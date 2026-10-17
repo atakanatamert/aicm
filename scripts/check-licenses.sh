@@ -10,6 +10,10 @@ apache_re='^(cmd/aicm-agent|internal/(agentlink|mcpserver|harness|meter|version)
 fail=0
 spdx='// SPDX-License''-Identifier:'
 for f in $(git ls-files --cached --others --exclude-standard '*.go'); do
+	# Generated files (sqlc, oapi) get their license from REUSE.toml.
+	if grep -Eq '^// Code generated .* DO NOT EDIT\.$' "$f"; then
+		continue
+	fi
 	dir=$(dirname "$f")
 	if echo "$dir" | grep -Eq "$apache_re"; then
 		want="$spdx Apache-2.0"
