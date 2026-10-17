@@ -1,0 +1,2278 @@
+openapi: 3.0.3
+info:
+  title: aicm hub API
+  version: 0.1.0
+  description: |
+    HTTP API of the aicm hub. The web UI, the MCP server and scripts use it.
+
+    **Auth.** Browser sessions use the `aicm_session` cookie set by
+    `POST /api/auth/login`. Scripts and MCP use `Authorization: Bearer <api token>`.
+    An API token acts as its user, with that user's role and grants.
+
+    **Roles.** Every operation declares `x-aicm-role`: the minimum role
+    (`viewer` < `editor` < `admin`). Non-admins only see accounts granted to
+    them or to one of their groups; everything scoped to an account (meters,
+    charges, usage, alerts) is filtered the same way. `public` operations
+    need no login.
+
+    **Errors.** Every non-2xx response is `Error`:
+    `{"error": {"code": "snake_case", "message": "..."}}`.
+
+    **Money.** Amounts are integer minor units with an ISO 4217 code
+    (`Money`). Token-cost estimates use micro units (`MicroMoney`). Converted
+    figures are always secondary and carry the rate date they used.
+
+    **Secrets.** Write-only. Responses carry at most the last four characters.
+
+    **Not in this spec.** `GET /api/agent/connect` is the agent WebSocket
+    (protocol in `docs/agentlink.md`). `/mcp` serves MCP over streamable HTTP.
+  license:
+    name: AGPL-3.0-or-later
+    url: https://www.gnu.org/licenses/agpl-3.0.html
+
+servers:
+  - url: /
+
+security:
+  - session: []
+  - bearer: []
+
+tags:
+  - name: system
+  - name: auth
+  - name: users
+  - name: providers
+  - name: accounts
+  - name: quotas
+  - name: money
+  - name: usage
+  - name: alerts
+  - name: machines
+  - name: settings
+  - name: audit
+  - name: export
+
+paths:
+  /healthz:
+    get:
+      tags: [system]
+      operationId: getHealth
+      summary: Liveness check
+      security: []
+      x-aicm-role: public
+      responses:
+        "200":
+          description: Process is up
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Health" }
+
+  /readyz:
+    get:
+      tags: [system]
+      operationId: getReady
+      summary: Readiness check (database reachable)
+      security: []
+      x-aicm-role: public
+      responses:
+        "200":
+          description: Ready
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Health" }
+        "503": { $ref: "#/components/responses/Error" }
+
+  # ---------------------------------------------------------------- auth
+
+  /api/setup:
+    get:
+      tags: [auth]
+      operationId: getSetupStatus
+      summary: Whether first-run setup is still needed (no users exist)
+      security: []
+      x-aicm-role: public
+      responses:
+        "200":
+          description: Setup status
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [needed]
+                properties:
+                  needed: { type: boolean }
+    post:
+      tags: [auth]
+      operationId: completeSetup
+      summary: Create the first admin and log in. Fails with 409 once any user exists.
+      security: []
+      x-aicm-role: public
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/SetupRequest" }
+      responses:
+        "200":
+          description: Admin created and logged in; sets the session cookie
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Me" }
+        "400": { $ref: "#/components/responses/Error" }
+        "409": { $ref: "#/components/responses/Error" }
+
+  /api/auth/login:
+    post:
+      tags: [auth]
+      operationId: login
+      summary: Login
+      security: []
+      x-aicm-role: public
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/LoginRequest" }
+      responses:
+        "200":
+          description: Logged in; sets the session cookie
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Me" }
+        "401": { $ref: "#/components/responses/Error" }
+        "429": { $ref: "#/components/responses/Error" }
+
+  /api/auth/logout:
+    post:
+      tags: [auth]
+      operationId: logout
+      summary: Logout
+      x-aicm-role: viewer
+      responses:
+        "204": { description: Logged out; session cookie cleared }
+
+  /api/me:
+    get:
+      tags: [auth]
+      operationId: getMe
+      summary: Get me
+      x-aicm-role: viewer
+      responses:
+        "200":
+          description: Current user
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Me" }
+        "401": { $ref: "#/components/responses/Error" }
+
+  /api/me/password:
+    post:
+      tags: [auth]
+      operationId: changePassword
+      summary: Change password
+      x-aicm-role: viewer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [current_password, new_password]
+              properties:
+                current_password: { type: string, format: password }
+                new_password: { type: string, format: password, minLength: 12 }
+      responses:
+        "204": { description: Password changed; other sessions are ended }
+        "400": { $ref: "#/components/responses/Error" }
+        "401": { $ref: "#/components/responses/Error" }
+
+  /api/me/tokens:
+    get:
+      tags: [auth]
+      operationId: listApiTokens
+      summary: List API tokens
+      x-aicm-role: viewer
+      responses:
+        "200":
+          description: The current user's API tokens
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/ApiToken" }
+    post:
+      tags: [auth]
+      operationId: createApiToken
+      summary: Create API token
+      x-aicm-role: viewer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name]
+              properties:
+                name: { type: string, minLength: 1, maxLength: 100 }
+                expires_at: { type: string, format: date-time, nullable: true }
+      responses:
+        "201":
+          description: Token created. `token` is shown only in this response.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ApiTokenCreated" }
+        "400": { $ref: "#/components/responses/Error" }
+
+  /api/me/tokens/{tokenId}:
+    delete:
+      tags: [auth]
+      operationId: revokeApiToken
+      summary: Revoke API token
+      x-aicm-role: viewer
+      parameters:
+        - { name: tokenId, in: path, required: true, schema: { type: string, format: uuid } }
+      responses:
+        "204": { description: Revoked }
+        "404": { $ref: "#/components/responses/Error" }
+
+  # ---------------------------------------------------------------- users
+
+  /api/users:
+    get:
+      tags: [users]
+      operationId: listUsers
+      summary: List users
+      x-aicm-role: admin
+      responses:
+        "200":
+          description: Users in the org
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/User" }
+    post:
+      tags: [users]
+      operationId: createUser
+      summary: Create user
+      x-aicm-role: admin
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/UserCreate" }
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/User" }
+        "400": { $ref: "#/components/responses/Error" }
+        "409": { $ref: "#/components/responses/Error" }
+
+  /api/users/{userId}:
+    patch:
+      tags: [users]
+      operationId: updateUser
+      summary: Change name, role, disabled state or reset the password. An admin cannot demote or disable the last admin.
+      x-aicm-role: admin
+      parameters:
+        - { $ref: "#/components/parameters/UserId" }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/UserUpdate" }
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/User" }
+        "400": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
+        "409": { $ref: "#/components/responses/Error" }
+
+  /api/groups:
+    get:
+      tags: [users]
+      operationId: listGroups
+      summary: List groups
+      x-aicm-role: admin
+      responses:
+        "200":
+          description: Groups with their members
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/Group" }
+    post:
+      tags: [users]
+      operationId: createGroup
+      summary: Create group
+      x-aicm-role: admin
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/GroupWrite" }
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Group" }
+        "409": { $ref: "#/components/responses/Error" }
+
+  /api/groups/{groupId}:
+    put:
+      tags: [users]
+      operationId: updateGroup
+      summary: Rename a group and replace its members
+      x-aicm-role: admin
+      parameters:
+        - { $ref: "#/components/parameters/GroupId" }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/GroupWrite" }
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Group" }
+        "404": { $ref: "#/components/responses/Error" }
+    delete:
+      tags: [users]
+      operationId: deleteGroup
+      summary: Delete a group and its grants
+      x-aicm-role: admin
+      parameters:
+        - { $ref: "#/components/parameters/GroupId" }
+      responses:
+        "204": { description: Deleted }
+        "404": { $ref: "#/components/responses/Error" }
+
+  # ---------------------------------------------------------------- providers
+
+  /api/providers:
+    get:
+      tags: [providers]
+      operationId: listProviders
+      summary: The provider catalog compiled into the hub
+      x-aicm-role: viewer
+      responses:
+        "200":
+          description: Catalog
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/ProviderInfo" }
+
+  # ---------------------------------------------------------------- accounts
+
+  /api/accounts:
+    get:
+      tags: [accounts]
+      operationId: listAccounts
+      summary: List accounts
+      x-aicm-role: viewer
+      parameters:
+        - name: status
+          in: query
+          description: Defaults to active. `pending` lists accounts discovered by agents awaiting review.
+          schema: { $ref: "#/components/schemas/AccountStatus" }
+        - name: include_archived
+          in: query
+          schema: { type: boolean, default: false }
+        - name: provider_id
+          in: query
+          schema: { type: string }
+      responses:
+        "200":
+          description: Accounts visible to the caller
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/Account" }
+    post:
+      tags: [accounts]
+      operationId: createAccount
+      summary: Add an account by hand (API key, wallet or subscription)
+      x-aicm-role: editor
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/AccountCreate" }
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Account" }
+        "400": { $ref: "#/components/responses/Error" }
+
+  /api/accounts/{accountId}:
+    get:
+      tags: [accounts]
+      operationId: getAccount
+      summary: Get account
+      x-aicm-role: viewer
+      parameters:
+        - { $ref: "#/components/parameters/AccountId" }
+      responses:
+        "200":
+          description: Account
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Account" }
+        "404": { $ref: "#/components/responses/Error" }
+    patch:
+      tags: [accounts]
+      operationId: updateAccount
+      summary: Update account
+      x-aicm-role: editor
+      parameters:
+        - { $ref: "#/components/parameters/AccountId" }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/AccountUpdate" }
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Account" }
+        "400": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
+
+  /api/accounts/{accountId}/archive:
+    post:
+      tags: [accounts]
+      operationId: archiveAccount
+      summary: Hide an account. Its history is kept.
+      x-aicm-role: admin
+      parameters:
+        - { $ref: "#/components/parameters/AccountId" }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [confirm]
+              properties:
+                confirm:
+                  type: boolean
+                  enum: [true]
+      responses:
+        "200":
+          description: Archived
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Account" }
+        "404": { $ref: "#/components/responses/Error" }
+
+  /api/accounts/{accountId}/confirm:
+    post:
+      tags: [accounts]
+      operationId: confirmDiscoveredAccount
+      summary: Accept a pending account reported by an agent
+      description: |
+        Moves a `pending` account to `active`. When the agent found a plain
+        API key (never an OAuth token) and `import_key` is true, the hub asks
+        that agent for the key and stores it encrypted.
+      x-aicm-role: editor
+      parameters:
+        - { $ref: "#/components/parameters/AccountId" }
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name: { type: string }
+                import_key: { type: boolean, default: false }
+      responses:
+        "200":
+          description: Confirmed
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Account" }
+        "404": { $ref: "#/components/responses/Error" }
+        "409": { $ref: "#/components/responses/Error" }
+
+  /api/accounts/{accountId}/dismiss:
+    post:
+      tags: [accounts]
+      operationId: dismissDiscoveredAccount
+      summary: Reject a pending account; agents stop sending its data
+      x-aicm-role: editor
+      parameters:
+        - { $ref: "#/components/parameters/AccountId" }
+      responses:
+        "200":
+          description: Dismissed
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Account" }
+        "404": { $ref: "#/components/responses/Error" }
+
+  /api/accounts/{accountId}/secret:
+    put:
+      tags: [accounts]
+      operationId: setAccountSecret
+      summary: Store or replace the account's key. Write-only.
+      x-aicm-role: editor
+      parameters:
+        - { $ref: "#/components/parameters/AccountId" }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [value]
+              properties:
+                value: { type: string, format: password, minLength: 1 }
+                validate:
+                  type: boolean
+                  default: true
+                  description: Call the provider's Validate before saving
+      responses:
+        "200":
+          description: Stored
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/SecretInfo" }
+        "400": { $ref: "#/components/responses/Error" }
+        "422":
+          description: The provider rejected the key
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+
+  /api/accounts/{accountId}/sync:
+    post:
+      tags: [accounts]
+      operationId: syncAccount
+      summary: Queue a fetch now. Respects the provider's minimum poll interval.
+      x-aicm-role: editor
+      parameters:
+        - { $ref: "#/components/parameters/AccountId" }
+      responses:
+        "202":
+          description: Queued
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [queued]
+                properties:
+                  queued: { type: boolean }
+        "404": { $ref: "#/components/responses/Error" }
+        "409":
+          description: The account has nothing the hub can fetch (manual or agent-captured)
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+        "429":
+          description: Synced too recently; Retry-After says when the next sync is allowed
+          headers:
+            Retry-After: { schema: { type: integer } }
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+
+  /api/accounts/{accountId}/grants:
+    get:
+      tags: [accounts]
+      operationId: getAccountGrants
+      summary: Get account grants
+      x-aicm-role: admin
+      parameters:
+        - { $ref: "#/components/parameters/AccountId" }
+      responses:
+        "200":
+          description: Who can see this account (admins always can)
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/AccountGrants" }
+    put:
+      tags: [accounts]
+      operationId: setAccountGrants
+      summary: Replace the account's grants
+      x-aicm-role: admin
+      parameters:
+        - { $ref: "#/components/parameters/AccountId" }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/AccountGrants" }
+      responses:
+        "200":
+          description: Replaced
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/AccountGrants" }
+        "400": { $ref: "#/components/responses/Error" }
+
+  /api/accounts/{accountId}/machines:
+    get:
+      tags: [accounts]
+      operationId: listAccountMachines
+      summary: Machines and harnesses that report this account
+      x-aicm-role: viewer
+      parameters:
+        - { $ref: "#/components/parameters/AccountId" }
+      responses:
+        "200":
+          description: Sightings
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/AccountMachine" }
+
+  # ---------------------------------------------------------------- quotas
+
+  /api/quotas:
+    get:
+      tags: [quotas]
+      operationId: listQuotas
+      summary: Every visible account's meters in provider terms, with scores, sorted by urgency
+      description: |
+        Urgency order: exhausted or infeasible accounts first, then the
+        lowest headroom, then the soonest renewal. Accounts without meters
+        are included when they have a renewal date, so the Quotas page shows
+        every renewal.
+      x-aicm-role: viewer
+      parameters:
+        - name: account_id
+          in: query
+          schema: { type: string, format: uuid }
+      responses:
+        "200":
+          description: Quota cards
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/AccountQuota" }
+
+  /api/accounts/{accountId}/meters:
+    post:
+      tags: [quotas]
+      operationId: upsertManualMeter
+      summary: Declare or change a manual meter on an account
+      x-aicm-role: editor
+      parameters:
+        - { $ref: "#/components/parameters/AccountId" }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/MeterDef" }
+      responses:
+        "200":
+          description: Saved
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/MeterDef" }
+        "400": { $ref: "#/components/responses/Error" }
+        "409":
+          description: The key belongs to a provider- or agent-defined meter
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+
+  /api/accounts/{accountId}/meters/{meterKey}/readings:
+    get:
+      tags: [quotas]
+      operationId: listMeterReadings
+      summary: List meter readings
+      x-aicm-role: viewer
+      parameters:
+        - { $ref: "#/components/parameters/AccountId" }
+        - { $ref: "#/components/parameters/MeterKey" }
+        - { $ref: "#/components/parameters/From" }
+        - { $ref: "#/components/parameters/To" }
+        - { $ref: "#/components/parameters/Limit" }
+      responses:
+        "200":
+          description: Readings, newest first
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/MeterReading" }
+        "404": { $ref: "#/components/responses/Error" }
+    post:
+      tags: [quotas]
+      operationId: recordManualReading
+      summary: Enter a manual reading (source manual)
+      x-aicm-role: editor
+      parameters:
+        - { $ref: "#/components/parameters/AccountId" }
+        - { $ref: "#/components/parameters/MeterKey" }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ManualReading" }
+      responses:
+        "201":
+          description: Recorded
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/MeterReading" }
+        "400": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
+
+  /api/recommend:
+    get:
+      tags: [quotas]
+      operationId: recommendAccount
+      summary: Rank accounts for a job, with reasons
+      description: |
+        Rank: feasible first, then most expiring quota, then lowest marginal
+        cost (flat-rate subscriptions cost 0), then highest headroom
+        (Decision 11).
+      x-aicm-role: viewer
+      parameters:
+        - name: model_family
+          in: query
+          description: Model family the job needs, for example `claude`, `gpt`, `gemini`, `deepseek`. Empty means any.
+          schema: { type: string }
+        - name: size
+          in: query
+          schema: { $ref: "#/components/schemas/JobSize" }
+        - name: horizon_hours
+          in: query
+          description: How long the job will run
+          schema: { type: number, minimum: 0, maximum: 168, default: 1 }
+        - name: limit
+          in: query
+          schema: { type: integer, minimum: 1, maximum: 50, default: 5 }
+      responses:
+        "200":
+          description: Ranked accounts
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Recommendation" }
+
+  /api/forecast:
+    get:
+      tags: [quotas]
+      operationId: forecastCapacity
+      summary: Projected account score hour by hour
+      x-aicm-role: viewer
+      parameters:
+        - name: account_id
+          in: query
+          schema: { type: string, format: uuid }
+        - name: hours
+          in: query
+          schema: { type: integer, minimum: 1, maximum: 168, default: 24 }
+      responses:
+        "200":
+          description: One series per account
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/CapacityForecast" }
+
+  /api/renewals:
+    get:
+      tags: [quotas]
+      operationId: listRenewals
+      summary: Subscriptions renewing within N days, soonest first
+      x-aicm-role: viewer
+      parameters:
+        - name: within_days
+          in: query
+          schema: { type: integer, minimum: 1, maximum: 400, default: 30 }
+      responses:
+        "200":
+          description: Renewals
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/Renewal" }
+
+  # ---------------------------------------------------------------- money
+
+  /api/charges:
+    get:
+      tags: [money]
+      operationId: listCharges
+      summary: List charges
+      x-aicm-role: viewer
+      parameters:
+        - { $ref: "#/components/parameters/FromDate" }
+        - { $ref: "#/components/parameters/ToDate" }
+        - name: account_id
+          in: query
+          schema: { type: string, format: uuid }
+        - name: kind
+          in: query
+          schema: { $ref: "#/components/schemas/ChargeKind" }
+        - name: status
+          in: query
+          description: Defaults to confirmed. `suggested` lists detected top-ups awaiting review.
+          schema: { $ref: "#/components/schemas/ChargeStatus" }
+        - { $ref: "#/components/parameters/Cursor" }
+        - { $ref: "#/components/parameters/Limit" }
+      responses:
+        "200":
+          description: Charges, newest first
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ChargePage" }
+    post:
+      tags: [money]
+      operationId: createCharge
+      summary: Record a payment by hand (top-up, subscription fee, invoice, refund)
+      x-aicm-role: editor
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ChargeCreate" }
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Charge" }
+        "400": { $ref: "#/components/responses/Error" }
+
+  /api/charges/{chargeId}:
+    patch:
+      tags: [money]
+      operationId: updateCharge
+      summary: Edit a charge, or confirm or dismiss a suggested one
+      x-aicm-role: editor
+      parameters:
+        - { $ref: "#/components/parameters/ChargeId" }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ChargeUpdate" }
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Charge" }
+        "400": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
+
+  /api/spend:
+    get:
+      tags: [money]
+      operationId: getSpend
+      summary: Money out per period and provider, billed currency first
+      description: |
+        Sums confirmed charges. Each charge converts to the display currency
+        at its own date's rate. `billed` keeps one entry per currency so
+        nothing is mixed before conversion.
+      x-aicm-role: viewer
+      parameters:
+        - name: period
+          in: query
+          required: true
+          schema: { type: string, enum: [month, year] }
+        - { $ref: "#/components/parameters/FromDate" }
+        - { $ref: "#/components/parameters/ToDate" }
+        - name: group_by
+          in: query
+          schema: { type: string, enum: [provider, account], default: provider }
+        - name: currency
+          in: query
+          description: Conversion target; defaults to the org display currency
+          schema: { $ref: "#/components/schemas/CurrencyCode" }
+      responses:
+        "200":
+          description: Spend report
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/SpendReport" }
+
+  # ---------------------------------------------------------------- usage
+
+  /api/usage:
+    get:
+      tags: [usage]
+      operationId: getUsage
+      summary: Tokens, requests and estimated cost (secondary to money out)
+      x-aicm-role: viewer
+      parameters:
+        - { $ref: "#/components/parameters/FromDate" }
+        - { $ref: "#/components/parameters/ToDate" }
+        - name: group_by
+          in: query
+          required: true
+          schema: { type: string, enum: [day, model, account, provider] }
+        - name: account_id
+          in: query
+          schema: { type: string, format: uuid }
+        - name: provider_id
+          in: query
+          schema: { type: string }
+      responses:
+        "200":
+          description: Usage rows
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/UsageRow" }
+
+  # ---------------------------------------------------------------- alerts
+
+  /api/alerts:
+    get:
+      tags: [alerts]
+      operationId: listAlerts
+      summary: List alerts
+      x-aicm-role: viewer
+      parameters:
+        - name: unread
+          in: query
+          schema: { type: boolean }
+        - { $ref: "#/components/parameters/Cursor" }
+        - { $ref: "#/components/parameters/Limit" }
+      responses:
+        "200":
+          description: Inbox, newest first
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/AlertPage" }
+
+  /api/alerts/read-all:
+    post:
+      tags: [alerts]
+      operationId: markAllAlertsRead
+      summary: Mark all alerts read
+      x-aicm-role: viewer
+      responses:
+        "204": { description: Done }
+
+  /api/alerts/{alertId}:
+    patch:
+      tags: [alerts]
+      operationId: updateAlert
+      summary: Mark read or snooze one alert
+      x-aicm-role: viewer
+      parameters:
+        - { $ref: "#/components/parameters/AlertId" }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                read: { type: boolean }
+                snoozed_until: { type: string, format: date-time, nullable: true }
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Alert" }
+        "404": { $ref: "#/components/responses/Error" }
+
+  /api/alert-rules:
+    get:
+      tags: [alerts]
+      operationId: listAlertRules
+      summary: Org defaults plus per-account overrides
+      x-aicm-role: viewer
+      parameters:
+        - name: account_id
+          in: query
+          schema: { type: string, format: uuid }
+      responses:
+        "200":
+          description: Rules
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/AlertRule" }
+    put:
+      tags: [alerts]
+      operationId: upsertAlertRule
+      summary: Create or replace the rule for (account_id, kind). Org defaults (no account_id) need admin.
+      x-aicm-role: editor
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/AlertRuleWrite" }
+      responses:
+        "200":
+          description: Saved
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/AlertRule" }
+        "400": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+
+  # ---------------------------------------------------------------- machines
+
+  /api/machines:
+    get:
+      tags: [machines]
+      operationId: listMachines
+      summary: List machines
+      x-aicm-role: viewer
+      responses:
+        "200":
+          description: Enrolled agents
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/Machine" }
+
+  /api/machines/{machineId}:
+    patch:
+      tags: [machines]
+      operationId: updateMachine
+      summary: Rename or revoke a machine. A revoked machine is disconnected and cannot reconnect.
+      x-aicm-role: admin
+      parameters:
+        - { $ref: "#/components/parameters/MachineId" }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name: { type: string, minLength: 1 }
+                revoked: { type: boolean, enum: [true] }
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Machine" }
+        "404": { $ref: "#/components/responses/Error" }
+
+  /api/enroll-tokens:
+    get:
+      tags: [machines]
+      operationId: listEnrollTokens
+      summary: List enroll tokens
+      x-aicm-role: admin
+      responses:
+        "200":
+          description: Enrollment tokens (hashes only)
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/EnrollToken" }
+    post:
+      tags: [machines]
+      operationId: createEnrollToken
+      summary: Create a universal enrollment token and the one-line install commands
+      x-aicm-role: admin
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                permanent: { type: boolean, default: false }
+                ttl_minutes: { type: integer, minimum: 5, maximum: 10080, default: 60 }
+      responses:
+        "201":
+          description: Created. The token and commands are shown only in this response.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/EnrollTokenCreated" }
+
+  /api/enroll-tokens/{enrollTokenId}:
+    delete:
+      tags: [machines]
+      operationId: revokeEnrollToken
+      summary: Revoke an enrollment token. Already-enrolled machines stay enrolled.
+      x-aicm-role: admin
+      parameters:
+        - { name: enrollTokenId, in: path, required: true, schema: { type: string, format: uuid } }
+      responses:
+        "204": { description: Revoked }
+        "404": { $ref: "#/components/responses/Error" }
+
+  # ---------------------------------------------------------------- settings
+
+  /api/settings:
+    get:
+      tags: [settings]
+      operationId: getSettings
+      summary: Get settings
+      x-aicm-role: viewer
+      responses:
+        "200":
+          description: Org settings
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Settings" }
+    patch:
+      tags: [settings]
+      operationId: updateSettings
+      summary: Update settings
+      x-aicm-role: admin
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/SettingsUpdate" }
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Settings" }
+        "400": { $ref: "#/components/responses/Error" }
+
+  /api/settings/smtp/test:
+    post:
+      tags: [settings]
+      operationId: sendTestEmail
+      summary: Send test email
+      x-aicm-role: admin
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [to]
+              properties:
+                to: { type: string, format: email }
+      responses:
+        "204": { description: Sent }
+        "502":
+          description: The SMTP server rejected the message
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+
+  # ---------------------------------------------------------------- audit
+
+  /api/audit:
+    get:
+      tags: [audit]
+      operationId: listAuditLog
+      summary: List audit log
+      x-aicm-role: admin
+      parameters:
+        - name: actor_id
+          in: query
+          schema: { type: string, format: uuid }
+        - name: target_kind
+          in: query
+          schema: { type: string }
+        - name: target_id
+          in: query
+          schema: { type: string }
+        - { $ref: "#/components/parameters/Cursor" }
+        - { $ref: "#/components/parameters/Limit" }
+      responses:
+        "200":
+          description: Entries, newest first
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/AuditPage" }
+
+  # ---------------------------------------------------------------- export
+
+  /api/export/charges.csv:
+    get:
+      tags: [export]
+      operationId: exportCharges
+      summary: Export charges
+      x-aicm-role: viewer
+      parameters:
+        - { $ref: "#/components/parameters/FromDate" }
+        - { $ref: "#/components/parameters/ToDate" }
+        - { name: account_id, in: query, schema: { type: string, format: uuid } }
+        - { name: kind, in: query, schema: { $ref: "#/components/schemas/ChargeKind" } }
+        - { name: status, in: query, schema: { $ref: "#/components/schemas/ChargeStatus" } }
+      responses:
+        "200":
+          description: |
+            Columns: id, occurred_on, account_id, account_name, provider_id, kind,
+            status, source, amount (decimal in billed currency), currency,
+            converted_amount, converted_currency, rate_date, description
+          content:
+            text/csv:
+              schema: { type: string }
+
+  /api/export/usage.csv:
+    get:
+      tags: [export]
+      operationId: exportUsage
+      summary: Export usage
+      x-aicm-role: viewer
+      parameters:
+        - { $ref: "#/components/parameters/FromDate" }
+        - { $ref: "#/components/parameters/ToDate" }
+        - { name: account_id, in: query, schema: { type: string, format: uuid } }
+        - { name: provider_id, in: query, schema: { type: string } }
+      responses:
+        "200":
+          description: |
+            One row per account, day and model. Columns: day, account_id,
+            account_name, provider_id, model, source, requests, input_tokens,
+            output_tokens, cache_read_tokens, cache_write_tokens,
+            reasoning_tokens, cost (decimal), cost_currency, cost_reported
+          content:
+            text/csv:
+              schema: { type: string }
+
+  /api/export/readings.csv:
+    get:
+      tags: [export]
+      operationId: exportReadings
+      summary: Export readings
+      x-aicm-role: viewer
+      parameters:
+        - { $ref: "#/components/parameters/From" }
+        - { $ref: "#/components/parameters/To" }
+        - { name: account_id, in: query, schema: { type: string, format: uuid } }
+      responses:
+        "200":
+          description: |
+            Columns: captured_at, account_id, account_name, provider_id,
+            meter_key, meter_label, unit, unit_currency, used, remaining,
+            limit, resets_at, source
+          content:
+            text/csv:
+              schema: { type: string }
+
+components:
+  securitySchemes:
+    session:
+      type: apiKey
+      in: cookie
+      name: aicm_session
+    bearer:
+      type: http
+      scheme: bearer
+      description: Personal API token (`aicm_pat_…`)
+
+  parameters:
+    AccountId:
+      name: accountId
+      in: path
+      required: true
+      schema: { type: string, format: uuid }
+    UserId:
+      name: userId
+      in: path
+      required: true
+      schema: { type: string, format: uuid }
+    GroupId:
+      name: groupId
+      in: path
+      required: true
+      schema: { type: string, format: uuid }
+    ChargeId:
+      name: chargeId
+      in: path
+      required: true
+      schema: { type: string, format: uuid }
+    AlertId:
+      name: alertId
+      in: path
+      required: true
+      schema: { type: string, format: uuid }
+    MachineId:
+      name: machineId
+      in: path
+      required: true
+      schema: { type: string, format: uuid }
+    MeterKey:
+      name: meterKey
+      in: path
+      required: true
+      schema: { $ref: "#/components/schemas/MeterKey" }
+    From:
+      name: from
+      in: query
+      description: Inclusive start time
+      schema: { type: string, format: date-time }
+    To:
+      name: to
+      in: query
+      description: Exclusive end time
+      schema: { type: string, format: date-time }
+    FromDate:
+      name: from
+      in: query
+      description: Inclusive start day
+      schema: { type: string, format: date }
+    ToDate:
+      name: to
+      in: query
+      description: Inclusive end day
+      schema: { type: string, format: date }
+    Cursor:
+      name: cursor
+      in: query
+      description: Opaque cursor from a previous page's `next_cursor`
+      schema: { type: string }
+    Limit:
+      name: limit
+      in: query
+      schema: { type: integer, minimum: 1, maximum: 500, default: 100 }
+
+  responses:
+    Error:
+      description: Error
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/Error" }
+
+  schemas:
+    # ------------------------------------------------------------ shared
+
+    Error:
+      type: object
+      required: [error]
+      properties:
+        error:
+          type: object
+          required: [code, message]
+          properties:
+            code:
+              type: string
+              description: Stable snake_case code, for example `not_found`, `forbidden`, `validation_failed`
+            message: { type: string }
+
+    Health:
+      type: object
+      required: [status]
+      properties:
+        status: { type: string }
+        version: { type: string }
+
+    CurrencyCode:
+      type: string
+      pattern: "^[A-Z]{3}$"
+      description: ISO 4217 code
+      example: USD
+
+    Money:
+      type: object
+      description: An amount in integer minor units (cents for USD, fen for CNY, yen for JPY)
+      required: [amount_minor, currency]
+      properties:
+        amount_minor: { type: integer, format: int64 }
+        currency: { $ref: "#/components/schemas/CurrencyCode" }
+
+    MicroMoney:
+      type: object
+      description: A token-cost estimate in micro units (1e-6 of the currency unit)
+      required: [amount_micro, currency]
+      properties:
+        amount_micro: { type: integer, format: int64 }
+        currency: { $ref: "#/components/schemas/CurrencyCode" }
+
+    ConvertedMoney:
+      type: object
+      description: An amount converted at the rate of `rate_date`. Absent when no rate is known.
+      required: [amount_minor, currency, rate_date]
+      properties:
+        amount_minor: { type: integer, format: int64 }
+        currency: { $ref: "#/components/schemas/CurrencyCode" }
+        rate_date: { type: string, format: date }
+
+    Role:
+      type: string
+      enum: [admin, editor, viewer]
+
+    Links:
+      type: object
+      description: Provider pages. Any may be absent.
+      properties:
+        top_up: { type: string, format: uri }
+        billing: { type: string, format: uri }
+        manage_subscription: { type: string, format: uri }
+        cancel: { type: string, format: uri }
+        usage: { type: string, format: uri }
+        keys: { type: string, format: uri }
+        docs: { type: string, format: uri }
+
+    # ------------------------------------------------------------ auth and users
+
+    SetupRequest:
+      type: object
+      required: [email, password]
+      properties:
+        email: { type: string, format: email }
+        name: { type: string }
+        password: { type: string, format: password, minLength: 12 }
+
+    LoginRequest:
+      type: object
+      required: [email, password]
+      properties:
+        email: { type: string, format: email }
+        password: { type: string, format: password }
+
+    Me:
+      type: object
+      required: [user, org]
+      properties:
+        user: { $ref: "#/components/schemas/User" }
+        org:
+          type: object
+          required: [id, name, display_currency]
+          properties:
+            id: { type: string, format: uuid }
+            name: { type: string }
+            display_currency: { $ref: "#/components/schemas/CurrencyCode" }
+
+    User:
+      type: object
+      required: [id, email, name, role, disabled, created_at]
+      properties:
+        id: { type: string, format: uuid }
+        email: { type: string, format: email }
+        name: { type: string }
+        role: { $ref: "#/components/schemas/Role" }
+        disabled: { type: boolean }
+        last_login_at: { type: string, format: date-time, nullable: true }
+        created_at: { type: string, format: date-time }
+
+    UserCreate:
+      type: object
+      required: [email, password, role]
+      properties:
+        email: { type: string, format: email }
+        name: { type: string }
+        password: { type: string, format: password, minLength: 12 }
+        role: { $ref: "#/components/schemas/Role" }
+
+    UserUpdate:
+      type: object
+      properties:
+        name: { type: string }
+        role: { $ref: "#/components/schemas/Role" }
+        disabled: { type: boolean }
+        password: { type: string, format: password, minLength: 12 }
+
+    Group:
+      type: object
+      required: [id, name, member_ids]
+      properties:
+        id: { type: string, format: uuid }
+        name: { type: string }
+        member_ids:
+          type: array
+          items: { type: string, format: uuid }
+
+    GroupWrite:
+      type: object
+      required: [name, member_ids]
+      properties:
+        name: { type: string, minLength: 1 }
+        member_ids:
+          type: array
+          items: { type: string, format: uuid }
+
+    ApiToken:
+      type: object
+      required: [id, name, last4, created_at]
+      properties:
+        id: { type: string, format: uuid }
+        name: { type: string }
+        last4: { type: string }
+        created_at: { type: string, format: date-time }
+        last_used_at: { type: string, format: date-time, nullable: true }
+        expires_at: { type: string, format: date-time, nullable: true }
+        revoked_at: { type: string, format: date-time, nullable: true }
+
+    ApiTokenCreated:
+      allOf:
+        - $ref: "#/components/schemas/ApiToken"
+        - type: object
+          required: [token]
+          properties:
+            token:
+              type: string
+              description: The full token. Shown once.
+
+    # ------------------------------------------------------------ providers
+
+    AuthKind:
+      type: string
+      description: |
+        api_key: a normal provider key the hub stores. admin_key: an org-wide
+        admin or management key. agent_capture: data comes from the agent on
+        the user's machine; the hub holds no credential. none: manual only.
+      enum: [api_key, admin_key, agent_capture, none]
+
+    MeterKey:
+      type: string
+      pattern: "^[a-z0-9][a-z0-9_.-]{0,63}$"
+      description: Provider-defined meter key, for example `five_hour`, `seven_day`, `balance`
+
+    MeterUnit:
+      type: string
+      description: |
+        percent: 0–100 used. currency: values are minor units of `unit_currency`.
+        count, tokens, requests, credits: provider-defined counts.
+      enum: [percent, count, tokens, requests, credits, currency]
+
+    ResetKind:
+      type: string
+      description: |
+        never: a wallet with no reset. rolling: the window restarts
+        `window_minutes` after first use. fixed: the provider announces
+        `resets_at`. calendar_month: resets on the 1st (UTC).
+      enum: [never, rolling, fixed, calendar_month]
+
+    ReadingSource:
+      type: string
+      enum: [statusline, stream_json, rollout, app_server, api, manual]
+
+    MeterDef:
+      type: object
+      required: [key, label, unit, reset_kind]
+      properties:
+        key: { $ref: "#/components/schemas/MeterKey" }
+        label:
+          type: string
+          description: The provider's own name for the meter
+        unit: { $ref: "#/components/schemas/MeterUnit" }
+        unit_currency: { $ref: "#/components/schemas/CurrencyCode" }
+        reset_kind: { $ref: "#/components/schemas/ResetKind" }
+        window_minutes: { type: integer, nullable: true }
+        limit:
+          type: number
+          nullable: true
+          description: Known limit in the meter's unit; null when the provider doesn't say
+
+    ConfigField:
+      type: object
+      description: A non-secret adapter option the account form asks for
+      required: [key, label, required]
+      properties:
+        key: { type: string }
+        label: { type: string }
+        help: { type: string }
+        required: { type: boolean }
+        options:
+          type: array
+          items: { type: string }
+
+    ProviderInfo:
+      type: object
+      required: [id, name, currency, auth_kinds, links, meters, unofficial, capabilities, config_fields]
+      properties:
+        id: { type: string, example: openrouter }
+        name: { type: string }
+        currency: { $ref: "#/components/schemas/CurrencyCode" }
+        auth_kinds:
+          type: array
+          items: { $ref: "#/components/schemas/AuthKind" }
+        links: { $ref: "#/components/schemas/Links" }
+        meters:
+          type: array
+          items: { $ref: "#/components/schemas/MeterDef" }
+        unofficial:
+          type: boolean
+          description: Relies on an undocumented endpoint; needs the per-account opt-in
+        capabilities:
+          type: object
+          required: [usage, quota, charges]
+          properties:
+            usage: { type: boolean }
+            quota: { type: boolean }
+            charges: { type: boolean }
+        config_fields:
+          type: array
+          items: { $ref: "#/components/schemas/ConfigField" }
+        min_poll_seconds: { type: integer }
+
+    # ------------------------------------------------------------ accounts
+
+    AccountStatus:
+      type: string
+      enum: [pending, active, dismissed]
+
+    BillingCycle:
+      type: string
+      enum: [none, weekly, monthly, yearly]
+
+    PromoKind:
+      type: string
+      enum: [trial, discount]
+
+    Plan:
+      type: object
+      description: Subscription details. `price` is absent and `renews_on` null for pure API or wallet accounts.
+      required: [name, cycle, auto_renew]
+      properties:
+        name: { type: string }
+        price:
+          $ref: "#/components/schemas/Money"
+        cycle: { $ref: "#/components/schemas/BillingCycle" }
+        renews_on: { type: string, format: date, nullable: true }
+        auto_renew: { type: boolean }
+        promo_kind:
+          $ref: "#/components/schemas/PromoKind"
+        promo_ends_on: { type: string, format: date, nullable: true }
+
+    SecretInfo:
+      type: object
+      required: [set]
+      properties:
+        set: { type: boolean }
+        last4: { type: string }
+        updated_at: { type: string, format: date-time, nullable: true }
+
+    SyncState:
+      type: object
+      properties:
+        last_synced_at: { type: string, format: date-time, nullable: true }
+        last_error: { type: string }
+        failing_since: { type: string, format: date-time, nullable: true }
+
+    Account:
+      type: object
+      required: [id, provider_id, name, status, auth_kind, currency, secret, config, allow_unofficial, plan, notes, sync, links, created_at, updated_at]
+      properties:
+        id: { type: string, format: uuid }
+        provider_id: { type: string }
+        name: { type: string }
+        status: { $ref: "#/components/schemas/AccountStatus" }
+        external_id:
+          type: string
+          nullable: true
+          description: The provider's own account id, used to merge one account seen on several machines
+        auth_kind: { $ref: "#/components/schemas/AuthKind" }
+        currency: { $ref: "#/components/schemas/CurrencyCode" }
+        secret: { $ref: "#/components/schemas/SecretInfo" }
+        config:
+          type: object
+          additionalProperties: { type: string }
+        allow_unofficial: { type: boolean }
+        plan: { $ref: "#/components/schemas/Plan" }
+        notes: { type: string }
+        sync: { $ref: "#/components/schemas/SyncState" }
+        # From the provider catalog
+        links:
+          $ref: "#/components/schemas/Links"
+        archived_at: { type: string, format: date-time, nullable: true }
+        created_at: { type: string, format: date-time }
+        updated_at: { type: string, format: date-time }
+
+    PlanWrite:
+      type: object
+      required: [cycle]
+      properties:
+        name: { type: string }
+        # Required unless cycle is none
+        price:
+          $ref: "#/components/schemas/Money"
+        cycle: { $ref: "#/components/schemas/BillingCycle" }
+        renews_on: { type: string, format: date, nullable: true }
+        auto_renew: { type: boolean, default: true }
+        promo_kind:
+          $ref: "#/components/schemas/PromoKind"
+        promo_ends_on: { type: string, format: date, nullable: true }
+
+    AccountCreate:
+      type: object
+      required: [provider_id, name]
+      properties:
+        provider_id: { type: string }
+        name: { type: string, minLength: 1 }
+        # Defaults to the provider's first auth kind
+        auth_kind:
+          $ref: "#/components/schemas/AuthKind"
+        # Defaults to the provider's billing currency
+        currency:
+          $ref: "#/components/schemas/CurrencyCode"
+        secret:
+          type: string
+          format: password
+          description: Optional key, validated and stored encrypted
+        config:
+          type: object
+          additionalProperties: { type: string }
+        allow_unofficial: { type: boolean, default: false }
+        plan: { $ref: "#/components/schemas/PlanWrite" }
+        notes: { type: string }
+
+    AccountUpdate:
+      type: object
+      description: Only the fields present change.
+      properties:
+        name: { type: string, minLength: 1 }
+        currency: { $ref: "#/components/schemas/CurrencyCode" }
+        config:
+          type: object
+          additionalProperties: { type: string }
+        allow_unofficial: { type: boolean }
+        plan: { $ref: "#/components/schemas/PlanWrite" }
+        notes: { type: string }
+
+    AccountGrants:
+      type: object
+      required: [user_ids, group_ids]
+      properties:
+        user_ids:
+          type: array
+          items: { type: string, format: uuid }
+        group_ids:
+          type: array
+          items: { type: string, format: uuid }
+
+    AccountMachine:
+      type: object
+      required: [machine_id, machine_name, harness, first_seen_at, last_seen_at]
+      properties:
+        machine_id: { type: string, format: uuid }
+        machine_name: { type: string }
+        harness: { type: string, example: claudecode }
+        first_seen_at: { type: string, format: date-time }
+        last_seen_at: { type: string, format: date-time }
+
+    # ------------------------------------------------------------ quotas
+
+    MeterReading:
+      type: object
+      description: One reading, exactly as the provider reported it
+      required: [captured_at, source]
+      properties:
+        used: { type: number, nullable: true }
+        remaining: { type: number, nullable: true }
+        limit: { type: number, nullable: true }
+        resets_at: { type: string, format: date-time, nullable: true }
+        captured_at: { type: string, format: date-time }
+        source: { $ref: "#/components/schemas/ReadingSource" }
+        machine_id: { type: string, format: uuid, nullable: true }
+
+    ManualReading:
+      type: object
+      properties:
+        used: { type: number, nullable: true }
+        remaining: { type: number, nullable: true }
+        limit: { type: number, nullable: true }
+        resets_at: { type: string, format: date-time, nullable: true }
+        captured_at:
+          type: string
+          format: date-time
+          description: Defaults to now
+
+    MeterScore:
+      type: object
+      description: Derived numbers for ranking. Never shown instead of the provider's figures.
+      required: [headroom, expiring_share, stale]
+      properties:
+        burn_per_hour:
+          type: number
+          nullable: true
+          description: Recent consumption per hour in the meter's unit; null with too few readings
+        hours_to_empty: { type: number, nullable: true }
+        hours_to_reset: { type: number, nullable: true }
+        headroom:
+          type: number
+          minimum: 0
+          maximum: 1
+          description: min(1, time-to-empty / time-to-reset)
+        expiring_share:
+          type: number
+          minimum: 0
+          maximum: 1
+          description: Share of the limit that will reset unused at the current pace
+        stale:
+          type: boolean
+          description: The latest reading is past its resets_at, so the window is known to be back at zero
+
+    MeterView:
+      type: object
+      required: [def, score]
+      properties:
+        def: { $ref: "#/components/schemas/MeterDef" }
+        manual: { type: boolean }
+        latest:
+          $ref: "#/components/schemas/MeterReading"
+        score: { $ref: "#/components/schemas/MeterScore" }
+
+    AccountScore:
+      type: object
+      required: [feasible, headroom, expiring_share]
+      properties:
+        feasible:
+          type: boolean
+          description: False when any meter is exhausted
+        headroom:
+          type: number
+          description: The weakest meter's headroom
+        expiring_share:
+          type: number
+          description: The largest expiring share among the account's meters
+        binding_meter:
+          type: string
+          nullable: true
+          description: Key of the meter that sets the headroom
+
+    AccountQuota:
+      type: object
+      required: [account, meters, score]
+      properties:
+        account: { $ref: "#/components/schemas/AccountSummary" }
+        meters:
+          type: array
+          items: { $ref: "#/components/schemas/MeterView" }
+        score: { $ref: "#/components/schemas/AccountScore" }
+
+    AccountSummary:
+      type: object
+      required: [id, provider_id, provider_name, name, plan, links]
+      properties:
+        id: { type: string, format: uuid }
+        provider_id: { type: string }
+        provider_name: { type: string }
+        name: { type: string }
+        plan: { $ref: "#/components/schemas/Plan" }
+        links: { $ref: "#/components/schemas/Links" }
+        last_synced_at: { type: string, format: date-time, nullable: true }
+
+    JobSize:
+      type: string
+      description: Rough job size; scales the expected consumption used for feasibility
+      enum: [small, medium, large]
+
+    Recommendation:
+      type: object
+      required: [ranked, generated_at]
+      properties:
+        generated_at: { type: string, format: date-time }
+        ranked:
+          type: array
+          items: { $ref: "#/components/schemas/RankedAccount" }
+
+    RankedAccount:
+      type: object
+      required: [rank, account, score, marginal_cost_per_mtok, reasons]
+      properties:
+        rank: { type: integer, minimum: 1 }
+        account: { $ref: "#/components/schemas/AccountSummary" }
+        score: { $ref: "#/components/schemas/AccountScore" }
+        # Zero for flat-rate subscriptions
+        marginal_cost_per_mtok:
+          $ref: "#/components/schemas/MicroMoney"
+        reasons:
+          type: array
+          description: Plain-language reasons, for example "Claude Max — 62% of the weekly window expires in 31 h unused"
+          items: { type: string }
+
+    CapacityForecast:
+      type: object
+      required: [account_id, points]
+      properties:
+        account_id: { type: string, format: uuid }
+        points:
+          type: array
+          items:
+            type: object
+            required: [at, headroom, feasible]
+            properties:
+              at: { type: string, format: date-time }
+              headroom: { type: number }
+              feasible: { type: boolean }
+
+    Renewal:
+      type: object
+      required: [account, renews_on, days_left, auto_renew]
+      properties:
+        account: { $ref: "#/components/schemas/AccountSummary" }
+        renews_on: { type: string, format: date }
+        days_left: { type: integer }
+        auto_renew: { type: boolean }
+        price:
+          $ref: "#/components/schemas/Money"
+        converted:
+          $ref: "#/components/schemas/ConvertedMoney"
+        promo_kind:
+          $ref: "#/components/schemas/PromoKind"
+        promo_ends_on: { type: string, format: date, nullable: true }
+
+    # ------------------------------------------------------------ money
+
+    ChargeKind:
+      type: string
+      enum: [subscription, topup, invoice, refund]
+
+    ChargeStatus:
+      type: string
+      enum: [confirmed, suggested, dismissed]
+
+    ChargeSource:
+      type: string
+      enum: [manual, renewal, detected, api]
+
+    Charge:
+      type: object
+      required: [id, account_id, provider_id, kind, status, source, amount, occurred_on, description, created_at]
+      properties:
+        id: { type: string, format: uuid }
+        account_id: { type: string, format: uuid }
+        account_name: { type: string }
+        provider_id: { type: string }
+        kind: { $ref: "#/components/schemas/ChargeKind" }
+        status: { $ref: "#/components/schemas/ChargeStatus" }
+        source: { $ref: "#/components/schemas/ChargeSource" }
+        amount: { $ref: "#/components/schemas/Money" }
+        converted:
+          $ref: "#/components/schemas/ConvertedMoney"
+        occurred_on: { type: string, format: date }
+        period_start: { type: string, format: date, nullable: true }
+        period_end: { type: string, format: date, nullable: true }
+        description: { type: string }
+        created_at: { type: string, format: date-time }
+
+    ChargeCreate:
+      type: object
+      required: [account_id, kind, amount, occurred_on]
+      properties:
+        account_id: { type: string, format: uuid }
+        kind: { $ref: "#/components/schemas/ChargeKind" }
+        amount: { $ref: "#/components/schemas/Money" }
+        occurred_on: { type: string, format: date }
+        period_start: { type: string, format: date }
+        period_end: { type: string, format: date }
+        description: { type: string }
+
+    ChargeUpdate:
+      type: object
+      description: Only the fields present change. Setting status confirms or dismisses a suggested charge.
+      properties:
+        status:
+          type: string
+          enum: [confirmed, dismissed]
+        amount: { $ref: "#/components/schemas/Money" }
+        occurred_on: { type: string, format: date }
+        description: { type: string }
+
+    ChargePage:
+      type: object
+      required: [items]
+      properties:
+        items:
+          type: array
+          items: { $ref: "#/components/schemas/Charge" }
+        next_cursor: { type: string, nullable: true }
+
+    SpendReport:
+      type: object
+      required: [display_currency, rows, totals]
+      properties:
+        display_currency: { $ref: "#/components/schemas/CurrencyCode" }
+        rows:
+          type: array
+          items: { $ref: "#/components/schemas/SpendRow" }
+        totals:
+          type: array
+          description: One entry per period across all groups
+          items: { $ref: "#/components/schemas/SpendTotal" }
+
+    SpendRow:
+      type: object
+      required: [period, provider_id, billed]
+      properties:
+        period:
+          type: string
+          description: "`2026-10` for month, `2026` for year"
+        provider_id: { type: string }
+        account_id: { type: string, format: uuid, nullable: true }
+        account_name: { type: string }
+        billed:
+          type: array
+          description: One entry per billed currency, never mixed
+          items: { $ref: "#/components/schemas/Money" }
+        # Sum of each charge converted at its own date; absent if any rate is missing
+        converted:
+          $ref: "#/components/schemas/Money"
+        unconverted_count:
+          type: integer
+          description: Charges with no rate for their date
+
+    SpendTotal:
+      type: object
+      required: [period, billed]
+      properties:
+        period: { type: string }
+        billed:
+          type: array
+          items: { $ref: "#/components/schemas/Money" }
+        converted:
+          $ref: "#/components/schemas/Money"
+
+    # ------------------------------------------------------------ usage
+
+    UsageRow:
+      type: object
+      description: Grouping keys present depend on group_by
+      required: [requests, input_tokens, output_tokens, cache_read_tokens, cache_write_tokens, reasoning_tokens, cost, cost_reported]
+      properties:
+        day: { type: string, format: date }
+        model: { type: string }
+        account_id: { type: string, format: uuid }
+        account_name: { type: string }
+        provider_id: { type: string }
+        requests: { type: integer, format: int64 }
+        input_tokens: { type: integer, format: int64 }
+        output_tokens: { type: integer, format: int64 }
+        cache_read_tokens: { type: integer, format: int64 }
+        cache_write_tokens: { type: integer, format: int64 }
+        reasoning_tokens: { type: integer, format: int64 }
+        cost:
+          type: array
+          description: One entry per currency
+          items: { $ref: "#/components/schemas/MicroMoney" }
+        cost_reported:
+          type: boolean
+          description: True when every row's cost came from the provider rather than the price table
+
+    # ------------------------------------------------------------ alerts
+
+    AlertKind:
+      type: string
+      enum: [renewal, promo_ending, low_balance, meter_exhausted, quota_waste, sync_failing, agent_offline]
+
+    Alert:
+      type: object
+      required: [id, kind, severity, title, body, created_at, read]
+      properties:
+        id: { type: string, format: uuid }
+        kind: { $ref: "#/components/schemas/AlertKind" }
+        severity: { type: string, enum: [info, warning, critical] }
+        title: { type: string }
+        body: { type: string }
+        account_id: { type: string, format: uuid, nullable: true }
+        machine_id: { type: string, format: uuid, nullable: true }
+        links: { $ref: "#/components/schemas/Links" }
+        created_at: { type: string, format: date-time }
+        read: { type: boolean }
+        emailed_at: { type: string, format: date-time, nullable: true }
+        snoozed_until: { type: string, format: date-time, nullable: true }
+        resolved_at: { type: string, format: date-time, nullable: true }
+
+    AlertPage:
+      type: object
+      required: [items, unread_count]
+      properties:
+        items:
+          type: array
+          items: { $ref: "#/components/schemas/Alert" }
+        unread_count: { type: integer }
+        next_cursor: { type: string, nullable: true }
+
+    AlertRule:
+      type: object
+      required: [id, kind, enabled, params]
+      properties:
+        id: { type: string, format: uuid }
+        account_id:
+          type: string
+          format: uuid
+          nullable: true
+          description: Null for the org-wide default
+        kind: { $ref: "#/components/schemas/AlertKind" }
+        enabled: { type: boolean }
+        params: { $ref: "#/components/schemas/AlertParams" }
+        snoozed_until: { type: string, format: date-time, nullable: true }
+
+    AlertRuleWrite:
+      type: object
+      required: [kind, enabled, params]
+      properties:
+        account_id: { type: string, format: uuid, nullable: true }
+        kind: { $ref: "#/components/schemas/AlertKind" }
+        enabled: { type: boolean }
+        params: { $ref: "#/components/schemas/AlertParams" }
+        snoozed_until: { type: string, format: date-time, nullable: true }
+
+    AlertParams:
+      type: object
+      description: |
+        Which fields apply depends on kind:
+        renewal, promo_ending: days_before.
+        low_balance: below_percent, days_left.
+        meter_exhausted: used_percent.
+        quota_waste: unused_percent, hours_before_reset.
+        sync_failing, agent_offline: after_hours.
+      properties:
+        days_before:
+          type: array
+          items: { type: integer, minimum: 0 }
+        below_percent: { type: number, minimum: 0, maximum: 100 }
+        days_left: { type: number, minimum: 0 }
+        used_percent: { type: number, minimum: 0, maximum: 100 }
+        unused_percent: { type: number, minimum: 0, maximum: 100 }
+        hours_before_reset: { type: number, minimum: 0 }
+        after_hours: { type: number, minimum: 0 }
+
+    # ------------------------------------------------------------ machines
+
+    Machine:
+      type: object
+      required: [id, name, hostname, os, arch, agent_version, enrolled_at, online]
+      properties:
+        id: { type: string, format: uuid }
+        name: { type: string }
+        hostname: { type: string }
+        os: { type: string }
+        arch: { type: string }
+        agent_version: { type: string }
+        enrolled_at: { type: string, format: date-time }
+        last_seen_at: { type: string, format: date-time, nullable: true }
+        online:
+          type: boolean
+          description: Has a live WebSocket connection to this hub
+        revoked_at: { type: string, format: date-time, nullable: true }
+        harnesses:
+          type: array
+          items: { type: string }
+
+    EnrollToken:
+      type: object
+      required: [id, created_at, use_count]
+      properties:
+        id: { type: string, format: uuid }
+        created_at: { type: string, format: date-time }
+        expires_at:
+          type: string
+          format: date-time
+          nullable: true
+          description: Null for a permanent token
+        revoked_at: { type: string, format: date-time, nullable: true }
+        last_used_at: { type: string, format: date-time, nullable: true }
+        use_count: { type: integer }
+
+    EnrollTokenCreated:
+      allOf:
+        - $ref: "#/components/schemas/EnrollToken"
+        - type: object
+          required: [token, hub_url, hub_public_key, commands]
+          properties:
+            token:
+              type: string
+              description: The universal token. Shown once.
+            hub_url: { type: string, format: uri }
+            hub_public_key:
+              type: string
+              description: Base64 Ed25519 public key the agent pins
+            commands:
+              type: object
+              required: [sh, powershell, docker]
+              properties:
+                sh: { type: string, description: "curl | sh one-liner for macOS and Linux" }
+                brew: { type: string }
+                powershell: { type: string }
+                docker: { type: string }
+
+    # ------------------------------------------------------------ settings
+
+    SmtpSettings:
+      type: object
+      required: [host, port, username, password, tls, from]
+      properties:
+        host: { type: string }
+        port: { type: integer }
+        username: { type: string }
+        password: { $ref: "#/components/schemas/SecretInfo" }
+        tls: { type: string, enum: [none, starttls, tls] }
+        from: { type: string }
+
+    Settings:
+      type: object
+      required: [display_currency, fx_source, smtp, version, source_url]
+      properties:
+        display_currency: { $ref: "#/components/schemas/CurrencyCode" }
+        fx_source: { type: string, enum: [frankfurter, ecb] }
+        smtp: { $ref: "#/components/schemas/SmtpSettings" }
+        version: { type: string }
+        source_url:
+          type: string
+          format: uri
+          description: Source code of the running version (AGPL network clause)
+
+    SettingsUpdate:
+      type: object
+      properties:
+        display_currency: { $ref: "#/components/schemas/CurrencyCode" }
+        fx_source: { type: string, enum: [frankfurter, ecb] }
+        smtp:
+          type: object
+          properties:
+            host: { type: string }
+            port: { type: integer, minimum: 1, maximum: 65535 }
+            username: { type: string }
+            password:
+              type: string
+              format: password
+              description: Write-only; empty string clears it
+            tls: { type: string, enum: [none, starttls, tls] }
+            from: { type: string }
+
+    # ------------------------------------------------------------ audit
+
+    AuditEntry:
+      type: object
+      required: [id, occurred_at, actor_kind, actor_label, action, target_kind, target_id]
+      properties:
+        id: { type: integer, format: int64 }
+        occurred_at: { type: string, format: date-time }
+        actor_kind: { type: string, enum: [user, api_token, agent, system] }
+        actor_id: { type: string, format: uuid, nullable: true }
+        actor_label: { type: string }
+        action:
+          type: string
+          example: account.update
+        target_kind: { type: string }
+        target_id: { type: string }
+        before:
+          type: object
+          nullable: true
+          additionalProperties: true
+        after:
+          type: object
+          nullable: true
+          additionalProperties: true
+
+    AuditPage:
+      type: object
+      required: [items]
+      properties:
+        items:
+          type: array
+          items: { $ref: "#/components/schemas/AuditEntry" }
+        next_cursor: { type: string, nullable: true }

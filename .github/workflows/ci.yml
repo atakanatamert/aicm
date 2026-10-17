@@ -43,6 +43,15 @@ jobs:
           go run ./cmd/aicm migrate up
           go run ./cmd/aicm migrate status
         env:
+  openapi:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npx -y @redocly/cli@2 lint api/openapi.yaml
+
           AICM_DATABASE_URL: postgres://aicm:aicm@localhost:5432/aicm?sslmode=disable
 
   licenses:
