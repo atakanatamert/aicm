@@ -12,7 +12,7 @@ One or two sentences on what exists after this task that didn't before.
 
 - `internal/feature/file.go` (new)
 - `internal/feature/file_test.go` (new, only if a test is required below)
-- `db/queries/feature.sql` (edit)
+- `internal/db/queries/feature.sql` (new or edit; then `sqlc generate` updates `internal/db/`)
 
 Touch nothing else.
 
