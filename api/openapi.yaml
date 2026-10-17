@@ -2181,8 +2181,12 @@ components:
       allOf:
         - $ref: "#/components/schemas/EnrollToken"
         - type: object
-          required: [token, hub_url, hub_public_key, commands]
+          required: [token, hub_url, org_id, hub_public_key, commands]
           properties:
+            org_id:
+              type: string
+              format: uuid
+              description: The org the agent enrolls into; part of the signed handshake
             token:
               type: string
               description: The universal token. Shown once.
