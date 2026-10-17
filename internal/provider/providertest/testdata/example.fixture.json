@@ -1,0 +1,50 @@
+{
+  "recorded_at": "2026-10-17T12:00:00Z",
+  "interactions": [
+    {
+      "method": "GET",
+      "url": "https://api.example.com/user/balance",
+      "status": 200,
+      "header": { "Content-Type": "application/json" },
+      "body": { "balance": { "currency": "CNY", "topped_up": "110.00", "granted": "9.50", "updated_at": 1792238400 } }
+    },
+    {
+      "method": "GET",
+      "url": "https://api.example.com/user/balance",
+      "status": 200,
+      "header": { "Content-Type": "application/json" },
+      "body": { "balance": { "currency": "CNY", "topped_up": "110.00", "granted": "9.50", "updated_at": 1792238400 } }
+    },
+    {
+      "method": "GET",
+      "url": "https://api.example.com/usage?end=2026-10-03&start=2026-10-01",
+      "status": 429,
+      "header": { "Content-Type": "application/json", "Retry-After": "2" },
+      "body": { "error": "rate limited" }
+    },
+    {
+      "method": "GET",
+      "url": "https://api.example.com/usage?end=2026-10-03&start=2026-10-01",
+      "status": 200,
+      "header": { "Content-Type": "application/json" },
+      "body": {
+        "data": [
+          { "date": "2026-10-01", "model": "example-chat", "requests": 12, "input_tokens": 48000, "output_tokens": 3100, "cost": "0.0864", "currency": "CNY" }
+        ],
+        "next_page": "p2"
+      }
+    },
+    {
+      "method": "GET",
+      "url": "https://api.example.com/usage?end=2026-10-03&page=p2&start=2026-10-01",
+      "status": 200,
+      "header": { "Content-Type": "application/json" },
+      "body": {
+        "data": [
+          { "date": "2026-10-02", "model": "example-reasoner", "requests": 3, "input_tokens": 9000, "output_tokens": 12000, "cost": "0.051", "currency": "CNY" }
+        ],
+        "next_page": ""
+      }
+    }
+  ]
+}

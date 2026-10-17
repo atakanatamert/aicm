@@ -1,0 +1,42 @@
+{
+  "quota": [
+    {
+      "key": "balance_topped_up",
+      "remaining": 11000,
+      "captured_at": "2026-10-17T12:00:00Z",
+      "source": "api"
+    },
+    {
+      "key": "balance_granted",
+      "remaining": 950,
+      "captured_at": "2026-10-17T12:00:00Z",
+      "source": "api"
+    }
+  ],
+  "usage": [
+    {
+      "day": "2026-10-01T00:00:00Z",
+      "model": "example-chat",
+      "requests": 12,
+      "input_tokens": 48000,
+      "output_tokens": 3100,
+      "cache_read_tokens": 0,
+      "cache_write_tokens": 0,
+      "reasoning_tokens": 0,
+      "cost_micro": 86400,
+      "cost_currency": "CNY"
+    },
+    {
+      "day": "2026-10-02T00:00:00Z",
+      "model": "example-reasoner",
+      "requests": 3,
+      "input_tokens": 9000,
+      "output_tokens": 12000,
+      "cache_read_tokens": 0,
+      "cache_write_tokens": 0,
+      "reasoning_tokens": 0,
+      "cost_micro": 51000,
+      "cost_currency": "CNY"
+    }
+  ]
+}
