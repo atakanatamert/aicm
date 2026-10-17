@@ -1,0 +1,33 @@
+# Self-hosted hub: `docker compose up`. Copy .env.example to .env first.
+services:
+  db:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: aicm
+      POSTGRES_PASSWORD: ${AICM_DB_PASSWORD:-aicm}
+      POSTGRES_DB: aicm
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U aicm -d aicm"]
+      interval: 2s
+      timeout: 3s
+      retries: 30
+
+  hub:
+    build: .
+    image: aicm:dev
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      AICM_DATABASE_URL: postgres://aicm:${AICM_DB_PASSWORD:-aicm}@db:5432/aicm?sslmode=disable
+      AICM_PUBLIC_URL: ${AICM_PUBLIC_URL:-http://localhost:8080}
+      AICM_LOG_LEVEL: ${AICM_LOG_LEVEL:-info}
+    ports:
+      - "${AICM_PORT:-8080}:8080"
+
+volumes:
+  db-data:

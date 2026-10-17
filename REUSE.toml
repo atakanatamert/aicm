@@ -1,0 +1,28 @@
+version = 1
+SPDX-PackageName = "aicm"
+SPDX-PackageDownloadLocation = "https://github.com/atakanatamert/aicm"
+
+# The last matching annotation wins. Source files carry their own
+# SPDX-License-Identifier header; copyright comes from here so headers stay
+# one line.
+
+# Hub (AGPL): everything not listed below.
+[[annotations]]
+path = "**"
+precedence = "aggregate"
+SPDX-FileCopyrightText = "2026 Atakan Atamert and aicm contributors"
+SPDX-License-Identifier = "AGPL-3.0-or-later"
+
+# Apache-2.0 parts: everything the agent binary links, plus the MCP server.
+[[annotations]]
+path = [
+  "cmd/aicm-agent/**",
+  "internal/agentlink/**",
+  "internal/mcpserver/**",
+  "internal/harness/**",
+  "internal/meter/**",
+  "internal/version/**",
+]
+precedence = "aggregate"
+SPDX-FileCopyrightText = "2026 Atakan Atamert and aicm contributors"
+SPDX-License-Identifier = "Apache-2.0"

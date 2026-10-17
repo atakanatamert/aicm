@@ -19,14 +19,17 @@ docs/                plan, decisions, research, task cards
 
 ## Go conventions
 
-- Go 1.23+. Use stdlib `net/http` routing (method and path patterns). Allowed libraries: `pgx/v5`, `sqlc`, `goose`, `riverqueue/river`, `wneessen/go-mail`, `coder/websocket`, the official `modelcontextprotocol/go-sdk`, `golang.org/x/crypto`. Ask before adding any other dependency.
+- Go 1.26+ (River and goose require it). Use stdlib `net/http` routing (method and path patterns). Allowed libraries: `pgx/v5`, `sqlc`, `goose`, `riverqueue/river`, `wneessen/go-mail`, `coder/websocket`, the official `modelcontextprotocol/go-sdk`, `golang.org/x/crypto`. Ask before adding any other dependency.
 - No ORM, no DI container, no global state other than the logger. Wire dependencies by hand in `cmd/*/main.go`.
 - Every query filters by `org_id`. Every table that holds tenant data has an `org_id`.
 - Errors: wrap them with `fmt.Errorf("doing x: %w", err)`. Handlers return JSON errors `{ "error": { "code", "message" } }`.
 - Logging: `log/slog` with structured fields. Never log secrets, tokens or full API keys.
 - Money: integer minor units plus an ISO 4217 currency code. Never store money as a float. Convert only for display, at the rate of the record's own date.
 - Time: store UTC `timestamptz`. Meter `resets_at` values are absolute times, not durations.
-- Every source file starts with an SPDX header: `// SPDX-License-Identifier: AGPL-3.0-or-later` (hub) or `// SPDX-License-Identifier: Apache-2.0` (agent, agentlink, mcpserver).
+<!-- REUSE-IgnoreStart -->
+- Every Go source file starts with a one-line SPDX header: `// SPDX-License-Identifier: AGPL-3.0-or-later` (hub) or `// SPDX-License-Identifier: Apache-2.0` (everything the agent binary links: `cmd/aicm-agent`, `internal/agentlink`, `internal/mcpserver`, `internal/harness`, `internal/meter`, `internal/version`). Apache packages must never import AGPL packages. `REUSE.toml` supplies copyright and covers non-Go files.
+<!-- REUSE-IgnoreEnd -->
+- SQL: schema lives in `migrations/` (goose). Queries live in `internal/db/queries/<feature>.sql`; `sqlc generate` writes Go into `internal/db`. Feature packages call `internal/db`.
 
 ## Security rules
 
