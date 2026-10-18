@@ -49,7 +49,7 @@ export default function Usage() {
         title="Usage"
         description="Token usage and cost estimates. Estimates from token counts × list prices. Money out is on the Overview."
       />
-      <div className="flex flex-col gap-4 px-6 py-6">
+      <div className="mx-auto flex w-full max-w-6xl flex-col gap-4 px-4 py-6 sm:px-6">
         <div className="flex flex-wrap items-end justify-between gap-3">
           <div className="flex flex-wrap items-end gap-3">
             <div className="flex flex-col gap-1.5">

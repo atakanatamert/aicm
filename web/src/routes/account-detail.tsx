@@ -1,3 +1,4 @@
+import { ExternalLink } from "lucide-react"
 import { Link, useParams } from "react-router"
 import type { components } from "@/api/schema"
 import { query } from "@/api/client"
@@ -38,7 +39,7 @@ function DetailSkeleton() {
         <Skeleton className="h-6 w-64" />
         <Skeleton className="h-8 w-full max-w-md" />
       </div>
-      <div className="mx-auto w-full max-w-6xl space-y-6 px-6 py-6">
+      <div className="mx-auto w-full max-w-6xl space-y-6 px-4 py-6 sm:px-6">
         <div className="grid gap-6 md:grid-cols-2">
           <Skeleton className="h-48" />
           <Skeleton className="h-48" />
@@ -66,9 +67,10 @@ function AccountHeader({ account }: { account: Account }) {
       <div className="mt-3 flex flex-wrap items-start gap-2">
         {LINKS.map(({ key, label }) =>
           account.links[key] ? (
-            <Button key={key} asChild variant="outline" size="xs">
+            <Button key={key} asChild variant="outline" size="sm">
               <a href={account.links[key]!} target="_blank" rel="noreferrer">
                 {label}
+                <ExternalLink aria-hidden className="size-3" />
               </a>
             </Button>
           ) : null,
@@ -111,7 +113,7 @@ export default function AccountDetail() {
   return (
     <>
       <AccountHeader account={data} />
-      <div className="mx-auto w-full max-w-6xl space-y-6 px-6 py-6">
+      <div className="mx-auto w-full max-w-6xl space-y-6 px-4 py-6 sm:px-6">
         <div className="grid gap-6 md:grid-cols-2">
           <SectionCard title="Plan & renewal" description="What you pay and when it renews.">
             <PlanCard account={data} canEdit={canEdit} />
