@@ -1,7 +1,8 @@
 import type { components } from "@/api/schema"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+import { useProviderNames } from "@/hooks/use-provider-names"
 import { formatMoney } from "@/lib/format"
-import { billedSummary, providerLabel } from "./spend-format"
+import { billedSummary } from "./spend-format"
 
 type SpendRow = components["schemas"]["SpendRow"]
 type CurrencyCode = components["schemas"]["CurrencyCode"]
@@ -16,6 +17,7 @@ interface ProviderTableProps {
 
 /** Per provider: this month and this year, billed per currency first, converted second. */
 export function ProviderTable({ monthRows, yearRows, displayCurrency }: ProviderTableProps) {
+  const providerName = useProviderNames()
   const yearTotals = new Map<string, number>()
   for (const row of yearRows) {
     yearTotals.set(row.provider_id, (yearTotals.get(row.provider_id) ?? 0) + (row.converted?.amount_minor ?? 0))
@@ -36,7 +38,7 @@ export function ProviderTable({ monthRows, yearRows, displayCurrency }: Provider
         <TableBody>
           {providers.map((provider) => (
             <TableRow key={provider}>
-              <TableCell className="font-medium">{providerLabel(provider)}</TableCell>
+              <TableCell className="font-medium">{providerName(provider)}</TableCell>
               <PeriodCell row={monthRows.find((r) => r.provider_id === provider)} displayCurrency={displayCurrency} />
               <PeriodCell row={yearRows.find((r) => r.provider_id === provider)} displayCurrency={displayCurrency} />
             </TableRow>

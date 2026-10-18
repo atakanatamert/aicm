@@ -12,15 +12,6 @@ export function isoDay(d: Date = new Date()): string {
   return d.toISOString().slice(0, 10)
 }
 
-/** "anthropic" → "Anthropic", "zai-glm" → "Zai Glm". */
-export function providerLabel(providerId: string): string {
-  return providerId
-    .split(/[-_.]/)
-    .filter(Boolean)
-    .map((word) => word[0]!.toUpperCase() + word.slice(1))
-    .join(" ")
-}
-
 /** "¥300.00 · $212.00" — billed amounts stay per currency, never summed. */
 export function billedSummary(billed: Money[]): string {
   return billed.map((m) => formatMoney(m)).join(" · ")

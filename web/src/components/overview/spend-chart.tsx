@@ -2,8 +2,8 @@ import { Link } from "react-router"
 import { Bar, BarChart, CartesianGrid, XAxis, YAxis } from "recharts"
 import type { components } from "@/api/schema"
 import { ChartContainer, ChartLegend, ChartLegendContent, ChartTooltip, ChartTooltipContent, type ChartConfig } from "@/components/ui/chart"
+import { useProviderNames } from "@/hooks/use-provider-names"
 import { currencyExponent, formatMoney } from "@/lib/format"
-import { providerLabel } from "./spend-format"
 
 type SpendRow = components["schemas"]["SpendRow"]
 type CurrencyCode = components["schemas"]["CurrencyCode"]
@@ -20,6 +20,7 @@ interface SpendChartProps {
 
 /** Money out per month this year, stacked by provider, in the display currency. */
 export function SpendChart({ rows, displayCurrency, year }: SpendChartProps) {
+  const providerName = useProviderNames()
   const exp = currencyExponent(displayCurrency)
   const totals = new Map<string, number>()
   for (const row of rows) {
@@ -39,7 +40,7 @@ export function SpendChart({ rows, displayCurrency, year }: SpendChartProps) {
   }
 
   const config: ChartConfig = Object.fromEntries(
-    providers.map((provider, i) => [provider, { label: providerLabel(provider), color: `var(--chart-${(i % 5) + 1})` }]),
+    providers.map((provider, i) => [provider, { label: providerName(provider), color: `var(--chart-${(i % 5) + 1})` }]),
   )
 
   return (
