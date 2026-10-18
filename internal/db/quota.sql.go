@@ -43,7 +43,7 @@ func (q *Queries) GetMeter(ctx context.Context, arg GetMeterParams) (QuotaMeter,
 }
 
 const getVisibleAccount = `-- name: GetVisibleAccount :one
-SELECT a.id, a.org_id, a.provider_id, a.name, a.status, a.external_id, a.auth_kind, a.secret_id, a.config, a.allow_unofficial, a.plan_name, a.price_minor, a.currency, a.billing_cycle, a.renews_on, a.auto_renew, a.promo_kind, a.promo_ends_on, a.notes, a.last_synced_at, a.last_sync_error, a.sync_failing_since, a.archived_at, a.created_at, a.updated_at FROM accounts a
+SELECT a.id, a.org_id, a.provider_id, a.name, a.status, a.external_id, a.auth_kind, a.secret_id, a.config, a.allow_unofficial, a.plan_name, a.price_minor, a.currency, a.billing_cycle, a.renews_on, a.auto_renew, a.promo_kind, a.promo_ends_on, a.notes, a.last_synced_at, a.last_sync_error, a.sync_failing_since, a.archived_at, a.created_at, a.updated_at, a.renewal_anchor_day FROM accounts a
 WHERE a.org_id = $1 AND a.id = $2
   AND account_visible($1, $3, $4, a.id)
 `
@@ -89,6 +89,7 @@ func (q *Queries) GetVisibleAccount(ctx context.Context, arg GetVisibleAccountPa
 		&i.ArchivedAt,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.RenewalAnchorDay,
 	)
 	return i, err
 }
@@ -283,7 +284,7 @@ func (q *Queries) ListRecentReadings(ctx context.Context, arg ListRecentReadings
 }
 
 const listVisibleQuotaAccounts = `-- name: ListVisibleQuotaAccounts :many
-SELECT a.id, a.org_id, a.provider_id, a.name, a.status, a.external_id, a.auth_kind, a.secret_id, a.config, a.allow_unofficial, a.plan_name, a.price_minor, a.currency, a.billing_cycle, a.renews_on, a.auto_renew, a.promo_kind, a.promo_ends_on, a.notes, a.last_synced_at, a.last_sync_error, a.sync_failing_since, a.archived_at, a.created_at, a.updated_at
+SELECT a.id, a.org_id, a.provider_id, a.name, a.status, a.external_id, a.auth_kind, a.secret_id, a.config, a.allow_unofficial, a.plan_name, a.price_minor, a.currency, a.billing_cycle, a.renews_on, a.auto_renew, a.promo_kind, a.promo_ends_on, a.notes, a.last_synced_at, a.last_sync_error, a.sync_failing_since, a.archived_at, a.created_at, a.updated_at, a.renewal_anchor_day
 FROM accounts a
 WHERE a.org_id = $1
   AND a.status = 'active'
@@ -342,6 +343,7 @@ func (q *Queries) ListVisibleQuotaAccounts(ctx context.Context, arg ListVisibleQ
 			&i.ArchivedAt,
 			&i.CreatedAt,
 			&i.UpdatedAt,
+			&i.RenewalAnchorDay,
 		); err != nil {
 			return nil, err
 		}

@@ -20,6 +20,7 @@ import (
 
 	"github.com/jackc/pgx/v5/pgxpool"
 
+	"github.com/atakanatamert/aicm/internal/account"
 	"github.com/atakanatamert/aicm/internal/audit"
 	"github.com/atakanatamert/aicm/internal/auth"
 	"github.com/atakanatamert/aicm/internal/config"
@@ -235,6 +236,7 @@ func serve(ctx context.Context, args []string) error {
 	}
 
 	httpc := provider.NewHTTPClient(log, nil)
+	providers := registry.All(httpc)
 	prices := pricing.NewService(pool, httpc, log)
 	usageSvc := usagepkg.NewService(pool, prices, log)
 
@@ -244,6 +246,9 @@ func serve(ctx context.Context, args []string) error {
 	reg.Periodic = append(reg.Periodic, fx.PeriodicJob())
 	jobs.Register(reg, &pricing.ImportWorker{Service: prices})
 	reg.Periodic = append(reg.Periodic, pricing.PeriodicJob())
+	accounts := account.NewService(pool, store, providers, log)
+	jobs.Register(reg, &account.RollForwardWorker{Service: accounts})
+	reg.Periodic = append(reg.Periodic, account.PeriodicJob())
 	riverClient, err := jobs.NewClient(pool, log, reg)
 	if err != nil {
 		return err
@@ -252,7 +257,6 @@ func serve(ctx context.Context, args []string) error {
 		return err
 	}
 
-	providers := registry.All(httpc)
 	catalog := func(id string) (provider.Info, bool) {
 		p, ok := registry.ByID(providers, id)
 		if !ok {
@@ -266,13 +270,16 @@ func serve(ctx context.Context, args []string) error {
 	srv := &http.Server{
 		Addr: cfg.ListenAddr,
 		Handler: httpapi.NewRouter(httpapi.Deps{
-			Log:     log,
-			DB:      pool,
-			Secrets: store,
-			Auth:    auth.NewService(pool, log, cfg.PublicURL),
-			Usage:   usageSvc,
-			Quota:   quotaSvc,
-			Audit:   auditSvc,
+			Log:       log,
+			DB:        pool,
+			Secrets:   store,
+			Auth:      auth.NewService(pool, log, cfg.PublicURL),
+			Usage:     usageSvc,
+			Quota:     quotaSvc,
+			Audit:     auditSvc,
+			Accounts:  accounts,
+			FX:        fxSvc,
+			Providers: providers,
 		}),
 		ReadHeaderTimeout: 10 * time.Second,
 	}

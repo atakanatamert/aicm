@@ -7,39 +7,11 @@ import "context"
 // Operations not implemented yet. Each answers 501 not_implemented. A task
 // that implements one moves the method into its feature file.
 
-func (s *Server) ListAccounts(context.Context, ListAccountsRequestObject) (ListAccountsResponseObject, error) {
-	return nil, ErrNotImplemented
-}
-
-func (s *Server) CreateAccount(context.Context, CreateAccountRequestObject) (CreateAccountResponseObject, error) {
-	return nil, ErrNotImplemented
-}
-
-func (s *Server) GetAccount(context.Context, GetAccountRequestObject) (GetAccountResponseObject, error) {
-	return nil, ErrNotImplemented
-}
-
-func (s *Server) UpdateAccount(context.Context, UpdateAccountRequestObject) (UpdateAccountResponseObject, error) {
-	return nil, ErrNotImplemented
-}
-
-func (s *Server) ArchiveAccount(context.Context, ArchiveAccountRequestObject) (ArchiveAccountResponseObject, error) {
-	return nil, ErrNotImplemented
-}
-
 func (s *Server) ConfirmDiscoveredAccount(context.Context, ConfirmDiscoveredAccountRequestObject) (ConfirmDiscoveredAccountResponseObject, error) {
 	return nil, ErrNotImplemented
 }
 
 func (s *Server) DismissDiscoveredAccount(context.Context, DismissDiscoveredAccountRequestObject) (DismissDiscoveredAccountResponseObject, error) {
-	return nil, ErrNotImplemented
-}
-
-func (s *Server) ListAccountMachines(context.Context, ListAccountMachinesRequestObject) (ListAccountMachinesResponseObject, error) {
-	return nil, ErrNotImplemented
-}
-
-func (s *Server) SetAccountSecret(context.Context, SetAccountSecretRequestObject) (SetAccountSecretResponseObject, error) {
 	return nil, ErrNotImplemented
 }
 
@@ -108,14 +80,6 @@ func (s *Server) ListMachines(context.Context, ListMachinesRequestObject) (ListM
 }
 
 func (s *Server) UpdateMachine(context.Context, UpdateMachineRequestObject) (UpdateMachineResponseObject, error) {
-	return nil, ErrNotImplemented
-}
-
-func (s *Server) ListProviders(context.Context, ListProvidersRequestObject) (ListProvidersResponseObject, error) {
-	return nil, ErrNotImplemented
-}
-
-func (s *Server) ListRenewals(context.Context, ListRenewalsRequestObject) (ListRenewalsResponseObject, error) {
 	return nil, ErrNotImplemented
 }
 

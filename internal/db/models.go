@@ -36,6 +36,7 @@ type Account struct {
 	ArchivedAt       *time.Time
 	CreatedAt        time.Time
 	UpdatedAt        time.Time
+	RenewalAnchorDay *int16
 }
 
 type AccountGrant struct {
