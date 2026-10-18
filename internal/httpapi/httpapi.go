@@ -33,6 +33,7 @@ import (
 	"github.com/atakanatamert/aicm/internal/provider"
 	"github.com/atakanatamert/aicm/internal/quota"
 	"github.com/atakanatamert/aicm/internal/secrets"
+	"github.com/atakanatamert/aicm/internal/settings"
 	"github.com/atakanatamert/aicm/internal/syncer"
 	"github.com/atakanatamert/aicm/internal/usage"
 	"github.com/atakanatamert/aicm/internal/version"
@@ -61,6 +62,7 @@ type Deps struct {
 	Machines  *machine.Service
 	AgentHub  *agenthub.Hub
 	Alerts    *alert.Service
+	Settings  *settings.Service
 }
 
 // Server implements StrictServerInterface.

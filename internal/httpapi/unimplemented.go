@@ -14,15 +14,3 @@ func (s *Server) ExportReadings(context.Context, ExportReadingsRequestObject) (E
 func (s *Server) ExportUsage(context.Context, ExportUsageRequestObject) (ExportUsageResponseObject, error) {
 	return nil, ErrNotImplemented
 }
-
-func (s *Server) GetSettings(context.Context, GetSettingsRequestObject) (GetSettingsResponseObject, error) {
-	return nil, ErrNotImplemented
-}
-
-func (s *Server) UpdateSettings(context.Context, UpdateSettingsRequestObject) (UpdateSettingsResponseObject, error) {
-	return nil, ErrNotImplemented
-}
-
-func (s *Server) SendTestEmail(context.Context, SendTestEmailRequestObject) (SendTestEmailResponseObject, error) {
-	return nil, ErrNotImplemented
-}

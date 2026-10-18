@@ -32,11 +32,13 @@ import (
 	"github.com/atakanatamert/aicm/internal/httpapi"
 	"github.com/atakanatamert/aicm/internal/jobs"
 	"github.com/atakanatamert/aicm/internal/machine"
+	"github.com/atakanatamert/aicm/internal/notify"
 	"github.com/atakanatamert/aicm/internal/pricing"
 	"github.com/atakanatamert/aicm/internal/provider"
 	"github.com/atakanatamert/aicm/internal/provider/registry"
 	"github.com/atakanatamert/aicm/internal/quota"
 	"github.com/atakanatamert/aicm/internal/secrets"
+	"github.com/atakanatamert/aicm/internal/settings"
 	"github.com/atakanatamert/aicm/internal/syncer"
 	usagepkg "github.com/atakanatamert/aicm/internal/usage"
 	"github.com/atakanatamert/aicm/internal/version"
@@ -341,6 +343,8 @@ func serve(ctx context.Context, args []string) error {
 	syncSvc := syncer.NewService(pool, log, providers, store, quotaSvc, usageSvc, charges)
 	quotaSvc.SetBalanceHook(charges.TopUpHook())
 	alertSvc := alert.NewService(pool, log, quotaSvc, providers)
+	settingsSvc := settings.NewService(pool, store)
+	alertSvc.SetHook(notify.Hook())
 
 	reg := jobs.NewRegistry()
 	jobs.Register(reg, &fx.RefreshWorker{Service: fxSvc})
@@ -354,6 +358,12 @@ func serve(ctx context.Context, args []string) error {
 	reg.Periodic = append(reg.Periodic, account.PeriodicJob())
 	jobs.Register(reg, &alert.EvaluateWorker{Service: alertSvc})
 	reg.Periodic = append(reg.Periodic, alert.PeriodicJob())
+	jobs.Register(reg, &notify.SendAlertWorker{
+		Pool:      pool,
+		Settings:  settingsSvc,
+		PublicURL: cfg.PublicURL,
+		Log:       log,
+	})
 	riverClient, err := jobs.NewClient(pool, log, reg)
 	if err != nil {
 		return err
@@ -383,6 +393,7 @@ func serve(ctx context.Context, args []string) error {
 			Machines:  machineSvc,
 			AgentHub:  agentHub,
 			Alerts:    alertSvc,
+			Settings:  settingsSvc,
 		}),
 		ReadHeaderTimeout: 10 * time.Second,
 	}

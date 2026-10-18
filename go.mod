@@ -9,6 +9,7 @@ require (
 	github.com/pressly/goose/v3 v3.29.0
 	github.com/riverqueue/river v0.49.0
 	github.com/riverqueue/river/riverdriver/riverpgxv5 v0.49.0
+	github.com/wneessen/go-mail v0.8.1
 	golang.org/x/crypto v0.58.0
 )
 
