@@ -35,22 +35,6 @@ func (s *Server) UpdateAlert(context.Context, UpdateAlertRequestObject) (UpdateA
 	return nil, ErrNotImplemented
 }
 
-func (s *Server) ListCharges(context.Context, ListChargesRequestObject) (ListChargesResponseObject, error) {
-	return nil, ErrNotImplemented
-}
-
-func (s *Server) CreateCharge(context.Context, CreateChargeRequestObject) (CreateChargeResponseObject, error) {
-	return nil, ErrNotImplemented
-}
-
-func (s *Server) UpdateCharge(context.Context, UpdateChargeRequestObject) (UpdateChargeResponseObject, error) {
-	return nil, ErrNotImplemented
-}
-
-func (s *Server) ExportCharges(context.Context, ExportChargesRequestObject) (ExportChargesResponseObject, error) {
-	return nil, ErrNotImplemented
-}
-
 func (s *Server) ExportReadings(context.Context, ExportReadingsRequestObject) (ExportReadingsResponseObject, error) {
 	return nil, ErrNotImplemented
 }
@@ -68,9 +52,5 @@ func (s *Server) UpdateSettings(context.Context, UpdateSettingsRequestObject) (U
 }
 
 func (s *Server) SendTestEmail(context.Context, SendTestEmailRequestObject) (SendTestEmailResponseObject, error) {
-	return nil, ErrNotImplemented
-}
-
-func (s *Server) GetSpend(context.Context, GetSpendRequestObject) (GetSpendResponseObject, error) {
 	return nil, ErrNotImplemented
 }

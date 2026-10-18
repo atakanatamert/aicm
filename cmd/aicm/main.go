@@ -23,6 +23,7 @@ import (
 	"github.com/atakanatamert/aicm/internal/account"
 	"github.com/atakanatamert/aicm/internal/audit"
 	"github.com/atakanatamert/aicm/internal/auth"
+	"github.com/atakanatamert/aicm/internal/charge"
 	"github.com/atakanatamert/aicm/internal/config"
 	"github.com/atakanatamert/aicm/internal/db"
 	"github.com/atakanatamert/aicm/internal/fx"
@@ -255,6 +256,8 @@ func serve(ctx context.Context, args []string) error {
 	auditSvc := audit.NewService(pool)
 	syncSvc := syncer.NewService(pool, log, providers, store, quotaSvc, usageSvc, nil)
 	accounts := account.NewService(pool, store, providers, log)
+	charges := charge.NewService(pool, fxSvc, log)
+	quotaSvc.SetBalanceHook(charges.TopUpHook())
 
 	reg := jobs.NewRegistry()
 	jobs.Register(reg, &fx.RefreshWorker{Service: fxSvc})
@@ -264,7 +267,7 @@ func serve(ctx context.Context, args []string) error {
 	jobs.Register(reg, &syncer.SyncWorker{Service: syncSvc})
 	jobs.Register(reg, &syncer.DispatchWorker{Service: syncSvc})
 	reg.Periodic = append(reg.Periodic, syncer.PeriodicJob())
-	jobs.Register(reg, &account.RollForwardWorker{Service: accounts})
+	jobs.Register(reg, &account.RollForwardWorker{Service: accounts, Hook: charges.RenewalHook()})
 	reg.Periodic = append(reg.Periodic, account.PeriodicJob())
 	riverClient, err := jobs.NewClient(pool, log, reg)
 	if err != nil {
@@ -289,6 +292,7 @@ func serve(ctx context.Context, args []string) error {
 			Sync:      syncSvc,
 			Accounts:  accounts,
 			FX:        fxSvc,
+			Charges:   charges,
 			Providers: providers,
 			Machines:  machineSvc,
 		}),

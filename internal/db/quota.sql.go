@@ -355,6 +355,42 @@ func (q *Queries) ListVisibleQuotaAccounts(ctx context.Context, arg ListVisibleQ
 	return items, nil
 }
 
+const previousReading = `-- name: PreviousReading :one
+SELECT id, org_id, meter_id, used, remaining, limit_value, resets_at, captured_at, source, machine_id, received_at FROM quota_readings
+WHERE org_id = $1
+  AND meter_id = $2
+  AND captured_at < $3
+ORDER BY captured_at DESC, id DESC
+LIMIT 1
+`
+
+type PreviousReadingParams struct {
+	OrgID      string
+	MeterID    string
+	BeforeTime time.Time
+}
+
+// The newest reading of the same meter captured before this one. Used to
+// notice a balance that went up.
+func (q *Queries) PreviousReading(ctx context.Context, arg PreviousReadingParams) (QuotaReading, error) {
+	row := q.db.QueryRow(ctx, previousReading, arg.OrgID, arg.MeterID, arg.BeforeTime)
+	var i QuotaReading
+	err := row.Scan(
+		&i.ID,
+		&i.OrgID,
+		&i.MeterID,
+		&i.Used,
+		&i.Remaining,
+		&i.LimitValue,
+		&i.ResetsAt,
+		&i.CapturedAt,
+		&i.Source,
+		&i.MachineID,
+		&i.ReceivedAt,
+	)
+	return i, err
+}
+
 const upsertMeter = `-- name: UpsertMeter :one
 INSERT INTO quota_meters (org_id, account_id, key, label, unit, unit_currency, reset_kind, window_minutes, limit_value, manual)
 VALUES ($1, $2, $3, $4, $5, $6,

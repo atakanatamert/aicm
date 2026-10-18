@@ -23,6 +23,7 @@ import (
 	"github.com/atakanatamert/aicm/internal/account"
 	"github.com/atakanatamert/aicm/internal/audit"
 	"github.com/atakanatamert/aicm/internal/auth"
+	"github.com/atakanatamert/aicm/internal/charge"
 	"github.com/atakanatamert/aicm/internal/fx"
 	"github.com/atakanatamert/aicm/internal/jobs"
 	"github.com/atakanatamert/aicm/internal/machine"
@@ -52,6 +53,7 @@ type Deps struct {
 	Sync      *syncer.Service
 	Accounts  *account.Service
 	FX        *fx.Service
+	Charges   *charge.Service
 	Providers []provider.Provider // the compiled-in catalog, in display order
 	Machines  *machine.Service
 }

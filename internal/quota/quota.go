@@ -39,20 +39,31 @@ type Catalog func(providerID string) (provider.Info, bool)
 // units) for a model family, or ok=false when unknown.
 type PriceFunc func(ctx context.Context, providerID, family string) (micro int64, ok bool)
 
+// BalanceHook sees each newly stored reading of a currency meter that never
+// resets, with the previous reading of that meter (nil for the first).
+type BalanceHook func(ctx context.Context, orgID, accountID string, def meter.Def, prev *meter.Reading, cur meter.Reading) error
+
 // Service reads and writes meters and computes scores.
 type Service struct {
-	pool    *pgxpool.Pool
-	q       *db.Queries
-	log     *slog.Logger
-	catalog Catalog
-	price   PriceFunc
-	now     func() time.Time
+	pool        *pgxpool.Pool
+	q           *db.Queries
+	log         *slog.Logger
+	catalog     Catalog
+	price       PriceFunc
+	balanceHook BalanceHook
+	now         func() time.Time
 }
 
 // NewService builds the service. price may be nil until a price source exists;
 // metered accounts then rank after flat-rate ones with unknown cost.
 func NewService(pool *pgxpool.Pool, log *slog.Logger, catalog Catalog, price PriceFunc) *Service {
 	return &Service{pool: pool, q: db.New(pool), log: log, catalog: catalog, price: price, now: time.Now}
+}
+
+// SetBalanceHook installs the hook called for each new reading of a currency
+// meter that never resets.
+func (s *Service) SetBalanceHook(h BalanceHook) {
+	s.balanceHook = h
 }
 
 // RecordReadings upserts a meter definition and stores readings for it.
@@ -81,8 +92,33 @@ func (s *Service) RecordReadings(ctx context.Context, orgID, accountID string, d
 			return n, err
 		}
 		n += added
+		if added == 1 && s.balanceHook != nil && def.Unit == meter.UnitCurrency && def.ResetKind == meter.ResetNever {
+			s.notifyBalance(ctx, orgID, accountID, m.ID, def, r)
+		}
 	}
 	return n, nil
+}
+
+// notifyBalance passes a new wallet reading and its predecessor to the
+// balance hook. A failing hook is logged, never returned: it must not drop
+// the reading.
+func (s *Service) notifyBalance(ctx context.Context, orgID, accountID, meterID string, def meter.Def, cur meter.Reading) {
+	row, err := s.q.PreviousReading(ctx, db.PreviousReadingParams{
+		OrgID: orgID, MeterID: meterID, BeforeTime: cur.CapturedAt.UTC(),
+	})
+	var prev *meter.Reading
+	switch {
+	case errors.Is(err, pgx.ErrNoRows):
+	case err != nil:
+		s.log.WarnContext(ctx, "loading previous reading for balance hook", "account_id", accountID, "meter", def.Key, "err", err)
+		return
+	default:
+		p := readingOf(def.Key, row)
+		prev = &p
+	}
+	if err := s.balanceHook(ctx, orgID, accountID, def, prev, cur); err != nil {
+		s.log.WarnContext(ctx, "balance hook failed", "account_id", accountID, "meter", def.Key, "err", err)
+	}
 }
 
 func (s *Service) upsertMeter(ctx context.Context, q *db.Queries, orgID, accountID string, def meter.Def, manual bool) (db.QuotaMeter, error) {

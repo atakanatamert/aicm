@@ -54,6 +54,16 @@ WHERE r.org_id = sqlc.arg(org_id)
                   ORDER BY r2.captured_at DESC, r2.id DESC LIMIT 1))
 ORDER BY r.meter_id, r.captured_at, r.id;
 
+-- name: PreviousReading :one
+-- The newest reading of the same meter captured before this one. Used to
+-- notice a balance that went up.
+SELECT * FROM quota_readings
+WHERE org_id = sqlc.arg(org_id)
+  AND meter_id = sqlc.arg(meter_id)
+  AND captured_at < sqlc.arg(before_time)
+ORDER BY captured_at DESC, id DESC
+LIMIT 1;
+
 -- name: ListMeterReadings :many
 SELECT * FROM quota_readings
 WHERE org_id = sqlc.arg(org_id)
