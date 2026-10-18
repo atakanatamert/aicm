@@ -57,3 +57,5 @@ Touch nothing else.
 - [ ] The verification checklist in `docs/DELEGATION.md` passes (Opus runs the Impeccable critique).
 
 ## Outcome (filled in by Opus)
+
+Merged in `5736ba8` after the first attempt (GLM). The first run hit the 60-minute job limit before reporting; a `-c` continuation finished the smoke and the summary. The review cards call `GET /api/accounts/{id}/machines` for the harness name (not in the card list, but an existing spec operation). Duplicate shadcn files resolved to main's copies.
