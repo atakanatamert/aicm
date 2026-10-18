@@ -54,3 +54,5 @@ Touch nothing else.
 - [ ] The verification checklist in `docs/DELEGATION.md` passes (Opus runs the Impeccable critique).
 
 ## Outcome (filled in by Opus)
+
+Merged in `5313076` after the first attempt (GLM, ~30 min). Sparkline skipped (optional in the card).

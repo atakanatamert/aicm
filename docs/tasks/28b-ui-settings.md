@@ -55,3 +55,5 @@ Touch nothing else.
 - [ ] The verification checklist in `docs/DELEGATION.md` passes (Opus runs the Impeccable critique).
 
 ## Outcome (filled in by Opus)
+
+Merged in `49375ca` after the first attempt (GLM, ~49 min). Duplicate shadcn component files resolved to main's copies.

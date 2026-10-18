@@ -83,3 +83,5 @@ Flags/env: hub URL from `--hub` or `AICM_HUB_URL`, else the agent's `config.json
 - [ ] `go build ./... && go vet ./... && ~/go/bin/golangci-lint run` clean; `./scripts/check-licenses.sh` passes.
 
 ## Outcome (filled in by Opus)
+
+Merged in `8e98dc2` after the first attempt. Opus mounted `/mcp` per method (POST, GET, DELETE) when the UI's `GET /` catch-all arrived. Writer's note accepted: `snooze_alert` follows the spec role (viewer), not the PLAN table (editor).

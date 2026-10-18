@@ -29,18 +29,20 @@ Tasks 1–5 are the contracts Opus writes before any delegation. Large tasks wer
 | 18 | Agent | Agent core: enroll, link, spool, cursors, self-update | DeepSeek | 5 | merged |
 | 18a | Agent | Hub: enroll tokens, machines API, hub key | DeepSeek | 5, 6, 7 | merged |
 | 18b | Agent | Hub: agent WebSocket, ingest, confirm/dismiss | DeepSeek | 18a | merged |
-| 19 | Agent | Install scripts (sh, PowerShell), hub-served | DeepSeek | 18 | in progress |
+| 19 | Agent | Install scripts (sh, PowerShell), hub-served | DeepSeek | 18 | merged |
 | 20 | Agent | `harness/claudecode` + statusline wrapper | DeepSeek | 5 | merged |
 | 21 | Agent | `harness/codex` + app-server poll | DeepSeek | 5 | merged |
 | 22 | Agent | `harness/omp` | DeepSeek | 5 | merged |
-| 23 | Agent | Opt-in Claude usage poll | DeepSeek | 20 | in progress |
-| 24 | UI | Shell, login, theme, generated client, embedding | GLM | 3 | in progress |
-| 25 | UI | Quotas and renewals page | GLM | 13, 24 | to do |
-| 26 | UI | Overview: money out | GLM | 10, 11, 24 | to do |
-| 27 | UI | Accounts, detail, usage, discovered review | GLM | 9, 24 | to do |
-| 28 | UI | Alerts, Machines, Settings | GLM | 14, 18, 24 | to do |
-| 29 | MCP | `aicm-agent mcp` and hub `/mcp` | DeepSeek | 3, 13 | in progress |
-| 30 | Release | GoReleaser, GHCR, Homebrew tap, SBOM | Opus | 19 | to do |
+| 23 | Agent | Opt-in Claude usage poll | DeepSeek | 20 | merged |
+| 24 | UI | Shell, login, theme, generated client, embedding | GLM | 3 | merged |
+| 25 | UI | Quotas and renewals page | GLM | 13, 24 | merged |
+| 26 | UI | Overview: money out | GLM | 10, 11, 24 | merged |
+| 27a | UI | Accounts, add account, discovered review, Usage | GLM | 9, 12, 24 | in progress |
+| 27b | UI | Account detail | GLM | 27a | to do |
+| 28a | UI | Alerts inbox and rules, Machines | GLM | 14a, 18a, 24 | merged |
+| 28b | UI | Settings | GLM | 7b, 8, 14b, 24 | merged |
+| 29 | MCP | `aicm-agent mcp` and hub `/mcp` | DeepSeek | 3, 13 | merged |
+| 30 | Release | GoReleaser, GHCR, Homebrew tap, SBOM | Opus | 19 | merged |
 | 31 | Catalog | Manual and agent-captured providers | DeepSeek | 4 | merged |
 | 32 | Release | README providers table + CI drift check | DeepSeek | 31 | merged |
 | 33 | Core | Usage and readings CSV exports | DeepSeek | 12, 13 | merged |

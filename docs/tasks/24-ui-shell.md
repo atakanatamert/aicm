@@ -106,3 +106,5 @@ CI `web` job: setup node 22 + pnpm, `pnpm -C web install --frozen-lockfile`, `pn
 - [ ] The verification checklist in `docs/DELEGATION.md` passes (Opus runs the Impeccable critique on the screens).
 
 ## Outcome (filled in by Opus)
+
+Merged in `6b41711` after the first attempt (GLM 5.3 Flash, ~51 min). Opus resolved router conflicts (method-qualified `/mcp` patterns so they don't collide with `GET /`) and checked setup, shell and mobile light/dark in a browser.

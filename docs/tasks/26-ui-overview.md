@@ -54,3 +54,5 @@ Touch nothing else.
 - [ ] The verification checklist in `docs/DELEGATION.md` passes (Opus runs the Impeccable critique).
 
 ## Outcome (filled in by Opus)
+
+Merged in `3ca787d` after the first attempt (GLM, ~40 min). Opus switched provider labels from a capitalised id to the catalog names (`useProviderNames`).

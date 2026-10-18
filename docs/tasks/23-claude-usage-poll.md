@@ -50,3 +50,5 @@ Rules, all enforced inside `Poll`:
 - [ ] No real request to Anthropic is made by the tests or by you.
 
 ## Outcome (filled in by Opus)
+
+Merged in `9e855e6` after the first attempt. No request to Anthropic was made; `extra_usage` is decoded but not stored as a meter yet.

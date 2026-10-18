@@ -55,3 +55,5 @@ Parameters `-Hub -Org -Key -Token [-Version] [-Uninstall]`. Download the `window
 - [ ] `go build ./... && go vet ./... && ~/go/bin/golangci-lint run` clean; `./scripts/check-licenses.sh` passes; `reuse lint` passes.
 
 ## Outcome (filled in by Opus)
+
+Merged in `5c08c87` after the first attempt. Writer verified a full local install on this Mac (LaunchAgent running, machine online, uninstall clean). Opus re-ran the flow with the GoReleaser snapshot archives (task 30). `install.ps1` is unverified: no PowerShell here.
