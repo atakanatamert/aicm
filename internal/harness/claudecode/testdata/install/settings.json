@@ -1,0 +1,9 @@
+{
+  "statusLine": {
+    "type": "command",
+    "command": "echo mine",
+    "padding": 2
+  },
+  "theme": "dark",
+  "model": "opus"
+}

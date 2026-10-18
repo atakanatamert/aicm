@@ -1,0 +1,47 @@
+[
+  {
+    "account": {
+      "provider_id": "claude",
+      "external_id": "3f2a1b0c-9d8e-4f7a-8b6c-5d4e3f2a1b0c"
+    },
+    "source": "claudecode",
+    "message_id": "msg_a:req_1",
+    "occurred_at": "2026-10-01T10:00:02Z",
+    "model": "claude-sonnet-4-5",
+    "input_tokens": 100,
+    "output_tokens": 25,
+    "cache_read_tokens": 7,
+    "cache_write_tokens": 10,
+    "reasoning_tokens": 0
+  },
+  {
+    "account": {
+      "provider_id": "claude",
+      "external_id": "3f2a1b0c-9d8e-4f7a-8b6c-5d4e3f2a1b0c"
+    },
+    "source": "claudecode",
+    "message_id": "msg_d:req_3",
+    "occurred_at": "2026-10-01T10:10:00Z",
+    "model": "claude-opus-4-1",
+    "input_tokens": 200,
+    "output_tokens": 40,
+    "cache_read_tokens": 50,
+    "cache_write_tokens": 0,
+    "reasoning_tokens": 0
+  },
+  {
+    "account": {
+      "provider_id": "claude",
+      "external_id": "3f2a1b0c-9d8e-4f7a-8b6c-5d4e3f2a1b0c"
+    },
+    "source": "claudecode",
+    "message_id": "msg_e:req_4",
+    "occurred_at": "2026-10-01T09:00:00Z",
+    "model": "claude-haiku-4-5",
+    "input_tokens": 50,
+    "output_tokens": 10,
+    "cache_read_tokens": 0,
+    "cache_write_tokens": 0,
+    "reasoning_tokens": 0
+  }
+]

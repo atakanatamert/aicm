@@ -1,0 +1,18 @@
+{
+  "cwd": "/current/working/directory",
+  "transcript_path": "/path/to/transcript.jsonl",
+  "model": {
+    "id": "claude-opus-5-5",
+    "display_name": "Opus"
+  },
+  "rate_limits": {
+    "five_hour": {
+      "used_percentage": 1738425600,
+      "resets_at": 1738425600
+    },
+    "seven_day": {
+      "used_percentage": 1738425600,
+      "resets_at": 1738857600
+    }
+  }
+}
