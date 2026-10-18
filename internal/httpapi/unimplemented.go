@@ -35,14 +35,6 @@ func (s *Server) DismissDiscoveredAccount(context.Context, DismissDiscoveredAcco
 	return nil, ErrNotImplemented
 }
 
-func (s *Server) GetAccountGrants(context.Context, GetAccountGrantsRequestObject) (GetAccountGrantsResponseObject, error) {
-	return nil, ErrNotImplemented
-}
-
-func (s *Server) SetAccountGrants(context.Context, SetAccountGrantsRequestObject) (SetAccountGrantsResponseObject, error) {
-	return nil, ErrNotImplemented
-}
-
 func (s *Server) ListAccountMachines(context.Context, ListAccountMachinesRequestObject) (ListAccountMachinesResponseObject, error) {
 	return nil, ErrNotImplemented
 }
@@ -111,39 +103,11 @@ func (s *Server) ExportUsage(context.Context, ExportUsageRequestObject) (ExportU
 	return nil, ErrNotImplemented
 }
 
-func (s *Server) ListGroups(context.Context, ListGroupsRequestObject) (ListGroupsResponseObject, error) {
-	return nil, ErrNotImplemented
-}
-
-func (s *Server) CreateGroup(context.Context, CreateGroupRequestObject) (CreateGroupResponseObject, error) {
-	return nil, ErrNotImplemented
-}
-
-func (s *Server) DeleteGroup(context.Context, DeleteGroupRequestObject) (DeleteGroupResponseObject, error) {
-	return nil, ErrNotImplemented
-}
-
-func (s *Server) UpdateGroup(context.Context, UpdateGroupRequestObject) (UpdateGroupResponseObject, error) {
-	return nil, ErrNotImplemented
-}
-
 func (s *Server) ListMachines(context.Context, ListMachinesRequestObject) (ListMachinesResponseObject, error) {
 	return nil, ErrNotImplemented
 }
 
 func (s *Server) UpdateMachine(context.Context, UpdateMachineRequestObject) (UpdateMachineResponseObject, error) {
-	return nil, ErrNotImplemented
-}
-
-func (s *Server) ListApiTokens(context.Context, ListApiTokensRequestObject) (ListApiTokensResponseObject, error) {
-	return nil, ErrNotImplemented
-}
-
-func (s *Server) CreateApiToken(context.Context, CreateApiTokenRequestObject) (CreateApiTokenResponseObject, error) {
-	return nil, ErrNotImplemented
-}
-
-func (s *Server) RevokeApiToken(context.Context, RevokeApiTokenRequestObject) (RevokeApiTokenResponseObject, error) {
 	return nil, ErrNotImplemented
 }
 
@@ -168,17 +132,5 @@ func (s *Server) SendTestEmail(context.Context, SendTestEmailRequestObject) (Sen
 }
 
 func (s *Server) GetSpend(context.Context, GetSpendRequestObject) (GetSpendResponseObject, error) {
-	return nil, ErrNotImplemented
-}
-
-func (s *Server) ListUsers(context.Context, ListUsersRequestObject) (ListUsersResponseObject, error) {
-	return nil, ErrNotImplemented
-}
-
-func (s *Server) CreateUser(context.Context, CreateUserRequestObject) (CreateUserResponseObject, error) {
-	return nil, ErrNotImplemented
-}
-
-func (s *Server) UpdateUser(context.Context, UpdateUserRequestObject) (UpdateUserResponseObject, error) {
 	return nil, ErrNotImplemented
 }
