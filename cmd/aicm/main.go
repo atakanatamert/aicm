@@ -20,6 +20,7 @@ import (
 
 	"github.com/jackc/pgx/v5/pgxpool"
 
+	"github.com/atakanatamert/aicm/internal/auth"
 	"github.com/atakanatamert/aicm/internal/config"
 	"github.com/atakanatamert/aicm/internal/db"
 	"github.com/atakanatamert/aicm/internal/httpapi"
@@ -34,6 +35,8 @@ Commands:
   serve                     run the hub (HTTP API, UI, jobs); applies migrations first
   migrate up|down|status    manage the database schema
   rotate-key --new-key-file PATH  re-wrap every org data key with a new master key
+  create-admin --email E --name N
+                            create an admin (password from AICM_ADMIN_PASSWORD)
   version                   print the version
 `
 
@@ -57,6 +60,8 @@ func run(args []string, stdout, stderr io.Writer) int {
 		err = migrate(ctx, args[1:], stdout)
 	case "rotate-key":
 		err = rotateKey(ctx, args[1:], stdout)
+	case "create-admin":
+		err = createAdmin(ctx, args[1:], stdout)
 	case "version":
 		fmt.Fprintln(stdout, version.Name, version.Version)
 	case "-h", "--help", "help":
@@ -168,6 +173,34 @@ func rotateKey(ctx context.Context, args []string, stdout io.Writer) error {
 	return nil
 }
 
+// createAdmin adds an admin in the default org. The password comes from the
+// environment so it never appears in shell history or process arguments.
+func createAdmin(ctx context.Context, args []string, stdout io.Writer) error {
+	fs := flag.NewFlagSet("create-admin", flag.ContinueOnError)
+	email := fs.String("email", "", "admin email")
+	name := fs.String("name", "", "admin name")
+	if err := fs.Parse(args); err != nil {
+		return fmt.Errorf("parsing create-admin flags: %w", err)
+	}
+	if *email == "" {
+		return errors.New("usage: create-admin --email E --name N")
+	}
+	password := os.Getenv("AICM_ADMIN_PASSWORD")
+	if password == "" {
+		return errors.New("AICM_ADMIN_PASSWORD is required")
+	}
+	cfg, log, pool, err := setup(ctx)
+	if err != nil {
+		return err
+	}
+	defer pool.Close()
+	if err := auth.NewService(pool, log, cfg.PublicURL).CreateAdmin(ctx, *email, *name, password); err != nil {
+		return err
+	}
+	fmt.Fprintln(stdout, "admin created:", *email)
+	return nil
+}
+
 func serve(ctx context.Context, args []string) error {
 	fs := flag.NewFlagSet("serve", flag.ContinueOnError)
 	autoMigrate := fs.Bool("migrate", true, "apply pending migrations before serving")
@@ -204,8 +237,13 @@ func serve(ctx context.Context, args []string) error {
 	}
 
 	srv := &http.Server{
-		Addr:              cfg.ListenAddr,
-		Handler:           httpapi.NewRouter(httpapi.Deps{Log: log, DB: pool, Secrets: store}),
+		Addr: cfg.ListenAddr,
+		Handler: httpapi.NewRouter(httpapi.Deps{
+			Log:     log,
+			DB:      pool,
+			Secrets: store,
+			Auth:    auth.NewService(pool, log, cfg.PublicURL),
+		}),
 		ReadHeaderTimeout: 10 * time.Second,
 	}
 	errc := make(chan error, 1)

@@ -20,6 +20,7 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/atakanatamert/aicm/internal/auth"
 	"github.com/atakanatamert/aicm/internal/secrets"
 	"github.com/atakanatamert/aicm/internal/version"
 )
@@ -34,6 +35,7 @@ type Deps struct {
 	Log     *slog.Logger
 	DB      Pinger
 	Secrets secrets.Store
+	Auth    *auth.Service
 }
 
 // Server implements StrictServerInterface.
@@ -46,18 +48,30 @@ var _ StrictServerInterface = (*Server)(nil)
 // NewRouter returns the hub's HTTP handler.
 func NewRouter(d Deps) http.Handler {
 	s := &Server{Deps: d}
-	strict := NewStrictHandlerWithOptions(s, nil, StrictHTTPServerOptions{
+	authorize := auth.Authorize(WriteError)
+	strict := NewStrictHandlerWithOptions(s, []StrictMiddlewareFunc{
+		func(f StrictHandlerFunc, operationID string) StrictHandlerFunc {
+			h := authorize(auth.StrictHandlerFunc(f), operationID)
+			return func(ctx context.Context, w http.ResponseWriter, r *http.Request, request any) (any, error) {
+				return h(ctx, w, r, request)
+			}
+		},
+	}, StrictHTTPServerOptions{
 		RequestErrorHandlerFunc: func(w http.ResponseWriter, _ *http.Request, err error) {
 			WriteError(w, http.StatusBadRequest, "bad_request", err.Error())
 		},
 		ResponseErrorHandlerFunc: s.writeHandlerError,
 	})
-	return HandlerWithOptions(strict, StdHTTPServerOptions{
+	h := HandlerWithOptions(strict, StdHTTPServerOptions{
 		BaseRouter: http.NewServeMux(),
 		ErrorHandlerFunc: func(w http.ResponseWriter, _ *http.Request, err error) {
 			WriteError(w, http.StatusBadRequest, "bad_request", err.Error())
 		},
 	})
+	if d.Auth != nil {
+		return d.Auth.HTTPMiddleware(h)
+	}
+	return h
 }
 
 // GetHealth reports that the process is up. It never touches the database.
@@ -109,6 +123,14 @@ func Conflict(msg string) *APIError {
 }
 
 func (s *Server) writeHandlerError(w http.ResponseWriter, r *http.Request, err error) {
+	switch {
+	case errors.Is(err, auth.ErrUnauthenticated):
+		WriteError(w, http.StatusUnauthorized, "unauthorized", "login required")
+		return
+	case errors.Is(err, auth.ErrForbidden):
+		WriteError(w, http.StatusForbidden, "forbidden", "your role does not allow this")
+		return
+	}
 	var ae *APIError
 	if errors.As(err, &ae) {
 		WriteError(w, ae.Status, ae.Code, ae.Message)

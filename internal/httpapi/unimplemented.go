@@ -91,14 +91,6 @@ func (s *Server) ListAuditLog(context.Context, ListAuditLogRequestObject) (ListA
 	return nil, ErrNotImplemented
 }
 
-func (s *Server) Login(context.Context, LoginRequestObject) (LoginResponseObject, error) {
-	return nil, ErrNotImplemented
-}
-
-func (s *Server) Logout(context.Context, LogoutRequestObject) (LogoutResponseObject, error) {
-	return nil, ErrNotImplemented
-}
-
 func (s *Server) ListCharges(context.Context, ListChargesRequestObject) (ListChargesResponseObject, error) {
 	return nil, ErrNotImplemented
 }
@@ -163,14 +155,6 @@ func (s *Server) UpdateMachine(context.Context, UpdateMachineRequestObject) (Upd
 	return nil, ErrNotImplemented
 }
 
-func (s *Server) GetMe(context.Context, GetMeRequestObject) (GetMeResponseObject, error) {
-	return nil, ErrNotImplemented
-}
-
-func (s *Server) ChangePassword(context.Context, ChangePasswordRequestObject) (ChangePasswordResponseObject, error) {
-	return nil, ErrNotImplemented
-}
-
 func (s *Server) ListApiTokens(context.Context, ListApiTokensRequestObject) (ListApiTokensResponseObject, error) {
 	return nil, ErrNotImplemented
 }
@@ -208,14 +192,6 @@ func (s *Server) UpdateSettings(context.Context, UpdateSettingsRequestObject) (U
 }
 
 func (s *Server) SendTestEmail(context.Context, SendTestEmailRequestObject) (SendTestEmailResponseObject, error) {
-	return nil, ErrNotImplemented
-}
-
-func (s *Server) GetSetupStatus(context.Context, GetSetupStatusRequestObject) (GetSetupStatusResponseObject, error) {
-	return nil, ErrNotImplemented
-}
-
-func (s *Server) CompleteSetup(context.Context, CompleteSetupRequestObject) (CompleteSetupResponseObject, error) {
 	return nil, ErrNotImplemented
 }
 
