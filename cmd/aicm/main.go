@@ -20,6 +20,7 @@ import (
 
 	"github.com/jackc/pgx/v5/pgxpool"
 
+	"github.com/atakanatamert/aicm/deploy/install"
 	"github.com/atakanatamert/aicm/internal/account"
 	"github.com/atakanatamert/aicm/internal/agenthub"
 	"github.com/atakanatamert/aicm/internal/alert"
@@ -394,6 +395,7 @@ func serve(ctx context.Context, args []string) error {
 			AgentHub:  agentHub,
 			Alerts:    alertSvc,
 			Settings:  settingsSvc,
+			Install:   install.Handler(),
 		}),
 		ReadHeaderTimeout: 10 * time.Second,
 	}

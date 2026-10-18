@@ -63,6 +63,7 @@ type Deps struct {
 	AgentHub  *agenthub.Hub
 	Alerts    *alert.Service
 	Settings  *settings.Service
+	Install   http.Handler // public install scripts; nil disables them
 }
 
 // Server implements StrictServerInterface.
@@ -95,6 +96,12 @@ func NewRouter(d Deps) http.Handler {
 		// lives outside the generated router, so the role middleware never
 		// sees it.
 		base.Handle("GET "+agentlink.Path, d.AgentHub)
+	}
+	if d.Install != nil {
+		// The install scripts are public: the token in the query-free
+		// command is the credential, not a hub session.
+		base.Handle("GET /install.sh", d.Install)
+		base.Handle("GET /install.ps1", d.Install)
 	}
 	h := HandlerWithOptions(strict, StdHTTPServerOptions{
 		BaseRouter: base,
