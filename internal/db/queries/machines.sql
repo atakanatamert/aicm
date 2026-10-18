@@ -99,3 +99,11 @@ INSERT INTO hub_keys (org_id, public_key, secret_id)
 VALUES (sqlc.arg(org_id), sqlc.arg(public_key), sqlc.arg(secret_id))
 ON CONFLICT (org_id) DO NOTHING
 RETURNING *;
+
+-- name: ListMachineHarnesses :many
+-- Harnesses each machine has reported accounts from, for machines that are
+-- offline (the live list comes from the agent connection).
+SELECT machine_id, array_agg(DISTINCT harness ORDER BY harness)::text[] AS harnesses
+FROM account_machines
+WHERE org_id = sqlc.arg(org_id)
+GROUP BY machine_id;

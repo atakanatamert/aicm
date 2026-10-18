@@ -421,6 +421,20 @@ func (s *Service) ListMachines(ctx context.Context, p auth.Principal) ([]db.Mach
 	return rows, nil
 }
 
+// Harnesses returns, per machine id, the harnesses it has reported accounts
+// from.
+func (s *Service) Harnesses(ctx context.Context, p auth.Principal) (map[string][]string, error) {
+	rows, err := s.q.ListMachineHarnesses(ctx, p.OrgID)
+	if err != nil {
+		return nil, fmt.Errorf("listing machine harnesses: %w", err)
+	}
+	out := make(map[string][]string, len(rows))
+	for _, r := range rows {
+		out[r.MachineID] = r.Harnesses
+	}
+	return out, nil
+}
+
 // RenameMachine changes a machine's display name.
 func (s *Service) RenameMachine(ctx context.Context, p auth.Principal, id, name string) (db.Machine, error) {
 	name = strings.TrimSpace(name)

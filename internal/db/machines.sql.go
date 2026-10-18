@@ -310,6 +310,40 @@ func (q *Queries) ListEnrollTokens(ctx context.Context, orgID string) ([]EnrollT
 	return items, nil
 }
 
+const listMachineHarnesses = `-- name: ListMachineHarnesses :many
+SELECT machine_id, array_agg(DISTINCT harness ORDER BY harness)::text[] AS harnesses
+FROM account_machines
+WHERE org_id = $1
+GROUP BY machine_id
+`
+
+type ListMachineHarnessesRow struct {
+	MachineID string
+	Harnesses []string
+}
+
+// Harnesses each machine has reported accounts from, for machines that are
+// offline (the live list comes from the agent connection).
+func (q *Queries) ListMachineHarnesses(ctx context.Context, orgID string) ([]ListMachineHarnessesRow, error) {
+	rows, err := q.db.Query(ctx, listMachineHarnesses, orgID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []ListMachineHarnessesRow{}
+	for rows.Next() {
+		var i ListMachineHarnessesRow
+		if err := rows.Scan(&i.MachineID, &i.Harnesses); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const listMachines = `-- name: ListMachines :many
 SELECT id, org_id, name, hostname, fingerprint, os, arch, agent_version, token_hash, enroll_token_id, enrolled_at, last_seen_at, last_ip, revoked_at FROM machines
 WHERE org_id = $1

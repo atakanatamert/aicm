@@ -5,6 +5,7 @@ package httpapi
 import (
 	"context"
 	"errors"
+	"slices"
 	"strings"
 	"time"
 
@@ -98,9 +99,13 @@ func (s *Server) ListMachines(ctx context.Context, _ ListMachinesRequestObject) 
 	if err != nil {
 		return nil, mapMachineError(err)
 	}
+	seen, err := s.Machines.Harnesses(ctx, p)
+	if err != nil {
+		return nil, err
+	}
 	out := make([]Machine, 0, len(rows))
 	for _, row := range rows {
-		out = append(out, s.toMachine(row))
+		out = append(out, s.toMachine(row, seen[row.ID]))
 	}
 	return ListMachines200JSONResponse(out), nil
 }
@@ -137,7 +142,7 @@ func (s *Server) UpdateMachine(ctx context.Context, req UpdateMachineRequestObje
 			return nil, mapMachineError(err)
 		}
 	}
-	return UpdateMachine200JSONResponse(s.toMachine(m)), nil
+	return UpdateMachine200JSONResponse(s.toMachine(m, nil)), nil
 }
 
 func toEnrollToken(t db.EnrollToken) EnrollToken {
@@ -151,12 +156,18 @@ func toEnrollToken(t db.EnrollToken) EnrollToken {
 	}
 }
 
-func (s *Server) toMachine(m db.Machine) Machine {
+// toMachine merges the harnesses a live agent reports with those the machine
+// has reported accounts from, so offline machines still list them.
+func (s *Server) toMachine(m db.Machine, seen []string) Machine {
 	online := false
-	harnesses := []string{}
+	var live []string
 	if s.AgentHub != nil {
 		online = s.AgentHub.Online(m.ID)
-		harnesses = s.AgentHub.Harnesses(m.ID)
+		live = s.AgentHub.Harnesses(m.ID)
+	}
+	harnesses := slices.Compact(slices.Sorted(slices.Values(slices.Concat(live, seen))))
+	if harnesses == nil {
+		harnesses = []string{}
 	}
 	return Machine{
 		Id:           m.ID,
