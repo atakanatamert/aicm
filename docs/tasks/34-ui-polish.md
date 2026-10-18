@@ -90,3 +90,5 @@ Touch nothing else. No Go changes, no API changes.
 - [ ] The verification checklist in `docs/DELEGATION.md` passes (Opus re-runs the Impeccable critique).
 
 ## Outcome (filled in by Opus)
+
+Merged in `d6bace0` after the first attempt (GLM, ~43 min). Opus finished what the file list excluded (shared container and header action on Accounts, Usage and account detail; external-link icons on account detail) and a second critique pass: Nielsen 25 → 26/40 by the independent reviewer before the last fixes. Fixed after it: renewal card footer overflow (page scrolled sideways), alert bodies without pasted URLs and with readable dates (server side), Accounts uses the shared renewal urgency rule with its reason, Record a charge has no preselected account, dark `--chart-3` moved off the urgency hue, "about N days" past 48 h, Archive button outline. Left for later: one primary provider link per card with the rest in a menu, sort/filter on Accounts and Alerts, harness names on Machines from account sightings, `h2` section headings.
