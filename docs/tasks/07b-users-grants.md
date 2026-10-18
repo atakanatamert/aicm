@@ -89,3 +89,5 @@ Map service results to the generated types (`ApiToken`, `ApiTokenCreated`, `User
 - [ ] The verification checklist in `docs/DELEGATION.md` passes.
 
 ## Outcome (filled in by Opus)
+
+Merged in `5a7f8dd` after the first attempt (DeepSeek Flash, ~5 min). The card's contract had an import cycle (`audit` imported `auth`); the writer duplicated the audit insert to work around it. Opus fixed the contract (`audit.Actor`, `Principal.Actor()`, commit `402132c`) and replaced the duplicate with `audit.Write` before merging.

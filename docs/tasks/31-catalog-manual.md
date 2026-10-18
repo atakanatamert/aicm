@@ -74,3 +74,5 @@ return append(ps, manual.All()...)
 - [ ] The verification checklist in `docs/DELEGATION.md` passes.
 
 ## Outcome (filled in by Opus)
+
+Merged in `0a8b4aa` after the first attempt (DeepSeek Flash, ~2.5 min). Link changes by the writer, accepted: SuperGrok uses `https://grok.com/plans` (settings/subscription pages 404); Google AI Studio `/spend` and `/rate-limit` dropped (no matching `Links` field). The `/api/providers` smoke runs after task 09.

@@ -38,6 +38,8 @@ Touch nothing else.
 
 ## Contract
 
+Audit rows: `audit.Write(ctx, q, p.Actor(), audit.Entry{Action, TargetKind, TargetID, Before, After})` in the same transaction; system work uses `auth.Principal{OrgID: …, Kind: auth.ActorSystem, Label: "…"}.Actor()`.
+
 ```go
 package charge
 

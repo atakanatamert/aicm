@@ -40,7 +40,7 @@ docs/                plan, decisions, research, task cards
 - Subscription OAuth tokens (Claude, ChatGPT, Gemini) never leave the agent's machine and are never sent to the hub.
 - The agent reads harness files read-only and never refreshes an OAuth token.
 - Secrets go through `internal/secrets` only. API responses expose at most the last 4 characters.
-- Every mutation writes one `audit_log` row.
+- Every mutation writes one `audit_log` row: `audit.Write(ctx, q, principal.Actor(), audit.Entry{...})` with the same `*db.Queries` (transaction) as the change. Principals come from `auth.FromContext` (handlers use `requirePrincipal`).
 
 ## Tests
 

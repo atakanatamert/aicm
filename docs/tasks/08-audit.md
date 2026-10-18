@@ -73,3 +73,5 @@ Login and logout are not mutations of data and get no rows.
 - [ ] The verification checklist in `docs/DELEGATION.md` passes.
 
 ## Outcome (filled in by Opus)
+
+Merged in `397d6e8` after the first attempt (DeepSeek Flash, ~3 min). Same import cycle as 07b; the writer's local insert helper in `auth/service.go` was replaced by `audit.Write` in `402132c`. Smoke: five entries, cursor paging, viewer 403.
