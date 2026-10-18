@@ -30,7 +30,7 @@ docs/                plan, decisions, research, task cards
 - Every Go source file starts with a one-line SPDX header: `// SPDX-License-Identifier: AGPL-3.0-or-later` (hub) or `// SPDX-License-Identifier: Apache-2.0` (everything the agent binary links: `cmd/aicm-agent`, `internal/agentlink`, `internal/mcpserver`, `internal/apiclient`, `internal/agent`, `internal/harness`, `internal/meter`, `internal/version`). Apache packages must never import AGPL packages. `REUSE.toml` supplies copyright and covers non-Go files.
 <!-- REUSE-IgnoreEnd -->
 - SQL: schema lives in `migrations/` (goose). Queries live in `internal/db/queries/<feature>.sql`; `sqlc generate` writes Go into `internal/db`. Feature packages call `internal/db`.
-- HTTP: routes, request decoding and response types are generated from `api/openapi.yaml` into `internal/httpapi/api.gen.go` (`go generate ./internal/httpapi`). Handlers are methods on `httpapi.Server`, one file per feature; return typed responses or an `*httpapi.APIError`. Never edit `*.gen.go`; change the spec and regenerate. Operations not built yet sit in `internal/httpapi/unimplemented.go`; implementing one means moving its method out of that file.
+- HTTP: routes, request decoding and response types are generated from `api/openapi.yaml` into `internal/httpapi/api.gen.go` (`go generate ./internal/httpapi`). Handlers are methods on `httpapi.Server`, one file per feature; return typed responses or an `*httpapi.APIError`. Never edit `*.gen.go`; change the spec and regenerate. A new operation in the spec needs its handler before the package compiles.
 
 ## Security rules
 

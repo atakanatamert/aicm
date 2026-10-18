@@ -11,6 +11,24 @@ Open-source, self-hosted dashboard for every AI subscription and API wallet you 
 - **Hub:** a Go server with an embedded React UI, running in Docker with Postgres. It polls provider billing and balance APIs, stores money out in the billed currency, sends alerts and serves the dashboard and MCP.
 - **Agent:** `aicm-agent`, installed on each machine with one command. It reads local Claude Code, Codex and omp data and pushes usage and quota meters to the hub. Subscription login tokens never leave your machine.
 
+## Quick start
+
+```sh
+git clone https://github.com/atakanatamert/aicm && cd aicm
+cp .env.example .env          # set AICM_DB_PASSWORD and AICM_PUBLIC_URL
+docker compose up -d --build
+```
+
+Open `AICM_PUBLIC_URL` (default http://localhost:8080) and create the first admin. Then:
+
+1. **Add your machines:** *Machines → Add a machine* shows a one-line command for macOS/Linux, Homebrew, Windows and Docker. It installs `aicm-agent` as a user-level service, enrolls it and starts sending usage and quota meters. Accounts it finds appear under *Accounts → Found on your machines* for you to confirm.
+2. **Claude limits:** run `aicm-agent statusline install` once so Claude Code's statusline also records your 5-hour and weekly limits (your own statusline keeps working; `aicm-agent statusline uninstall` reverts it).
+3. **API accounts:** *Accounts → Add account* takes an admin or normal key (OpenRouter, Anthropic, OpenAI, xAI, DeepSeek, Moonshot, Z.ai, GitHub Copilot). Keys are encrypted and never shown again.
+4. **Subscriptions:** add plan, price and renewal date for each subscription; you get an email 7 days and 1 day before it renews once SMTP is set under *Settings → Email*.
+5. **MCP:** create an API token under *Settings → Profile*, then `claude mcp add aicm --env AICM_TOKEN=<token> -- aicm-agent mcp --hub <hub URL>`. Other clients can use `POST <hub URL>/mcp` with `Authorization: Bearer <token>`.
+
+**Back up the master key.** The hub generates it on first start in the `hub-data` volume (`/var/lib/aicm/master.key`). Every stored provider key is encrypted with it; without it you must re-enter every key. To rotate: `docker compose exec hub aicm rotate-key --new-key-file <file>`.
+
 ## Supported providers
 
 <!-- providers:start -->
