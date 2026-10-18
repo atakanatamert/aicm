@@ -9,13 +9,14 @@ type MicroMoney = components["schemas"]["MicroMoney"]
 type MeterDef = components["schemas"]["MeterDef"]
 
 // ISO 4217 minor-unit digits that are not 2 (mirrors internal/money).
-const ZERO_DECIMAL = new Set(["BIF", "CLP", "DJF", "GNF", "ISK", "JPY", "KMF", "KRW", "PYG", "RWF", "UGX", "UYI", "VND", "VUV", "XAF", "XOF", "XPF"])
-const THREE_DECIMAL = new Set(["BHD", "IQD", "JOD", "KWD", "LYD", "OMR", "TND"])
+const EXPONENT: Record<string, number> = {
+  BIF: 0, CLP: 0, DJF: 0, GNF: 0, ISK: 0, JPY: 0, KMF: 0, KRW: 0, PYG: 0,
+  RWF: 0, UGX: 0, UYI: 0, VND: 0, VUV: 0, XAF: 0, XOF: 0, XPF: 0,
+  BHD: 3, IQD: 3, JOD: 3, KWD: 3, LYD: 3, OMR: 3, TND: 3,
+}
 
 export function currencyExponent(currency: string): number {
-  if (ZERO_DECIMAL.has(currency)) return 0
-  if (THREE_DECIMAL.has(currency)) return 3
-  return 2
+  return EXPONENT[currency] ?? 2
 }
 
 /** "$200.00", "¥1,500", "CN¥110.00" — billed currency, exact minor units. */
