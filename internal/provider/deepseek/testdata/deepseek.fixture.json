@@ -1,0 +1,52 @@
+{
+  "_source": "https://api-docs.deepseek.com/api/get-user-balance (response example: https://deepseek.apidog.io/get-user-balance-13759477e0)",
+  "recorded_at": "2026-10-18T09:00:00Z",
+  "interactions": [
+    {
+      "method": "GET",
+      "url": "https://api.deepseek.com/user/balance",
+      "status": 200,
+      "header": { "Content-Type": "application/json" },
+      "body": {
+        "is_available": true,
+        "balance_infos": [
+          {
+            "currency": "CNY",
+            "total_balance": "110.00",
+            "granted_balance": "10.00",
+            "topped_up_balance": "100.00"
+          },
+          {
+            "currency": "USD",
+            "total_balance": "5.50",
+            "granted_balance": "0.50",
+            "topped_up_balance": "5.00"
+          }
+        ]
+      }
+    },
+    {
+      "method": "GET",
+      "url": "https://api.deepseek.com/user/balance",
+      "status": 200,
+      "header": { "Content-Type": "application/json" },
+      "body": {
+        "is_available": true,
+        "balance_infos": [
+          {
+            "currency": "CNY",
+            "total_balance": "110.00",
+            "granted_balance": "10.00",
+            "topped_up_balance": "100.00"
+          },
+          {
+            "currency": "USD",
+            "total_balance": "5.50",
+            "granted_balance": "0.50",
+            "topped_up_balance": "5.00"
+          }
+        ]
+      }
+    }
+  ]
+}

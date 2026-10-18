@@ -1,0 +1,26 @@
+[
+  {
+    "key": "topped_up_cny",
+    "remaining": 10000,
+    "captured_at": "2026-10-18T09:00:00Z",
+    "source": "api"
+  },
+  {
+    "key": "granted_cny",
+    "remaining": 1000,
+    "captured_at": "2026-10-18T09:00:00Z",
+    "source": "api"
+  },
+  {
+    "key": "topped_up_usd",
+    "remaining": 500,
+    "captured_at": "2026-10-18T09:00:00Z",
+    "source": "api"
+  },
+  {
+    "key": "granted_usd",
+    "remaining": 50,
+    "captured_at": "2026-10-18T09:00:00Z",
+    "source": "api"
+  }
+]
