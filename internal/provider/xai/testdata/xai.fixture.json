@@ -1,0 +1,257 @@
+{
+  "_source": "https://docs.x.ai/developers/rest-api-reference/management/billing",
+  "recorded_at": "2026-10-18T12:00:00Z",
+  "interactions": [
+    {
+      "method": "GET",
+      "url": "https://management-api.x.ai/auth/management-keys/validation",
+      "status": 200,
+      "header": {
+        "Content-Type": "application/json"
+      },
+      "body": {
+        "managementKeyId": "mk_ci_1",
+        "teamId": "65c1e471-205f-4566-9c5a-07198bcdf4ce",
+        "name": "CI management key"
+      }
+    },
+    {
+      "method": "GET",
+      "url": "https://management-api.x.ai/v1/billing/teams/65c1e471-205f-4566-9c5a-07198bcdf4ce/prepaid/balance",
+      "status": 200,
+      "header": {
+        "Content-Type": "application/json"
+      },
+      "body": {
+        "changes": [
+          {
+            "teamId": "65c1e471-205f-4566-9c5a-07198bcdf4ce",
+            "changeOrigin": "PURCHASE",
+            "topupStatus": "SUCCEEDED",
+            "amount": {
+              "val": "-1000"
+            },
+            "invoiceId": "inv_topup_1",
+            "invoiceNumber": "062-446-653-166",
+            "createTime": "2026-10-02T15:28:02.308840Z",
+            "paymentProcessor": {
+              "kind": "STRIPE"
+            }
+          },
+          {
+            "teamId": "65c1e471-205f-4566-9c5a-07198bcdf4ce",
+            "changeOrigin": "PURCHASE",
+            "topupStatus": "SUCCEEDED",
+            "amount": {
+              "val": "-2000"
+            },
+            "invoiceId": "inv_topup_2",
+            "invoiceNumber": "062-446-653-167",
+            "createTime": "2026-10-06T09:00:00Z",
+            "paymentProcessor": {
+              "kind": "STRIPE"
+            }
+          },
+          {
+            "teamId": "65c1e471-205f-4566-9c5a-07198bcdf4ce",
+            "changeOrigin": "SPEND",
+            "amount": {
+              "val": "500"
+            },
+            "createTime": "2026-10-06T10:00:00Z"
+          }
+        ],
+        "total": {
+          "val": "-2500"
+        }
+      }
+    },
+    {
+      "method": "POST",
+      "url": "https://management-api.x.ai/v1/billing/teams/65c1e471-205f-4566-9c5a-07198bcdf4ce/usage",
+      "request_body": {
+        "analyticsRequest": {
+          "timeRange": {
+            "startTime": "2026-10-01 00:00:00",
+            "endTime": "2026-10-04 00:00:00",
+            "timezone": "Etc/GMT"
+          },
+          "timeUnit": "TIME_UNIT_DAY",
+          "values": [
+            {
+              "name": "usd",
+              "aggregation": "AGGREGATION_SUM"
+            }
+          ],
+          "groupBy": [
+            "description"
+          ],
+          "filters": []
+        }
+      },
+      "status": 200,
+      "header": {
+        "Content-Type": "application/json"
+      },
+      "body": {
+        "timeSeries": [
+          {
+            "group": [
+              "Chat grok-4-0709"
+            ],
+            "groupLabels": [
+              "Chat grok-4-0709"
+            ],
+            "dataPoints": [
+              {
+                "timestamp": "2026-10-01T00:00:00Z",
+                "values": [
+                  0.75973725
+                ]
+              },
+              {
+                "timestamp": "2026-10-02T00:00:00Z",
+                "values": [
+                  0
+                ]
+              },
+              {
+                "timestamp": "2026-10-03T00:00:00Z",
+                "values": [
+                  1.25
+                ]
+              }
+            ]
+          },
+          {
+            "group": [
+              "grok-2-image-1212"
+            ],
+            "groupLabels": [
+              "grok-2-image-1212"
+            ],
+            "dataPoints": [
+              {
+                "timestamp": "2026-10-01T00:00:00Z",
+                "values": [
+                  0
+                ]
+              },
+              {
+                "timestamp": "2026-10-02T00:00:00Z",
+                "values": [
+                  0.14
+                ]
+              },
+              {
+                "timestamp": "2026-10-03T00:00:00Z",
+                "values": [
+                  0
+                ]
+              }
+            ]
+          }
+        ],
+        "limitReached": false
+      }
+    },
+    {
+      "method": "GET",
+      "url": "https://management-api.x.ai/v1/billing/teams/65c1e471-205f-4566-9c5a-07198bcdf4ce/invoices?since.month=10&since.year=2026",
+      "status": 200,
+      "header": {
+        "Content-Type": "application/json"
+      },
+      "body": {
+        "invoices": [
+          {
+            "teamId": "65c1e471-205f-4566-9c5a-07198bcdf4ce",
+            "invoiceId": "inv_2026_10",
+            "invoiceNumber": "742-250-927-722",
+            "createTime": "2026-10-05T10:00:00Z",
+            "invoiceStatus": "PAID",
+            "lines": [
+              {
+                "clusterName": "us-east-1",
+                "description": "Chat grok-4-0709",
+                "unitType": "Prompt text tokens",
+                "unitPrice": "20000",
+                "numUnits": "908",
+                "amount": "18"
+              }
+            ],
+            "subtotal": "4200",
+            "tax": "800",
+            "total": "5000",
+            "monthly": {
+              "billingCycle": {
+                "year": 2026,
+                "month": 10
+              },
+              "defaultCreditsIssued": {
+                "val": "0"
+              },
+              "autoCreditsIssued": {
+                "val": "0"
+              },
+              "prepaidTokensToSpend": {
+                "val": "0"
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "method": "GET",
+      "url": "https://management-api.x.ai/v1/billing/teams/65c1e471-205f-4566-9c5a-07198bcdf4ce/prepaid/balance",
+      "status": 200,
+      "header": {
+        "Content-Type": "application/json"
+      },
+      "body": {
+        "changes": [
+          {
+            "teamId": "65c1e471-205f-4566-9c5a-07198bcdf4ce",
+            "changeOrigin": "PURCHASE",
+            "topupStatus": "SUCCEEDED",
+            "amount": {
+              "val": "-1000"
+            },
+            "invoiceId": "inv_topup_1",
+            "invoiceNumber": "062-446-653-166",
+            "createTime": "2026-10-02T15:28:02.308840Z",
+            "paymentProcessor": {
+              "kind": "STRIPE"
+            }
+          },
+          {
+            "teamId": "65c1e471-205f-4566-9c5a-07198bcdf4ce",
+            "changeOrigin": "PURCHASE",
+            "topupStatus": "SUCCEEDED",
+            "amount": {
+              "val": "-2000"
+            },
+            "invoiceId": "inv_topup_2",
+            "invoiceNumber": "062-446-653-167",
+            "createTime": "2026-10-06T09:00:00Z",
+            "paymentProcessor": {
+              "kind": "STRIPE"
+            }
+          },
+          {
+            "teamId": "65c1e471-205f-4566-9c5a-07198bcdf4ce",
+            "changeOrigin": "SPEND",
+            "amount": {
+              "val": "500"
+            },
+            "createTime": "2026-10-06T10:00:00Z"
+          }
+        ],
+        "total": {
+          "val": "-2500"
+        }
+      }
+    }
+  ]
+}

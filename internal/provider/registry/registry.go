@@ -12,6 +12,7 @@ import (
 	"github.com/atakanatamert/aicm/internal/provider/moonshot"
 	"github.com/atakanatamert/aicm/internal/provider/openai"
 	"github.com/atakanatamert/aicm/internal/provider/openrouter"
+	"github.com/atakanatamert/aicm/internal/provider/xai"
 	"github.com/atakanatamert/aicm/internal/provider/zai"
 )
 
@@ -22,6 +23,7 @@ func All(c *provider.HTTPClient) []provider.Provider {
 		openrouter.New(c),
 		anthropic.New(c),
 		openai.New(c),
+		xai.New(c),
 		deepseek.New(c),
 		moonshot.New(c),
 		zai.New(c),

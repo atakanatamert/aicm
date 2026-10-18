@@ -1,0 +1,116 @@
+{
+  "charges": [
+    {
+      "kind": "topup",
+      "amount": {
+        "amount_minor": 1000,
+        "currency": "USD"
+      },
+      "occurred_on": "2026-10-02T00:00:00Z",
+      "external_id": "inv_topup_1",
+      "description": "062-446-653-166"
+    },
+    {
+      "kind": "invoice",
+      "amount": {
+        "amount_minor": 5000,
+        "currency": "USD"
+      },
+      "occurred_on": "2026-10-05T00:00:00Z",
+      "external_id": "inv_2026_10",
+      "description": "742-250-927-722"
+    },
+    {
+      "kind": "topup",
+      "amount": {
+        "amount_minor": 2000,
+        "currency": "USD"
+      },
+      "occurred_on": "2026-10-06T00:00:00Z",
+      "external_id": "inv_topup_2",
+      "description": "062-446-653-167"
+    }
+  ],
+  "quota": [
+    {
+      "key": "prepaid_balance",
+      "remaining": 2500,
+      "captured_at": "2026-10-18T12:00:00Z",
+      "source": "api"
+    }
+  ],
+  "usage": [
+    {
+      "day": "2026-10-01T00:00:00Z",
+      "model": "Chat grok-4-0709",
+      "requests": 0,
+      "input_tokens": 0,
+      "output_tokens": 0,
+      "cache_read_tokens": 0,
+      "cache_write_tokens": 0,
+      "reasoning_tokens": 0,
+      "cost_micro": 759737,
+      "cost_currency": "USD"
+    },
+    {
+      "day": "2026-10-01T00:00:00Z",
+      "model": "grok-2-image-1212",
+      "requests": 0,
+      "input_tokens": 0,
+      "output_tokens": 0,
+      "cache_read_tokens": 0,
+      "cache_write_tokens": 0,
+      "reasoning_tokens": 0,
+      "cost_micro": 0,
+      "cost_currency": "USD"
+    },
+    {
+      "day": "2026-10-02T00:00:00Z",
+      "model": "Chat grok-4-0709",
+      "requests": 0,
+      "input_tokens": 0,
+      "output_tokens": 0,
+      "cache_read_tokens": 0,
+      "cache_write_tokens": 0,
+      "reasoning_tokens": 0,
+      "cost_micro": 0,
+      "cost_currency": "USD"
+    },
+    {
+      "day": "2026-10-02T00:00:00Z",
+      "model": "grok-2-image-1212",
+      "requests": 0,
+      "input_tokens": 0,
+      "output_tokens": 0,
+      "cache_read_tokens": 0,
+      "cache_write_tokens": 0,
+      "reasoning_tokens": 0,
+      "cost_micro": 140000,
+      "cost_currency": "USD"
+    },
+    {
+      "day": "2026-10-03T00:00:00Z",
+      "model": "Chat grok-4-0709",
+      "requests": 0,
+      "input_tokens": 0,
+      "output_tokens": 0,
+      "cache_read_tokens": 0,
+      "cache_write_tokens": 0,
+      "reasoning_tokens": 0,
+      "cost_micro": 1250000,
+      "cost_currency": "USD"
+    },
+    {
+      "day": "2026-10-03T00:00:00Z",
+      "model": "grok-2-image-1212",
+      "requests": 0,
+      "input_tokens": 0,
+      "output_tokens": 0,
+      "cache_read_tokens": 0,
+      "cache_write_tokens": 0,
+      "reasoning_tokens": 0,
+      "cost_micro": 0,
+      "cost_currency": "USD"
+    }
+  ]
+}
