@@ -1,0 +1,13 @@
+[
+  {
+    "ref": {
+      "provider_id": "chatgpt",
+      "external_id": "acct_abc123"
+    },
+    "harness": "codex",
+    "label": "test@example.com",
+    "plan": "plus",
+    "auth_kind": "agent_capture",
+    "has_api_key": false
+  }
+]

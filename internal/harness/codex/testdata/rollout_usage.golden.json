@@ -1,0 +1,32 @@
+[
+  {
+    "account": {
+      "provider_id": "chatgpt",
+      "external_id": "acct_abc123"
+    },
+    "source": "codex",
+    "message_id": "11111111-2222-3333-4444-555555555555:2026-03-04T10:00:03.000Z",
+    "occurred_at": "2026-03-04T10:00:03Z",
+    "model": "gpt-5.1-codex",
+    "input_tokens": 600,
+    "output_tokens": 50,
+    "cache_read_tokens": 400,
+    "cache_write_tokens": 0,
+    "reasoning_tokens": 10
+  },
+  {
+    "account": {
+      "provider_id": "chatgpt",
+      "external_id": "acct_abc123"
+    },
+    "source": "codex",
+    "message_id": "11111111-2222-3333-4444-555555555555:2026-03-04T10:00:04.000Z",
+    "occurred_at": "2026-03-04T10:00:04Z",
+    "model": "gpt-5.1-codex",
+    "input_tokens": 1200,
+    "output_tokens": 100,
+    "cache_read_tokens": 800,
+    "cache_write_tokens": 0,
+    "reasoning_tokens": 20
+  }
+]

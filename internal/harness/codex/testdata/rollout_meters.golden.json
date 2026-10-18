@@ -1,0 +1,62 @@
+[
+  {
+    "account": {
+      "provider_id": "chatgpt",
+      "external_id": "acct_abc123"
+    },
+    "def": {
+      "key": "primary",
+      "label": "5-hour limit",
+      "unit": "percent",
+      "reset_kind": "fixed",
+      "window_minutes": 300
+    },
+    "reading": {
+      "key": "primary",
+      "used": 12,
+      "limit": 100,
+      "resets_at": "2026-03-04T15:00:00Z",
+      "captured_at": "2026-03-04T10:00:04Z",
+      "source": "rollout"
+    }
+  },
+  {
+    "account": {
+      "provider_id": "chatgpt",
+      "external_id": "acct_abc123"
+    },
+    "def": {
+      "key": "secondary",
+      "label": "Weekly limit",
+      "unit": "percent",
+      "reset_kind": "fixed",
+      "window_minutes": 10080
+    },
+    "reading": {
+      "key": "secondary",
+      "used": 40,
+      "limit": 100,
+      "resets_at": "2026-03-11T10:00:04Z",
+      "captured_at": "2026-03-04T10:00:04Z",
+      "source": "rollout"
+    }
+  },
+  {
+    "account": {
+      "provider_id": "chatgpt",
+      "external_id": "acct_abc123"
+    },
+    "def": {
+      "key": "credits",
+      "label": "Codex credits",
+      "unit": "credits",
+      "reset_kind": "never"
+    },
+    "reading": {
+      "key": "credits",
+      "remaining": 12.5,
+      "captured_at": "2026-03-04T10:00:04Z",
+      "source": "rollout"
+    }
+  }
+]
