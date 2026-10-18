@@ -5,13 +5,20 @@
 package config
 
 import (
+	"crypto/rand"
+	"encoding/base64"
 	"errors"
 	"fmt"
+	"io/fs"
 	"log/slog"
 	"net/url"
 	"os"
+	"path/filepath"
 	"strings"
 )
+
+// masterKeySize is the length of the key that wraps org data keys.
+const masterKeySize = 32
 
 // Hub is the hub's runtime configuration.
 type Hub struct {
@@ -26,6 +33,8 @@ type Hub struct {
 	LogLevel slog.Level
 	// LogFormat is json or text (AICM_LOG_FORMAT, default "json").
 	LogFormat string
+	// MasterKey is the 32-byte key that wraps every org data key.
+	MasterKey []byte
 }
 
 // LoadHub reads the hub configuration from the environment.
@@ -49,7 +58,82 @@ func LoadHub() (Hub, error) {
 	if c.LogFormat != "json" && c.LogFormat != "text" {
 		errs = append(errs, fmt.Errorf("AICM_LOG_FORMAT %q must be json or text", c.LogFormat))
 	}
+	masterKey, err := LoadMasterKey()
+	if err != nil {
+		errs = append(errs, err)
+	} else {
+		c.MasterKey = masterKey
+	}
 	return c, errors.Join(errs...)
+}
+
+// LoadMasterKey reads the key that wraps org data keys, in order:
+// AICM_MASTER_KEY, then AICM_MASTER_KEY_FILE. When the file is missing and
+// AICM_MASTER_KEY_GENERATE=true it creates one (mode 0600) and uses it.
+// Nothing here logs the key.
+func LoadMasterKey() ([]byte, error) {
+	if v := strings.TrimSpace(os.Getenv("AICM_MASTER_KEY")); v != "" {
+		return decodeMasterKey("AICM_MASTER_KEY", v)
+	}
+	path := os.Getenv("AICM_MASTER_KEY_FILE")
+	if path == "" {
+		return nil, errors.New("AICM_MASTER_KEY or AICM_MASTER_KEY_FILE is required")
+	}
+	data, err := os.ReadFile(path) //nolint:gosec // path comes from AICM_MASTER_KEY_FILE
+	if err != nil {
+		if !errors.Is(err, fs.ErrNotExist) {
+			return nil, fmt.Errorf("reading AICM_MASTER_KEY_FILE: %w", err)
+		}
+		if os.Getenv("AICM_MASTER_KEY_GENERATE") != "true" {
+			return nil, errors.New("AICM_MASTER_KEY or AICM_MASTER_KEY_FILE is required")
+		}
+		return generateMasterKey(path)
+	}
+	return decodeMasterKey("AICM_MASTER_KEY_FILE", string(data))
+}
+
+// generateMasterKey creates a fresh key file and returns the key.
+func generateMasterKey(path string) ([]byte, error) {
+	key := make([]byte, masterKeySize)
+	if _, err := rand.Read(key); err != nil {
+		return nil, fmt.Errorf("generating master key: %w", err)
+	}
+	if err := os.MkdirAll(filepath.Dir(path), 0o700); err != nil { //nolint:gosec // path comes from AICM_MASTER_KEY_FILE
+		return nil, fmt.Errorf("creating master key directory: %w", err)
+	}
+	f, err := os.OpenFile(path, os.O_WRONLY|os.O_CREATE|os.O_EXCL, 0o600) //nolint:gosec // path comes from AICM_MASTER_KEY_FILE
+	if err != nil {
+		if errors.Is(err, fs.ErrExist) {
+			// Another process created the file first; use its key.
+			data, err := os.ReadFile(path) //nolint:gosec // path comes from AICM_MASTER_KEY_FILE
+			if err != nil {
+				return nil, fmt.Errorf("reading AICM_MASTER_KEY_FILE: %w", err)
+			}
+			return decodeMasterKey("AICM_MASTER_KEY_FILE", string(data))
+		}
+		return nil, fmt.Errorf("creating master key file: %w", err)
+	}
+	encoded := base64.StdEncoding.EncodeToString(key) + "\n"
+	if _, err := f.WriteString(encoded); err != nil {
+		_ = f.Close()
+		return nil, fmt.Errorf("writing master key file: %w", err)
+	}
+	if err := f.Close(); err != nil {
+		return nil, fmt.Errorf("closing master key file: %w", err)
+	}
+	return key, nil
+}
+
+// decodeMasterKey decodes base64 and requires exactly 32 bytes.
+func decodeMasterKey(name, value string) ([]byte, error) {
+	key, err := base64.StdEncoding.DecodeString(strings.TrimSpace(value))
+	if err != nil {
+		return nil, fmt.Errorf("%s is not valid base64: %w", name, err)
+	}
+	if len(key) != masterKeySize {
+		return nil, fmt.Errorf("%s must decode to %d bytes, got %d", name, masterKeySize, len(key))
+	}
+	return key, nil
 }
 
 // NewLogger builds the process logger from the configuration.

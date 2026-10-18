@@ -5,6 +5,7 @@ package main
 
 import (
 	"context"
+	"encoding/base64"
 	"errors"
 	"flag"
 	"fmt"
@@ -13,6 +14,7 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"strings"
 	"syscall"
 	"time"
 
@@ -22,6 +24,7 @@ import (
 	"github.com/atakanatamert/aicm/internal/db"
 	"github.com/atakanatamert/aicm/internal/httpapi"
 	"github.com/atakanatamert/aicm/internal/jobs"
+	"github.com/atakanatamert/aicm/internal/secrets"
 	"github.com/atakanatamert/aicm/internal/version"
 )
 
@@ -30,6 +33,7 @@ const usage = `Usage: ` + version.Name + ` <command> [flags]
 Commands:
   serve                     run the hub (HTTP API, UI, jobs); applies migrations first
   migrate up|down|status    manage the database schema
+  rotate-key --new-key-file PATH  re-wrap every org data key with a new master key
   version                   print the version
 `
 
@@ -51,6 +55,8 @@ func run(args []string, stdout, stderr io.Writer) int {
 		err = serve(ctx, args[1:])
 	case "migrate":
 		err = migrate(ctx, args[1:], stdout)
+	case "rotate-key":
+		err = rotateKey(ctx, args[1:], stdout)
 	case "version":
 		fmt.Fprintln(stdout, version.Name, version.Version)
 	case "-h", "--help", "help":
@@ -122,6 +128,46 @@ func migrate(ctx context.Context, args []string, stdout io.Writer) error {
 	}
 }
 
+// rotateKey re-wraps every org data key with a new master key.
+func rotateKey(ctx context.Context, args []string, stdout io.Writer) error {
+	fs := flag.NewFlagSet("rotate-key", flag.ContinueOnError)
+	newKeyFile := fs.String("new-key-file", "", "file containing the base64-encoded new master key")
+	if err := fs.Parse(args); err != nil {
+		return fmt.Errorf("parsing rotate-key flags: %w", err)
+	}
+	if *newKeyFile == "" {
+		return errors.New("usage: rotate-key --new-key-file PATH")
+	}
+	oldKey, err := config.LoadMasterKey()
+	if err != nil {
+		return fmt.Errorf("loading old master key: %w", err)
+	}
+	raw, err := os.ReadFile(*newKeyFile)
+	if err != nil {
+		return fmt.Errorf("reading new key file: %w", err)
+	}
+	newKey, err := base64.StdEncoding.DecodeString(strings.TrimSpace(string(raw)))
+	if err != nil {
+		return fmt.Errorf("decoding new master key: %w", err)
+	}
+	if len(newKey) != 32 {
+		return fmt.Errorf("new master key must be 32 bytes, got %d", len(newKey))
+	}
+
+	_, _, pool, err := setup(ctx)
+	if err != nil {
+		return err
+	}
+	defer pool.Close()
+
+	n, err := secrets.RotateMasterKey(ctx, pool, oldKey, newKey)
+	if err != nil {
+		return fmt.Errorf("rotating master key: %w", err)
+	}
+	fmt.Fprintf(stdout, "re-wrapped %d data keys; now set AICM_MASTER_KEY(_FILE) to the new key and restart\n", n)
+	return nil
+}
+
 func serve(ctx context.Context, args []string) error {
 	fs := flag.NewFlagSet("serve", flag.ContinueOnError)
 	autoMigrate := fs.Bool("migrate", true, "apply pending migrations before serving")
@@ -140,6 +186,14 @@ func serve(ctx context.Context, args []string) error {
 		}
 	}
 
+	store, err := secrets.NewBuiltin(pool, cfg.MasterKey)
+	if err != nil {
+		return fmt.Errorf("building secret store: %w", err)
+	}
+	if err := store.Check(ctx); err != nil {
+		return fmt.Errorf("checking secret store: %w", err)
+	}
+
 	reg := jobs.NewRegistry()
 	riverClient, err := jobs.NewClient(pool, log, reg)
 	if err != nil {
@@ -151,7 +205,7 @@ func serve(ctx context.Context, args []string) error {
 
 	srv := &http.Server{
 		Addr:              cfg.ListenAddr,
-		Handler:           httpapi.NewRouter(httpapi.Deps{Log: log, DB: pool}),
+		Handler:           httpapi.NewRouter(httpapi.Deps{Log: log, DB: pool, Secrets: store}),
 		ReadHeaderTimeout: 10 * time.Second,
 	}
 	errc := make(chan error, 1)

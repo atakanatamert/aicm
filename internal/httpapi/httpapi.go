@@ -20,6 +20,7 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/atakanatamert/aicm/internal/secrets"
 	"github.com/atakanatamert/aicm/internal/version"
 )
 
@@ -30,8 +31,9 @@ type Pinger interface {
 
 // Deps are the services handlers need. Later tasks add fields.
 type Deps struct {
-	Log *slog.Logger
-	DB  Pinger
+	Log     *slog.Logger
+	DB      Pinger
+	Secrets secrets.Store
 }
 
 // Server implements StrictServerInterface.

@@ -26,8 +26,13 @@ services:
       AICM_DATABASE_URL: postgres://aicm:${AICM_DB_PASSWORD:-aicm}@db:5432/aicm?sslmode=disable
       AICM_PUBLIC_URL: ${AICM_PUBLIC_URL:-http://localhost:8080}
       AICM_LOG_LEVEL: ${AICM_LOG_LEVEL:-info}
+      AICM_MASTER_KEY_FILE: /var/lib/aicm/master.key
+      AICM_MASTER_KEY_GENERATE: "true"
+    volumes:
+      - hub-data:/var/lib/aicm
     ports:
       - "${AICM_PORT:-8080}:8080"
 
 volumes:
   db-data:
+  hub-data:
