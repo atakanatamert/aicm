@@ -23,4 +23,4 @@ Commits follow [Conventional Commits](https://www.conventionalcommits.org) (`fea
 
 ## Licenses
 
-The hub is AGPL-3.0-or-later. The agent and everything it links (`cmd/aicm-agent`, `internal/agentlink`, `internal/mcpserver`, `internal/apiclient`, `internal/harness`, `internal/meter`, `internal/version`) is Apache-2.0 and must not import hub packages; `scripts/check-licenses.sh` enforces this. Code ported from another project needs an entry in [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md) in the same change.
+The hub is AGPL-3.0-or-later. The agent and everything it links (`cmd/aicm-agent`, `internal/agentlink`, `internal/mcpserver`, `internal/apiclient`, `internal/agent`, `internal/harness`, `internal/meter`, `internal/version`) is Apache-2.0 and must not import hub packages; `scripts/check-licenses.sh` enforces this. Code ported from another project needs an entry in [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md) in the same change.

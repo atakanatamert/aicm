@@ -34,14 +34,14 @@ type Interaction struct {
 	URL         string          `json:"url"`
 	RequestBody json.RawMessage `json:"request_body,omitempty"`
 	Status      int             `json:"status"`
-	// Header keeps only Content-Type and Retry-After.
+	// Header keeps only Content-Type, Retry-After and Link (paging).
 	Header map[string]string `json:"header,omitempty"`
 	// Body is the response when it is JSON; BodyText otherwise.
 	Body     json.RawMessage `json:"body,omitempty"`
 	BodyText string          `json:"body_text,omitempty"`
 }
 
-var keptHeaders = []string{"Content-Type", "Retry-After"}
+var keptHeaders = []string{"Content-Type", "Retry-After", "Link"}
 
 // Recorder is an http.RoundTripper that forwards to Next and records every
 // exchange, replacing each value in Secrets with Redacted. Review recorded

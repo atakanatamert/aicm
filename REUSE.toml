@@ -23,6 +23,7 @@ path = [
   "internal/meter/**",
   "internal/version/**",
   "internal/apiclient/**",
+  "internal/agent/**",
 ]
 precedence = "aggregate"
 SPDX-FileCopyrightText = "2026 Atakan Atamert and aicm contributors"
