@@ -22,6 +22,7 @@ import (
 
 	"github.com/atakanatamert/aicm/internal/account"
 	"github.com/atakanatamert/aicm/internal/agenthub"
+	"github.com/atakanatamert/aicm/internal/alert"
 	"github.com/atakanatamert/aicm/internal/audit"
 	"github.com/atakanatamert/aicm/internal/auth"
 	"github.com/atakanatamert/aicm/internal/charge"
@@ -259,6 +260,7 @@ func serve(ctx context.Context, args []string) error {
 	charges := charge.NewService(pool, fxSvc, log)
 	syncSvc := syncer.NewService(pool, log, providers, store, quotaSvc, usageSvc, charges)
 	quotaSvc.SetBalanceHook(charges.TopUpHook())
+	alertSvc := alert.NewService(pool, log, quotaSvc, providers)
 
 	reg := jobs.NewRegistry()
 	jobs.Register(reg, &fx.RefreshWorker{Service: fxSvc})
@@ -270,6 +272,8 @@ func serve(ctx context.Context, args []string) error {
 	reg.Periodic = append(reg.Periodic, syncer.PeriodicJob())
 	jobs.Register(reg, &account.RollForwardWorker{Service: accounts, Hook: charges.RenewalHook()})
 	reg.Periodic = append(reg.Periodic, account.PeriodicJob())
+	jobs.Register(reg, &alert.EvaluateWorker{Service: alertSvc})
+	reg.Periodic = append(reg.Periodic, alert.PeriodicJob())
 	riverClient, err := jobs.NewClient(pool, log, reg)
 	if err != nil {
 		return err
@@ -298,6 +302,7 @@ func serve(ctx context.Context, args []string) error {
 			Providers: providers,
 			Machines:  machineSvc,
 			AgentHub:  agentHub,
+			Alerts:    alertSvc,
 		}),
 		ReadHeaderTimeout: 10 * time.Second,
 	}

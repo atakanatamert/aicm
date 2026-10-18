@@ -23,6 +23,7 @@ import (
 	"github.com/atakanatamert/aicm/internal/account"
 	"github.com/atakanatamert/aicm/internal/agenthub"
 	"github.com/atakanatamert/aicm/internal/agentlink"
+	"github.com/atakanatamert/aicm/internal/alert"
 	"github.com/atakanatamert/aicm/internal/audit"
 	"github.com/atakanatamert/aicm/internal/auth"
 	"github.com/atakanatamert/aicm/internal/charge"
@@ -59,6 +60,7 @@ type Deps struct {
 	Providers []provider.Provider // the compiled-in catalog, in display order
 	Machines  *machine.Service
 	AgentHub  *agenthub.Hub
+	Alerts    *alert.Service
 }
 
 // Server implements StrictServerInterface.
