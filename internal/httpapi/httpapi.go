@@ -66,6 +66,8 @@ type Deps struct {
 	Install   http.Handler // public install scripts; nil disables them
 	// MCP serves the MCP tools at /mcp when set.
 	MCP http.Handler
+	// Web serves the embedded UI for every other GET path.
+	Web http.Handler
 }
 
 // Server implements StrictServerInterface.
@@ -92,7 +94,21 @@ func NewRouter(d Deps) http.Handler {
 		},
 		ResponseErrorHandlerFunc: s.writeHandlerError,
 	})
+	// Patterns carry methods throughout: a method-less pattern such as "/mcp"
+	// would overlap "GET /" without either being more specific, which
+	// net/http rejects.
 	base := http.NewServeMux()
+	if d.Web != nil {
+		// API routes are more specific and keep winning; the UI serves
+		// index.html for the rest so client-side routes survive a reload.
+		base.Handle("GET /", d.Web)
+	}
+	// Unknown /api/... paths still get the JSON 404 envelope.
+	for _, method := range []string{http.MethodGet, http.MethodPost, http.MethodPatch, http.MethodDelete, http.MethodPut} {
+		base.HandleFunc(method+" /api/", func(w http.ResponseWriter, _ *http.Request) {
+			WriteError(w, http.StatusNotFound, "not_found", "unknown API endpoint")
+		})
+	}
 	if d.AgentHub != nil {
 		// The agent endpoint authenticates with the agentlink handshake and
 		// lives outside the generated router, so the role middleware never
@@ -108,8 +124,10 @@ func NewRouter(d Deps) http.Handler {
 	if d.MCP != nil {
 		// MCP authenticates each request with its own bearer token and loops
 		// every tool call back through the API, so it also sits outside the
-		// generated router.
-		base.Handle("/mcp", d.MCP)
+		// generated router. Streamable HTTP uses POST, GET (stream) and DELETE.
+		for _, method := range []string{http.MethodPost, http.MethodGet, http.MethodDelete} {
+			base.Handle(method+" /mcp", d.MCP)
+		}
 	}
 	h := HandlerWithOptions(strict, StdHTTPServerOptions{
 		BaseRouter: base,

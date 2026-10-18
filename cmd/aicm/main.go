@@ -45,6 +45,7 @@ import (
 	"github.com/atakanatamert/aicm/internal/syncer"
 	usagepkg "github.com/atakanatamert/aicm/internal/usage"
 	"github.com/atakanatamert/aicm/internal/version"
+	"github.com/atakanatamert/aicm/web"
 )
 
 const usage = `Usage: ` + version.Name + ` <command> [flags]
@@ -409,6 +410,7 @@ func serve(ctx context.Context, args []string) error {
 			Settings:  settingsSvc,
 			Install:   install.Handler(),
 			MCP:       mcpserver.HTTPHandler(selfURL(cfg.ListenAddr)),
+			Web:       web.Handler(),
 		}),
 		ReadHeaderTimeout: 10 * time.Second,
 	}

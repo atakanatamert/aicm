@@ -1,9 +1,18 @@
 # Hub image: static Go binary on distroless, running as non-root.
+FROM node:22-alpine AS web
+WORKDIR /web
+RUN corepack enable
+COPY web/package.json web/pnpm-lock.yaml ./
+RUN pnpm install --frozen-lockfile
+COPY web/ ./
+RUN pnpm build
+
 FROM golang:1.27-alpine AS build
 WORKDIR /src
 COPY go.mod go.sum ./
 RUN go mod download
 COPY . .
+COPY --from=web /web/dist web/dist
 ARG VERSION=dev
 RUN CGO_ENABLED=0 go build -trimpath \
       -ldflags "-s -w -X github.com/atakanatamert/aicm/internal/version.Version=${VERSION}" \

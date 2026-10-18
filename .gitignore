@@ -2,6 +2,7 @@
 /bin/
 .env
 node_modules/
-web/dist/
+web/dist/*
+!web/dist/.keep
 *.test
 coverage.out

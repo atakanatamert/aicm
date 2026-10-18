@@ -59,6 +59,20 @@ jobs:
         env:
           AICM_DATABASE_URL: postgres://aicm:aicm@localhost:5432/aicm?sslmode=disable
 
+  web:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - uses: pnpm/action-setup@v4
+      - run: pnpm -C web install --frozen-lockfile
+      - run: pnpm -C web gen:api
+      - run: git diff --exit-code web/src/api/schema.d.ts
+      - run: pnpm -C web lint
+      - run: pnpm -C web build
+
   openapi:
     runs-on: ubuntu-latest
     steps:
