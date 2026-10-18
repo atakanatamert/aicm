@@ -6,12 +6,14 @@ package registry
 
 import (
 	"github.com/atakanatamert/aicm/internal/provider"
+	"github.com/atakanatamert/aicm/internal/provider/manual"
 )
 
 // All returns every provider, in catalog display order.
 func All(c *provider.HTTPClient) []provider.Provider {
 	_ = c // adapters take the client: openrouter.New(c), deepseek.New(c), …
-	return []provider.Provider{}
+	ps := []provider.Provider{ /* API adapters, one per line, added by their tasks */ }
+	return append(ps, manual.All()...)
 }
 
 // ByID finds a provider by its Info().ID.
