@@ -13,7 +13,6 @@ import (
 	"io/fs"
 	"os"
 	"path/filepath"
-	"reflect"
 	"sort"
 	"strconv"
 	"strings"
@@ -87,7 +86,7 @@ func readRollout(ctx context.Context, path string, cur harness.Cursor, ref agent
 	if err != nil {
 		return cur, nil, nil, fmt.Errorf("statting: %w", err)
 	}
-	if cur.Inode == inodeOf(info) && cur.Size == info.Size() && cur.ModTime.Equal(info.ModTime()) {
+	if cur.Inode == harness.Inode(info) && cur.Size == info.Size() && cur.ModTime.Equal(info.ModTime()) {
 		return cur, nil, nil, nil
 	}
 
@@ -102,7 +101,7 @@ func readRollout(ctx context.Context, path string, cur harness.Cursor, ref agent
 	if err != nil {
 		return cur, nil, nil, fmt.Errorf("statting: %w", err)
 	}
-	inode := inodeOf(info)
+	inode := harness.Inode(info)
 	offset := cur.Offset
 	if cur.Inode != inode || info.Size() < offset {
 		offset = 0
@@ -514,31 +513,4 @@ func sessionIDFromPath(path string) string {
 		rest = rest[:i]
 	}
 	return rest
-}
-
-// inodeOf reads the inode without a platform-specific build file. Platforms
-// whose file info has no Ino field report 0 and fall back to size checks.
-func inodeOf(info os.FileInfo) uint64 {
-	v := reflect.ValueOf(info.Sys())
-	if !v.IsValid() {
-		return 0
-	}
-	if v.Kind() == reflect.Pointer {
-		if v.IsNil() {
-			return 0
-		}
-		v = v.Elem()
-	}
-	if v.Kind() != reflect.Struct {
-		return 0
-	}
-	field := v.FieldByName("Ino")
-	if !field.IsValid() {
-		return 0
-	}
-	switch field.Kind() {
-	case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64, reflect.Uintptr:
-		return field.Uint()
-	}
-	return 0
 }

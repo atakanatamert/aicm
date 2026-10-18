@@ -10,7 +10,6 @@ import (
 	"io"
 	"os"
 	"path/filepath"
-	"reflect"
 	"time"
 
 	"github.com/atakanatamert/aicm/internal/agentlink"
@@ -129,7 +128,7 @@ func scanFile(path string, prev *harness.Cursor, handle func([]byte)) (harness.C
 	if info.IsDir() {
 		return harness.Cursor{}, false, nil
 	}
-	inode := fileInode(info)
+	inode := harness.Inode(info)
 	start := int64(0)
 	if prev != nil {
 		sameFile := prev.Inode == 0 || inode == 0 || prev.Inode == inode
@@ -178,31 +177,4 @@ done:
 		Size:    final.Size(),
 		ModTime: final.ModTime(),
 	}, true, nil
-}
-
-// fileInode returns a stable file identity without platform build tags.
-func fileInode(info os.FileInfo) uint64 {
-	sys := info.Sys()
-	if sys == nil {
-		return 0
-	}
-	v := reflect.ValueOf(sys)
-	for v.Kind() == reflect.Pointer || v.Kind() == reflect.Interface {
-		if v.IsNil() {
-			return 0
-		}
-		v = v.Elem()
-	}
-	if v.Kind() != reflect.Struct {
-		return 0
-	}
-	if f := v.FieldByName("Ino"); f.IsValid() && f.CanUint() {
-		return f.Uint()
-	}
-	hi := v.FieldByName("FileIndexHigh")
-	lo := v.FieldByName("FileIndexLow")
-	if hi.IsValid() && lo.IsValid() && hi.CanUint() && lo.CanUint() {
-		return hi.Uint()<<32 | lo.Uint()
-	}
-	return 0
 }

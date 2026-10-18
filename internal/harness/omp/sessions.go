@@ -15,7 +15,6 @@ import (
 	"sort"
 	"strconv"
 	"strings"
-	"syscall"
 	"time"
 
 	"github.com/atakanatamert/aicm/internal/agentlink"
@@ -98,7 +97,7 @@ func scanSessionFile(ctx context.Context, path string, prev harness.Cursor, keys
 	if err != nil {
 		return nil, prev, fmt.Errorf("stat: %w", err)
 	}
-	inode := inodeOf(info)
+	inode := harness.Inode(info)
 	if prev.Inode != 0 && prev.Inode == inode && prev.Size == info.Size() &&
 		prev.ModTime.Equal(info.ModTime()) {
 		return nil, prev, nil
@@ -374,11 +373,4 @@ func sessionFiles(root string) ([]string, error) {
 	}
 	sort.Strings(files)
 	return files, nil
-}
-
-func inodeOf(info os.FileInfo) uint64 {
-	if stat, ok := info.Sys().(*syscall.Stat_t); ok {
-		return stat.Ino
-	}
-	return 0
 }
