@@ -28,6 +28,7 @@ import (
 	"github.com/atakanatamert/aicm/internal/fx"
 	"github.com/atakanatamert/aicm/internal/httpapi"
 	"github.com/atakanatamert/aicm/internal/jobs"
+	"github.com/atakanatamert/aicm/internal/machine"
 	"github.com/atakanatamert/aicm/internal/pricing"
 	"github.com/atakanatamert/aicm/internal/provider"
 	"github.com/atakanatamert/aicm/internal/provider/registry"
@@ -272,6 +273,7 @@ func serve(ctx context.Context, args []string) error {
 	if err := jobs.Start(ctx, riverClient, reg); err != nil {
 		return err
 	}
+	machineSvc := machine.NewService(pool, store, cfg.PublicURL, log)
 
 	srv := &http.Server{
 		Addr: cfg.ListenAddr,
@@ -288,6 +290,7 @@ func serve(ctx context.Context, args []string) error {
 			Accounts:  accounts,
 			FX:        fxSvc,
 			Providers: providers,
+			Machines:  machineSvc,
 		}),
 		ReadHeaderTimeout: 10 * time.Second,
 	}

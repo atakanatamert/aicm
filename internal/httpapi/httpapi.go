@@ -25,6 +25,7 @@ import (
 	"github.com/atakanatamert/aicm/internal/auth"
 	"github.com/atakanatamert/aicm/internal/fx"
 	"github.com/atakanatamert/aicm/internal/jobs"
+	"github.com/atakanatamert/aicm/internal/machine"
 	"github.com/atakanatamert/aicm/internal/provider"
 	"github.com/atakanatamert/aicm/internal/quota"
 	"github.com/atakanatamert/aicm/internal/secrets"
@@ -52,6 +53,7 @@ type Deps struct {
 	Accounts  *account.Service
 	FX        *fx.Service
 	Providers []provider.Provider // the compiled-in catalog, in display order
+	Machines  *machine.Service
 }
 
 // Server implements StrictServerInterface.

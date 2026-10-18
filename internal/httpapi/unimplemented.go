@@ -47,18 +47,6 @@ func (s *Server) UpdateCharge(context.Context, UpdateChargeRequestObject) (Updat
 	return nil, ErrNotImplemented
 }
 
-func (s *Server) ListEnrollTokens(context.Context, ListEnrollTokensRequestObject) (ListEnrollTokensResponseObject, error) {
-	return nil, ErrNotImplemented
-}
-
-func (s *Server) CreateEnrollToken(context.Context, CreateEnrollTokenRequestObject) (CreateEnrollTokenResponseObject, error) {
-	return nil, ErrNotImplemented
-}
-
-func (s *Server) RevokeEnrollToken(context.Context, RevokeEnrollTokenRequestObject) (RevokeEnrollTokenResponseObject, error) {
-	return nil, ErrNotImplemented
-}
-
 func (s *Server) ExportCharges(context.Context, ExportChargesRequestObject) (ExportChargesResponseObject, error) {
 	return nil, ErrNotImplemented
 }
@@ -68,14 +56,6 @@ func (s *Server) ExportReadings(context.Context, ExportReadingsRequestObject) (E
 }
 
 func (s *Server) ExportUsage(context.Context, ExportUsageRequestObject) (ExportUsageResponseObject, error) {
-	return nil, ErrNotImplemented
-}
-
-func (s *Server) ListMachines(context.Context, ListMachinesRequestObject) (ListMachinesResponseObject, error) {
-	return nil, ErrNotImplemented
-}
-
-func (s *Server) UpdateMachine(context.Context, UpdateMachineRequestObject) (UpdateMachineResponseObject, error) {
 	return nil, ErrNotImplemented
 }
 
