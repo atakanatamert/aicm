@@ -53,20 +53,21 @@ $arch = switch ($env:PROCESSOR_ARCHITECTURE) {
 
 $hasVersion = [bool]$Version
 if (-not $hasVersion) {
-    $release = Invoke-RestMethod -Uri "https://api.github.com/repos/$Repo/releases/latest" -Headers @{ 'User-Agent' = $Binary }
-    $Version = $release.tag_name
+    $headers = @{ 'User-Agent' = $Binary }
+    try {
+        $Version = (Invoke-RestMethod -Uri "https://api.github.com/repos/$Repo/releases/latest" -Headers $headers).tag_name
+    }
+    catch {
+        # No stable release yet: take the newest pre-release.
+        $Version = (Invoke-RestMethod -Uri "https://api.github.com/repos/$Repo/releases?per_page=1" -Headers $headers)[0].tag_name
+    }
 }
 if (-not $Version.StartsWith('v')) {
     $Version = "v$Version"
 }
 $assetVersion = $Version.Substring(1)
 $asset = "${Binary}_${assetVersion}_windows_${arch}.zip"
-if ($hasVersion) {
-    $releaseDir = "$DownloadBase/download/$Version"
-}
-else {
-    $releaseDir = "$DownloadBase/latest/download"
-}
+$releaseDir = "$DownloadBase/download/$Version"
 
 $tmp = Join-Path ([System.IO.Path]::GetTempPath()) ("aicm-install-" + [guid]::NewGuid().ToString('N'))
 New-Item -ItemType Directory -Path $tmp | Out-Null

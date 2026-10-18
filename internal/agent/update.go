@@ -55,6 +55,9 @@ func Update(ctx context.Context, client *http.Client) (string, error) {
 		client = http.DefaultClient
 	}
 	body, err := download(ctx, client, releaseAPI)
+	if errors.Is(err, errNotFound) {
+		return "", nil // only pre-releases exist so far
+	}
 	if err != nil {
 		return "", err
 	}
@@ -137,6 +140,10 @@ func checksumFor(sums []byte, name string) (string, error) {
 	return "", fmt.Errorf("%s has no checksum for %s", checksumsAsset, name)
 }
 
+// errNotFound marks a 404, which the release API returns while no stable
+// release exists.
+var errNotFound = errors.New("not found")
+
 // download fetches one URL with a size cap.
 func download(ctx context.Context, client *http.Client, url string) ([]byte, error) {
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
@@ -150,6 +157,9 @@ func download(ctx context.Context, client *http.Client, url string) ([]byte, err
 		return nil, fmt.Errorf("requesting %s: %w", url, err)
 	}
 	defer resp.Body.Close() //nolint:errcheck // nothing useful to do with a close error
+	if resp.StatusCode == http.StatusNotFound {
+		return nil, fmt.Errorf("requesting %s: %w", url, errNotFound)
+	}
 	if resp.StatusCode != http.StatusOK {
 		msg, _ := io.ReadAll(io.LimitReader(resp.Body, 512))
 		return nil, fmt.Errorf("requesting %s: %s: %s", url, resp.Status, strings.TrimSpace(string(msg)))
@@ -165,7 +175,8 @@ func download(ctx context.Context, client *http.Client, url string) ([]byte, err
 }
 
 // versionIsNewer reports whether latest is a newer semantic-ish version than
-// current. Both may carry a leading v.
+// current. Both may carry a leading v. A final release is newer than a
+// pre-release of the same number (v1.2.0 > v1.2.0-rc.1).
 func versionIsNewer(latest, current string) (bool, error) {
 	l, err := versionParts(latest)
 	if err != nil {
@@ -187,7 +198,11 @@ func versionIsNewer(latest, current string) (bool, error) {
 			return a > b, nil
 		}
 	}
-	return false, nil
+	return isPrerelease(current) && !isPrerelease(latest), nil
+}
+
+func isPrerelease(v string) bool {
+	return strings.Contains(v, "-")
 }
 
 // versionParts turns v1.2.3 into [1 2 3], ignoring a prerelease suffix.

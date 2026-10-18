@@ -344,7 +344,10 @@ func (s *Service) CreateEnrollToken(ctx context.Context, p auth.Principal, perma
 	}, nil
 }
 
-// commands renders the install one-liners from the public values.
+// commands renders the install one-liners from the public values. A release
+// hub pins the agent to its own version, so pre-releases (which GitHub's
+// "latest" skips) install and the agent matches the hub; a dev hub installs
+// the latest release.
 func (s *Service) commands(orgID, publicKey, token string) Commands {
 	hub := s.publicURL
 	owner, _, _ := strings.Cut(repoPath, "/")
@@ -352,14 +355,20 @@ func (s *Service) commands(orgID, publicKey, token string) Commands {
 	sh := func(v string) string { return "'" + strings.ReplaceAll(v, "'", "'\\''") + "'" }
 	ps := func(v string) string { return "'" + strings.ReplaceAll(v, "'", "''") + "'" }
 	enroll := "--hub " + sh(hub) + " --org " + sh(orgID) + " --key " + sh(publicKey) + " --token " + sh(token)
+	shPin, psPin, image := "", "", "latest"
+	if v := version.Version; v != "dev" {
+		shPin = " --version " + sh(v)
+		psPin = " -Version " + ps(v)
+		image = strings.TrimPrefix(v, "v")
+	}
 	return Commands{
-		Sh: fmt.Sprintf("curl -fsSL %s/install.sh | sh -s -- %s", hub, enroll),
+		Sh: fmt.Sprintf("curl -fsSL %s/install.sh | sh -s -- %s%s", hub, enroll, shPin),
 		Brew: fmt.Sprintf("brew install %s/tap/%s && %s enroll %s && brew services start %s",
 			owner, binary, binary, enroll, binary),
-		PowerShell: fmt.Sprintf("& ([scriptblock]::Create((irm %s))) -Hub %s -Org %s -Key %s -Token %s",
-			ps(hub+"/install.ps1"), ps(hub), ps(orgID), ps(publicKey), ps(token)),
-		Docker: fmt.Sprintf(`docker run -d --name %s --restart unless-stopped -v "$HOME:/host-home:ro" -e AICM_AGENT_HOME=/host-home ghcr.io/%s/%s:latest run %s`,
-			binary, owner, binary, enroll),
+		PowerShell: fmt.Sprintf("& ([scriptblock]::Create((irm %s))) -Hub %s -Org %s -Key %s -Token %s%s",
+			ps(hub+"/install.ps1"), ps(hub), ps(orgID), ps(publicKey), ps(token), psPin),
+		Docker: fmt.Sprintf(`docker run -d --name %s --restart unless-stopped -v "$HOME:/host-home:ro" -e AICM_AGENT_HOME=/host-home ghcr.io/%s/%s:%s run %s`,
+			binary, owner, binary, image, enroll),
 	}
 }
 

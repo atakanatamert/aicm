@@ -88,7 +88,9 @@ brews:
     repository:
       owner: atakanatamert
       name: homebrew-tap
-      token: "{{ .Env.HOMEBREW_TAP_TOKEN }}"
+      token: '{{ index .Env "HOMEBREW_TAP_TOKEN" }}'
+    # Skipped until the tap exists (no token) and for pre-releases.
+    skip_upload: '{{ if index .Env "HOMEBREW_TAP_TOKEN" }}auto{{ else }}true{{ end }}'
     homepage: https://github.com/atakanatamert/aicm
     description: Agent for aicm, the self-hosted AI cost and subscription manager
     license: Apache-2.0

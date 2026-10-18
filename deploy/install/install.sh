@@ -41,7 +41,7 @@ fetch() {
 
 resolve_latest() {
 	if command -v curl >/dev/null 2>&1; then
-		effective=$(curl -fsSLI -o /dev/null -w '%{url_effective}' "$BASE/latest") || return 1
+		effective=$(curl -fsSLI -o /dev/null -w '%{url_effective}' "$BASE/latest") || effective=""
 		tag=${effective##*/}
 	elif command -v wget >/dev/null 2>&1; then
 		tag=$(wget -qO- "https://api.github.com/repos/$REPO/releases/latest" 2>/dev/null |
@@ -51,8 +51,17 @@ resolve_latest() {
 		return 1
 	fi
 	case "$tag" in
-	"" | latest) return 1 ;;
+	"" | latest | releases) newest_release ;;
+	*) printf '%s\n' "$tag" ;;
 	esac
+}
+
+# newest_release prints the newest tag including pre-releases, for repos that
+# have no stable release yet.
+newest_release() {
+	tag=$(fetch "https://api.github.com/repos/$REPO/releases?per_page=1" /dev/stdout 2>/dev/null |
+		sed -n 's/.*"tag_name"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p' | head -n 1)
+	[ -n "$tag" ] || return 1
 	printf '%s\n' "$tag"
 }
 
@@ -243,7 +252,7 @@ if [ -n "$VERSION" ]; then
 	release_dir="$BASE/download/$TAG"
 else
 	TAG=$(resolve_latest) || die "could not resolve the latest release under $BASE"
-	release_dir="$BASE/latest/download"
+	release_dir="$BASE/download/$TAG"
 fi
 asset_version=${TAG#v}
 asset="${BINARY}_${asset_version}_${os}_${ARCH}.tar.gz"
