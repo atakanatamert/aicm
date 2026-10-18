@@ -40,6 +40,7 @@ Tasks 1–5 are the contracts Opus writes before any delegation. Large tasks wer
 | 27a | UI | Accounts, add account, discovered review, Usage | GLM | 9, 12, 24 | merged |
 | 27b | UI | Account detail | GLM | 27a | merged |
 | 34 | UI | Fixes from the Impeccable critique | GLM | 25–28b | merged |
+| 35 | UI | First-run import, one primary provider link, sort and filter, harness names | GLM | 34 | in progress |
 | 28a | UI | Alerts inbox and rules, Machines | GLM | 14a, 18a, 24 | merged |
 | 28b | UI | Settings | GLM | 7b, 8, 14b, 24 | merged |
 | 29 | MCP | `aicm-agent mcp` and hub `/mcp` | DeepSeek | 3, 13 | merged |
