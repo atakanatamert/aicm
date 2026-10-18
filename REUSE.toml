@@ -22,6 +22,7 @@ path = [
   "internal/harness/**",
   "internal/meter/**",
   "internal/version/**",
+  "internal/apiclient/**",
 ]
 precedence = "aggregate"
 SPDX-FileCopyrightText = "2026 Atakan Atamert and aicm contributors"

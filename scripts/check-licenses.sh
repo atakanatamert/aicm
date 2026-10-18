@@ -6,7 +6,7 @@
 set -eu
 
 module=$(go list -m)
-apache_re='^(cmd/aicm-agent|internal/(agentlink|mcpserver|harness|meter|version))(/|$)'
+apache_re='^(cmd/aicm-agent|internal/(agentlink|mcpserver|harness|meter|version|apiclient))(/|$)'
 fail=0
 spdx='// SPDX-License''-Identifier:'
 for f in $(git ls-files --cached --others --exclude-standard '*.go'); do

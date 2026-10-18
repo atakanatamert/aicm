@@ -38,6 +38,10 @@ jobs:
         run: |
           go run github.com/sqlc-dev/sqlc/cmd/sqlc@v1.31.1 generate
           git diff --exit-code -- internal/db
+      - name: API codegen leaves no diff
+        run: |
+          go generate ./internal/httpapi ./internal/apiclient
+          git diff --exit-code -- internal/httpapi internal/apiclient
       - name: migrations apply cleanly
         run: |
           go run ./cmd/aicm migrate up

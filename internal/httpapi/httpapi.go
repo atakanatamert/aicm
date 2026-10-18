@@ -1,14 +1,21 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
-// Package httpapi is the hub's HTTP layer: the router, the JSON helpers and
-// one file of handlers per feature. Handlers parse the request, call the
-// feature's service and write JSON. Business logic stays in the feature
-// packages.
+// Package httpapi is the hub's HTTP layer. Routing, request decoding and
+// response types are generated from api/openapi.yaml into api.gen.go
+// (go generate ./internal/httpapi). Server implements the generated
+// StrictServerInterface with one file per feature (accounts.go, auth.go, …).
+// Handlers parse nothing by hand: they get typed request objects, call the
+// feature's service and return typed responses or an *APIError.
+//
+// Operations not built yet live in unimplemented.go and answer 501. A task
+// that implements an operation moves its method from there into the
+// feature file.
 package httpapi
 
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"log/slog"
 	"net/http"
 	"time"
@@ -21,57 +28,106 @@ type Pinger interface {
 	Ping(ctx context.Context) error
 }
 
-// Deps are the services the router needs. Later tasks add fields.
+// Deps are the services handlers need. Later tasks add fields.
 type Deps struct {
 	Log *slog.Logger
 	DB  Pinger
 }
 
+// Server implements StrictServerInterface.
+type Server struct {
+	Deps
+}
+
+var _ StrictServerInterface = (*Server)(nil)
+
 // NewRouter returns the hub's HTTP handler.
 func NewRouter(d Deps) http.Handler {
-	mux := http.NewServeMux()
-	mux.HandleFunc("GET /healthz", handleHealthz)
-	mux.HandleFunc("GET /readyz", d.handleReadyz)
-	return mux
+	s := &Server{Deps: d}
+	strict := NewStrictHandlerWithOptions(s, nil, StrictHTTPServerOptions{
+		RequestErrorHandlerFunc: func(w http.ResponseWriter, _ *http.Request, err error) {
+			WriteError(w, http.StatusBadRequest, "bad_request", err.Error())
+		},
+		ResponseErrorHandlerFunc: s.writeHandlerError,
+	})
+	return HandlerWithOptions(strict, StdHTTPServerOptions{
+		BaseRouter: http.NewServeMux(),
+		ErrorHandlerFunc: func(w http.ResponseWriter, _ *http.Request, err error) {
+			WriteError(w, http.StatusBadRequest, "bad_request", err.Error())
+		},
+	})
 }
 
-// handleHealthz reports that the process is up. It never touches the database.
-func handleHealthz(w http.ResponseWriter, _ *http.Request) {
-	WriteJSON(w, http.StatusOK, map[string]string{"status": "ok", "version": version.Version})
+// GetHealth reports that the process is up. It never touches the database.
+func (s *Server) GetHealth(_ context.Context, _ GetHealthRequestObject) (GetHealthResponseObject, error) {
+	return GetHealth200JSONResponse{Status: "ok", Version: new(version.Version)}, nil
 }
 
-// handleReadyz reports whether the hub can serve traffic (database reachable).
-func (d Deps) handleReadyz(w http.ResponseWriter, r *http.Request) {
-	ctx, cancel := context.WithTimeout(r.Context(), 2*time.Second)
+// GetReady reports whether the hub can serve traffic (database reachable).
+func (s *Server) GetReady(ctx context.Context, _ GetReadyRequestObject) (GetReadyResponseObject, error) {
+	ctx, cancel := context.WithTimeout(ctx, 2*time.Second)
 	defer cancel()
-	if err := d.DB.Ping(ctx); err != nil {
-		d.Log.WarnContext(ctx, "readiness check failed", "err", err)
-		WriteError(w, http.StatusServiceUnavailable, "db_unavailable", "database is not reachable")
+	if err := s.DB.Ping(ctx); err != nil {
+		s.Log.WarnContext(ctx, "readiness check failed", "err", err)
+		return nil, &APIError{Status: http.StatusServiceUnavailable, Code: "db_unavailable", Message: "database is not reachable"}
+	}
+	return GetReady200JSONResponse{Status: "ready"}, nil
+}
+
+// APIError is what handlers return to send a specific status and code.
+// Any other error becomes a logged 500 with code "internal".
+type APIError struct {
+	Status  int
+	Code    string
+	Message string
+}
+
+func (e *APIError) Error() string { return e.Code + ": " + e.Message }
+
+// Common errors.
+var (
+	ErrNotImplemented = &APIError{Status: http.StatusNotImplemented, Code: "not_implemented", Message: "this endpoint is not implemented yet"}
+	ErrUnauthorized   = &APIError{Status: http.StatusUnauthorized, Code: "unauthorized", Message: "login required"}
+	ErrForbidden      = &APIError{Status: http.StatusForbidden, Code: "forbidden", Message: "your role does not allow this"}
+)
+
+// NotFound, BadRequest and Conflict build the usual client errors.
+func NotFound(msg string) *APIError {
+	return &APIError{Status: http.StatusNotFound, Code: "not_found", Message: msg}
+}
+
+// BadRequest is a 400 with code validation_failed.
+func BadRequest(msg string) *APIError {
+	return &APIError{Status: http.StatusBadRequest, Code: "validation_failed", Message: msg}
+}
+
+// Conflict is a 409 with code conflict.
+func Conflict(msg string) *APIError {
+	return &APIError{Status: http.StatusConflict, Code: "conflict", Message: msg}
+}
+
+func (s *Server) writeHandlerError(w http.ResponseWriter, r *http.Request, err error) {
+	var ae *APIError
+	if errors.As(err, &ae) {
+		WriteError(w, ae.Status, ae.Code, ae.Message)
 		return
 	}
-	WriteJSON(w, http.StatusOK, map[string]string{"status": "ready"})
+	s.Log.ErrorContext(r.Context(), "handler failed", "method", r.Method, "path", r.URL.Path, "err", err)
+	WriteError(w, http.StatusInternalServerError, "internal", "internal error")
 }
 
-// ErrorBody is the JSON error envelope every handler returns:
-// {"error": {"code": "...", "message": "..."}}.
-type ErrorBody struct {
-	Error ErrorDetail `json:"error"`
-}
-
-// ErrorDetail is the inner error object. Code is a stable snake_case string.
-type ErrorDetail struct {
-	Code    string `json:"code"`
-	Message string `json:"message"`
-}
-
-// WriteJSON writes v as JSON with the given status.
+// WriteJSON writes v as JSON with the given status. Only for responses the
+// generated code doesn't cover (cookies, CSV, WebSocket upgrade errors).
 func WriteJSON(w http.ResponseWriter, status int, v any) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(status)
 	_ = json.NewEncoder(w).Encode(v)
 }
 
-// WriteError writes the standard JSON error envelope.
+// WriteError writes the standard envelope {"error": {"code", "message"}}.
 func WriteError(w http.ResponseWriter, status int, code, message string) {
-	WriteJSON(w, status, ErrorBody{Error: ErrorDetail{Code: code, Message: message}})
+	WriteJSON(w, status, Error{Error: struct {
+		Code    string `json:"code"`
+		Message string `json:"message"`
+	}{Code: code, Message: message}})
 }

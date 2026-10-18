@@ -1,0 +1,15 @@
+# oapi-codegen config for the Go API client used by aicm-agent mcp (Apache-2.0). Run: go generate ./internal/apiclient
+package: apiclient
+output: client.gen.go
+generate:
+  models: true
+  client: true
+output-options:
+  skip-prune: true
+  type-mapping:
+    number:
+      default: { type: float64 }
+    string:
+      formats:
+        uuid: { type: string }
+        email: { type: string }

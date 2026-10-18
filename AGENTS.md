@@ -22,7 +22,7 @@ docs/                plan, decisions, research, task cards
 
 ## Go conventions
 
-- Go 1.26+ (River and goose require it). Use stdlib `net/http` routing (method and path patterns). Allowed libraries: `pgx/v5`, `sqlc`, `goose`, `riverqueue/river`, `wneessen/go-mail`, `coder/websocket`, the official `modelcontextprotocol/go-sdk`, `golang.org/x/crypto`. Ask before adding any other dependency.
+- Go 1.26+ (River and goose require it). Use stdlib `net/http` routing (method and path patterns). Allowed libraries: `pgx/v5`, `sqlc`, `goose`, `riverqueue/river`, `wneessen/go-mail`, `coder/websocket`, the official `modelcontextprotocol/go-sdk`, `golang.org/x/crypto`, `oapi-codegen/runtime` (with its `google/uuid` and `go-jsonmerge` dependencies). Ask before adding any other dependency.
 - No ORM, no DI container, no global state other than the logger. Wire dependencies by hand in `cmd/*/main.go`.
 - Every query filters by `org_id`. Every table that holds tenant data has an `org_id`.
 - Errors: wrap them with `fmt.Errorf("doing x: %w", err)`. Handlers return JSON errors `{ "error": { "code", "message" } }`.
@@ -30,9 +30,10 @@ docs/                plan, decisions, research, task cards
 - Money: integer minor units plus an ISO 4217 currency code. Never store money as a float. Convert only for display, at the rate of the record's own date.
 - Time: store UTC `timestamptz`. Meter `resets_at` values are absolute times, not durations.
 <!-- REUSE-IgnoreStart -->
-- Every Go source file starts with a one-line SPDX header: `// SPDX-License-Identifier: AGPL-3.0-or-later` (hub) or `// SPDX-License-Identifier: Apache-2.0` (everything the agent binary links: `cmd/aicm-agent`, `internal/agentlink`, `internal/mcpserver`, `internal/harness`, `internal/meter`, `internal/version`). Apache packages must never import AGPL packages. `REUSE.toml` supplies copyright and covers non-Go files.
+- Every Go source file starts with a one-line SPDX header: `// SPDX-License-Identifier: AGPL-3.0-or-later` (hub) or `// SPDX-License-Identifier: Apache-2.0` (everything the agent binary links: `cmd/aicm-agent`, `internal/agentlink`, `internal/mcpserver`, `internal/apiclient`, `internal/harness`, `internal/meter`, `internal/version`). Apache packages must never import AGPL packages. `REUSE.toml` supplies copyright and covers non-Go files.
 <!-- REUSE-IgnoreEnd -->
 - SQL: schema lives in `migrations/` (goose). Queries live in `internal/db/queries/<feature>.sql`; `sqlc generate` writes Go into `internal/db`. Feature packages call `internal/db`.
+- HTTP: routes, request decoding and response types are generated from `api/openapi.yaml` into `internal/httpapi/api.gen.go` (`go generate ./internal/httpapi`). Handlers are methods on `httpapi.Server`, one file per feature; return typed responses or an `*httpapi.APIError`. Never edit `*.gen.go`; change the spec and regenerate. Operations not built yet sit in `internal/httpapi/unimplemented.go`; implementing one means moving its method out of that file.
 
 ## Security rules
 
@@ -48,7 +49,7 @@ Write tests only for: crypto, permissions (grants), money math, quota scoring, l
 ## Frontend conventions
 
 - React + TypeScript + Vite, shadcn/ui components, shadcn charts (Recharts v3), Motion for small transitions, Hairline only for empty states and the login screen.
-- Data comes through TanStack Query and the client generated from `api/openapi.yaml`. Don't hand-write fetch calls.
+- Data comes through TanStack Query: types generated from `api/openapi.yaml` by `openapi-typescript`, calls through `openapi-fetch` and `openapi-react-query`. Don't hand-write fetch calls or response types.
 - Quiet, neutral UI with one accent for urgency. Show provider meters in the provider's own words and units.
 
 ## Before you say a task is done
