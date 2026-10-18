@@ -38,7 +38,7 @@ function rangeOf(range: UsageRange): { from: string; to: string } {
 }
 
 export default function Usage() {
-  const [range, setRange] = useState<UsageRange>("month")
+  const [range, setRange] = useState<UsageRange>("last30")
   const [groupBy, setGroupBy] = useState<UsageGroupBy>("day")
   const { from, to } = rangeOf(range)
   const usage = query.useQuery("get", "/api/usage", { params: { query: { group_by: groupBy, from, to } } })
@@ -106,7 +106,14 @@ export default function Usage() {
           <EmptyState
             figure={<Phosphor play />}
             title="No usage in this range"
-            description="Requests show up here once your coding agents run through aicm."
+            description="Usage appears once an agent reads Claude Code, Codex or omp logs on a machine, or an API account syncs."
+            action={
+              range !== "year" && (
+                <Button variant="outline" onClick={() => setRange("year")}>
+                  Show this year
+                </Button>
+              )
+            }
           />
         ) : (
           <>
