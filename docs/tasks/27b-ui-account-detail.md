@@ -57,3 +57,5 @@ Touch nothing else.
 - [ ] The verification checklist in `docs/DELEGATION.md` passes (Opus runs the Impeccable critique).
 
 ## Outcome (filled in by Opus)
+
+Merged in `6280fb9` after the first attempt (GLM, ~44 min). Writer fixed an infinite refetch loop (date params rebuilt each render) found in its own smoke.
