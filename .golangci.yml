@@ -23,6 +23,7 @@ linters:
         - errors\.New\(
         - errors\.Join\(
         - \.Wrap
+        - river\.Job(Snooze|Cancel)\(
     gosec:
       excludes:
         - G104 # covered by errcheck

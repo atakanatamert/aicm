@@ -33,6 +33,7 @@ import (
 	"github.com/atakanatamert/aicm/internal/provider/registry"
 	"github.com/atakanatamert/aicm/internal/quota"
 	"github.com/atakanatamert/aicm/internal/secrets"
+	"github.com/atakanatamert/aicm/internal/syncer"
 	usagepkg "github.com/atakanatamert/aicm/internal/usage"
 	"github.com/atakanatamert/aicm/internal/version"
 )
@@ -235,18 +236,33 @@ func serve(ctx context.Context, args []string) error {
 		return fmt.Errorf("checking secret store: %w", err)
 	}
 
+	// Services first, then the job registry (workers need the services),
+	// then the River client (handlers need it to queue jobs).
 	httpc := provider.NewHTTPClient(log, nil)
 	providers := registry.All(httpc)
+	catalog := func(id string) (provider.Info, bool) {
+		p, ok := registry.ByID(providers, id)
+		if !ok {
+			return provider.Info{}, false
+		}
+		return p.Info(), true
+	}
 	prices := pricing.NewService(pool, httpc, log)
 	usageSvc := usagepkg.NewService(pool, prices, log)
+	fxSvc := fx.NewService(pool, log, fx.NewFrankfurter(httpc), fx.NewECB(httpc))
+	quotaSvc := quota.NewService(pool, log, catalog, quota.PriceFromTable(prices))
+	auditSvc := audit.NewService(pool)
+	syncSvc := syncer.NewService(pool, log, providers, store, quotaSvc, usageSvc, nil)
+	accounts := account.NewService(pool, store, providers, log)
 
 	reg := jobs.NewRegistry()
-	fxSvc := fx.NewService(pool, log, fx.NewFrankfurter(httpc), fx.NewECB(httpc))
 	jobs.Register(reg, &fx.RefreshWorker{Service: fxSvc})
 	reg.Periodic = append(reg.Periodic, fx.PeriodicJob())
 	jobs.Register(reg, &pricing.ImportWorker{Service: prices})
 	reg.Periodic = append(reg.Periodic, pricing.PeriodicJob())
-	accounts := account.NewService(pool, store, providers, log)
+	jobs.Register(reg, &syncer.SyncWorker{Service: syncSvc})
+	jobs.Register(reg, &syncer.DispatchWorker{Service: syncSvc})
+	reg.Periodic = append(reg.Periodic, syncer.PeriodicJob())
 	jobs.Register(reg, &account.RollForwardWorker{Service: accounts})
 	reg.Periodic = append(reg.Periodic, account.PeriodicJob())
 	riverClient, err := jobs.NewClient(pool, log, reg)
@@ -257,26 +273,18 @@ func serve(ctx context.Context, args []string) error {
 		return err
 	}
 
-	catalog := func(id string) (provider.Info, bool) {
-		p, ok := registry.ByID(providers, id)
-		if !ok {
-			return provider.Info{}, false
-		}
-		return p.Info(), true
-	}
-	quotaSvc := quota.NewService(pool, log, catalog, quota.PriceFromTable(prices))
-	auditSvc := audit.NewService(pool)
-
 	srv := &http.Server{
 		Addr: cfg.ListenAddr,
 		Handler: httpapi.NewRouter(httpapi.Deps{
 			Log:       log,
 			DB:        pool,
+			Jobs:      riverClient,
 			Secrets:   store,
 			Auth:      auth.NewService(pool, log, cfg.PublicURL),
 			Usage:     usageSvc,
 			Quota:     quotaSvc,
 			Audit:     auditSvc,
+			Sync:      syncSvc,
 			Accounts:  accounts,
 			FX:        fxSvc,
 			Providers: providers,

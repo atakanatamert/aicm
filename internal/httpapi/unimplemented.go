@@ -15,10 +15,6 @@ func (s *Server) DismissDiscoveredAccount(context.Context, DismissDiscoveredAcco
 	return nil, ErrNotImplemented
 }
 
-func (s *Server) SyncAccount(context.Context, SyncAccountRequestObject) (SyncAccountResponseObject, error) {
-	return nil, ErrNotImplemented
-}
-
 func (s *Server) ListAlertRules(context.Context, ListAlertRulesRequestObject) (ListAlertRulesResponseObject, error) {
 	return nil, ErrNotImplemented
 }

@@ -24,9 +24,11 @@ import (
 	"github.com/atakanatamert/aicm/internal/audit"
 	"github.com/atakanatamert/aicm/internal/auth"
 	"github.com/atakanatamert/aicm/internal/fx"
+	"github.com/atakanatamert/aicm/internal/jobs"
 	"github.com/atakanatamert/aicm/internal/provider"
 	"github.com/atakanatamert/aicm/internal/quota"
 	"github.com/atakanatamert/aicm/internal/secrets"
+	"github.com/atakanatamert/aicm/internal/syncer"
 	"github.com/atakanatamert/aicm/internal/usage"
 	"github.com/atakanatamert/aicm/internal/version"
 )
@@ -38,17 +40,18 @@ type Pinger interface {
 
 // Deps are the services handlers need. Later tasks add fields.
 type Deps struct {
-	Log      *slog.Logger
-	DB       Pinger
-	Secrets  secrets.Store
-	Auth     *auth.Service
-	Usage    *usage.Service
-	Quota    *quota.Service
-	Audit    *audit.Service
-	Accounts *account.Service
-	FX       *fx.Service
-	// Providers is the compiled-in catalog, in display order.
-	Providers []provider.Provider
+	Log       *slog.Logger
+	DB        Pinger
+	Jobs      *jobs.Client
+	Secrets   secrets.Store
+	Auth      *auth.Service
+	Usage     *usage.Service
+	Quota     *quota.Service
+	Audit     *audit.Service
+	Sync      *syncer.Service
+	Accounts  *account.Service
+	FX        *fx.Service
+	Providers []provider.Provider // the compiled-in catalog, in display order
 }
 
 // Server implements StrictServerInterface.
