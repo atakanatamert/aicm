@@ -10,6 +10,8 @@ import (
 	"net/http"
 	"net/netip"
 	"strings"
+
+	"github.com/atakanatamert/aicm/internal/audit"
 )
 
 // StrictHandlerFunc mirrors the generated strict handler type. It is an alias
@@ -72,6 +74,7 @@ func (s *Service) HTTPMiddleware(next http.Handler) http.Handler {
 			meta.sessionToken = token
 		}
 		ctx = context.WithValue(ctx, requestMetaKey{}, meta)
+		ctx = audit.WithClientIP(ctx, meta.ip)
 		if ok {
 			ctx = WithPrincipal(ctx, principal)
 		}

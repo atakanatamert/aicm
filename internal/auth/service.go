@@ -7,7 +7,6 @@ import (
 	"crypto/rand"
 	"crypto/sha256"
 	"encoding/base64"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"log/slog"
@@ -21,6 +20,7 @@ import (
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 
+	"github.com/atakanatamert/aicm/internal/audit"
 	"github.com/atakanatamert/aicm/internal/db"
 )
 
@@ -152,8 +152,9 @@ func (s *Service) CompleteSetup(ctx context.Context, email, name, password, user
 	if err := q.TouchUserLogin(ctx, db.TouchUserLoginParams{OrgID: user.OrgID, ID: user.ID}); err != nil {
 		return Session{}, fmt.Errorf("recording login: %w", err)
 	}
-	if err := writeAudit(ctx, q, session.Principal, "user.create", "user", user.ID, map[string]any{
-		"email": user.Email, "name": user.Name, "role": user.Role,
+	if err := audit.Write(ctx, q, session.Principal.Actor(), audit.Entry{
+		Action: "user.create", TargetKind: "user", TargetID: user.ID,
+		After: map[string]any{"email": user.Email, "name": user.Name, "role": user.Role},
 	}); err != nil {
 		return Session{}, err
 	}
@@ -308,8 +309,9 @@ func (s *Service) ChangePassword(ctx context.Context, p Principal, current, next
 	}); err != nil {
 		return fmt.Errorf("deleting other sessions: %w", err)
 	}
-	if err := writeAudit(ctx, s.queries, p, "user.password_change", "user", user.ID, map[string]any{
-		"password": "changed",
+	if err := audit.Write(ctx, s.queries, p.Actor(), audit.Entry{
+		Action: "user.password_change", TargetKind: "user", TargetID: user.ID,
+		After: map[string]any{"password": "changed"},
 	}); err != nil {
 		return err
 	}
@@ -367,40 +369,11 @@ func (s *Service) CreateAdmin(ctx context.Context, email, name, password string)
 	if err != nil {
 		return fmt.Errorf("creating admin: %w", err)
 	}
-	return writeAudit(ctx, s.queries, Principal{OrgID: org.ID, Kind: ActorSystem, Label: "cli"}, "user.create", "user", user.ID, map[string]any{
-		"email": user.Email, "name": user.Name, "role": user.Role,
-	})
-}
-
-// writeAudit inserts one audit row. Package audit imports auth for Principal,
-// so auth cannot call audit.Write without an import cycle.
-func writeAudit(ctx context.Context, q *db.Queries, p Principal, action, targetKind, targetID string, after any) error {
-	if p.Kind == "" {
-		p.Kind = ActorSystem
-	}
-	var actorID *string
-	if p.ActorID != "" {
-		actorID = new(p.ActorID)
-	}
-	raw, err := json.Marshal(after)
-	if err != nil {
-		return fmt.Errorf("encoding audit after: %w", err)
-	}
-	params := db.InsertAuditLogParams{
-		OrgID:      p.OrgID,
-		ActorKind:  string(p.Kind),
-		ActorID:    actorID,
-		ActorLabel: p.Label,
-		Action:     action,
-		TargetKind: targetKind,
-		TargetID:   targetID,
-		After:      raw,
-	}
-	if _, _, ip := RequestMeta(ctx); ip.IsValid() {
-		params.Ip = new(ip)
-	}
-	if err := q.InsertAuditLog(ctx, params); err != nil {
-		return fmt.Errorf("writing audit log: %w", err)
+	if err := audit.Write(ctx, s.queries, Principal{OrgID: org.ID, Kind: ActorSystem, Label: "cli"}.Actor(), audit.Entry{
+		Action: "user.create", TargetKind: "user", TargetID: user.ID,
+		After: map[string]any{"email": user.Email, "name": user.Name, "role": user.Role},
+	}); err != nil {
+		return fmt.Errorf("auditing admin creation: %w", err)
 	}
 	return nil
 }

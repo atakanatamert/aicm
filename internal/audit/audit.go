@@ -3,17 +3,29 @@
 // Package audit writes the append-only audit log. Every mutation calls
 // Write once, inside the same transaction as the change when there is one,
 // so a change and its audit row commit together.
+//
+// audit imports nothing from the feature packages, so every package
+// (including auth) can call it. auth.Principal.Actor() builds the Actor.
 package audit
 
 import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"net/netip"
 	"strings"
 
-	"github.com/atakanatamert/aicm/internal/auth"
 	"github.com/atakanatamert/aicm/internal/db"
 )
+
+// Actor is who made a change. Kind matches audit_log.actor_kind: user,
+// api_token, agent or system (the default when empty).
+type Actor struct {
+	OrgID string
+	Kind  string
+	ID    string
+	Label string
+}
 
 // Entry describes one change.
 type Entry struct {
@@ -30,9 +42,17 @@ type Entry struct {
 	After  any
 }
 
-// Write records e for principal p. q is the transaction (db.New(tx)) or
-// the pool's queries.
-func Write(ctx context.Context, q *db.Queries, p auth.Principal, e Entry) error {
+type ipKey struct{}
+
+// WithClientIP returns ctx carrying the request's client IP. The auth
+// middleware sets it; Write stores it with every row.
+func WithClientIP(ctx context.Context, ip netip.Addr) context.Context {
+	return context.WithValue(ctx, ipKey{}, ip)
+}
+
+// Write records e for actor a. q is the transaction (db.New(tx)) or the
+// pool's queries.
+func Write(ctx context.Context, q *db.Queries, a Actor, e Entry) error {
 	before, err := encode(e.Before)
 	if err != nil {
 		return fmt.Errorf("encoding audit before: %w", err)
@@ -42,25 +62,25 @@ func Write(ctx context.Context, q *db.Queries, p auth.Principal, e Entry) error 
 		return fmt.Errorf("encoding audit after: %w", err)
 	}
 	var actorID *string
-	if p.ActorID != "" {
-		actorID = new(p.ActorID)
+	if a.ID != "" {
+		actorID = new(a.ID)
 	}
-	kind := p.Kind
+	kind := a.Kind
 	if kind == "" {
-		kind = auth.ActorSystem
+		kind = "system"
 	}
 	params := db.InsertAuditLogParams{
-		OrgID:      p.OrgID,
-		ActorKind:  string(kind),
+		OrgID:      a.OrgID,
+		ActorKind:  kind,
 		ActorID:    actorID,
-		ActorLabel: p.Label,
+		ActorLabel: a.Label,
 		Action:     e.Action,
 		TargetKind: e.TargetKind,
 		TargetID:   e.TargetID,
 		Before:     before,
 		After:      after,
 	}
-	if _, _, ip := auth.RequestMeta(ctx); ip.IsValid() {
+	if ip, ok := ctx.Value(ipKey{}).(netip.Addr); ok && ip.IsValid() {
 		params.Ip = new(ip)
 	}
 	if err := q.InsertAuditLog(ctx, params); err != nil {

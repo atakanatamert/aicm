@@ -5,7 +5,11 @@
 // auth middleware puts in the request context.
 package auth
 
-import "context"
+import (
+	"context"
+
+	"github.com/atakanatamert/aicm/internal/audit"
+)
 
 // Role is a user's org-wide role.
 type Role string
@@ -63,6 +67,11 @@ type Principal struct {
 
 // IsAdmin reports whether the principal sees every account in the org.
 func (p Principal) IsAdmin() bool { return p.Role == RoleAdmin }
+
+// Actor is the principal as the audit log records it.
+func (p Principal) Actor() audit.Actor {
+	return audit.Actor{OrgID: p.OrgID, Kind: string(p.Kind), ID: p.ActorID, Label: p.Label}
+}
 
 type ctxKey struct{}
 
