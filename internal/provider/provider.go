@@ -73,6 +73,10 @@ type Info struct {
 	// MinPollInterval is the shortest gap between two syncs of one account.
 	// The sync engine enforces it from accounts.last_synced_at.
 	MinPollInterval time.Duration
+	// ModelFamilies lists the model families the account can run, for
+	// recommend_account: "claude", "gpt", "gemini", "grok", "deepseek",
+	// "kimi", "glm". "*" means any (routers such as OpenRouter).
+	ModelFamilies []string
 }
 
 // Validate checks the catalog entry. The registry test runs it for every

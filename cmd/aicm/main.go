@@ -28,6 +28,8 @@ import (
 	"github.com/atakanatamert/aicm/internal/jobs"
 	"github.com/atakanatamert/aicm/internal/pricing"
 	"github.com/atakanatamert/aicm/internal/provider"
+	"github.com/atakanatamert/aicm/internal/provider/registry"
+	"github.com/atakanatamert/aicm/internal/quota"
 	"github.com/atakanatamert/aicm/internal/secrets"
 	usagepkg "github.com/atakanatamert/aicm/internal/usage"
 	"github.com/atakanatamert/aicm/internal/version"
@@ -249,6 +251,16 @@ func serve(ctx context.Context, args []string) error {
 		return err
 	}
 
+	providers := registry.All(httpc)
+	catalog := func(id string) (provider.Info, bool) {
+		p, ok := registry.ByID(providers, id)
+		if !ok {
+			return provider.Info{}, false
+		}
+		return p.Info(), true
+	}
+	quotaSvc := quota.NewService(pool, log, catalog, quota.PriceFromTable(prices))
+
 	srv := &http.Server{
 		Addr: cfg.ListenAddr,
 		Handler: httpapi.NewRouter(httpapi.Deps{
@@ -257,6 +269,7 @@ func serve(ctx context.Context, args []string) error {
 			Secrets: store,
 			Auth:    auth.NewService(pool, log, cfg.PublicURL),
 			Usage:   usageSvc,
+			Quota:   quotaSvc,
 		}),
 		ReadHeaderTimeout: 10 * time.Second,
 	}

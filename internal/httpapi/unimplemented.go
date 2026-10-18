@@ -47,18 +47,6 @@ func (s *Server) ListAccountMachines(context.Context, ListAccountMachinesRequest
 	return nil, ErrNotImplemented
 }
 
-func (s *Server) UpsertManualMeter(context.Context, UpsertManualMeterRequestObject) (UpsertManualMeterResponseObject, error) {
-	return nil, ErrNotImplemented
-}
-
-func (s *Server) ListMeterReadings(context.Context, ListMeterReadingsRequestObject) (ListMeterReadingsResponseObject, error) {
-	return nil, ErrNotImplemented
-}
-
-func (s *Server) RecordManualReading(context.Context, RecordManualReadingRequestObject) (RecordManualReadingResponseObject, error) {
-	return nil, ErrNotImplemented
-}
-
 func (s *Server) SetAccountSecret(context.Context, SetAccountSecretRequestObject) (SetAccountSecretResponseObject, error) {
 	return nil, ErrNotImplemented
 }
@@ -127,10 +115,6 @@ func (s *Server) ExportUsage(context.Context, ExportUsageRequestObject) (ExportU
 	return nil, ErrNotImplemented
 }
 
-func (s *Server) ForecastCapacity(context.Context, ForecastCapacityRequestObject) (ForecastCapacityResponseObject, error) {
-	return nil, ErrNotImplemented
-}
-
 func (s *Server) ListGroups(context.Context, ListGroupsRequestObject) (ListGroupsResponseObject, error) {
 	return nil, ErrNotImplemented
 }
@@ -168,14 +152,6 @@ func (s *Server) RevokeApiToken(context.Context, RevokeApiTokenRequestObject) (R
 }
 
 func (s *Server) ListProviders(context.Context, ListProvidersRequestObject) (ListProvidersResponseObject, error) {
-	return nil, ErrNotImplemented
-}
-
-func (s *Server) ListQuotas(context.Context, ListQuotasRequestObject) (ListQuotasResponseObject, error) {
-	return nil, ErrNotImplemented
-}
-
-func (s *Server) RecommendAccount(context.Context, RecommendAccountRequestObject) (RecommendAccountResponseObject, error) {
 	return nil, ErrNotImplemented
 }
 
