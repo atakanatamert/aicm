@@ -191,3 +191,5 @@ Queries you need, all filtered by `org_id` except the two lookups by unique hash
 - [ ] The verification checklist in `docs/DELEGATION.md` passes. No audit rows yet (task 08 adds them).
 
 ## Outcome (filled in by Opus)
+
+Merged in `62c550b` after the first attempt (DeepSeek Flash, ~5 min). Merge conflicts in `cmd/aicm/main.go` and `httpapi.go` with task 06 resolved by Opus. Writer's choices accepted: `Authorize` lowercases the generated method name to match `operationId`; cookie helpers live on `auth.Service`.

@@ -165,3 +165,5 @@ aicm rotate-key --new-key-file PATH
 - [ ] The verification checklist in `docs/DELEGATION.md` passes.
 
 ## Outcome (filled in by Opus)
+
+Merged in `6134b6a` after the first attempt (DeepSeek Flash, ~5 min). Verification checklist passed; Opus also ran `docker compose up` and confirmed the hub generates `/var/lib/aicm/master.key` as uid 65532, mode 0600. Writer's choices accepted: `Check` reuses the rotation query; `Delete` returns `ErrNotFound`.

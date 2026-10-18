@@ -153,3 +153,5 @@ Replace the `_none yet_` row (or add a row) with: `| BerriAI/litellm model_price
 - [ ] The verification checklist in `docs/DELEGATION.md` passes.
 
 ## Outcome (filled in by Opus)
+
+Merged in `2186c50` after the first attempt (DeepSeek Flash, ~6 min). Smoke: 3,427 model prices imported. Writer's choices accepted: `usage` imported as `usagepkg` in `main.go` (name clash with the usage text constant).
