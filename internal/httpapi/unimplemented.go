@@ -7,14 +7,6 @@ import "context"
 // Operations not implemented yet. Each answers 501 not_implemented. A task
 // that implements one moves the method into its feature file.
 
-func (s *Server) ConfirmDiscoveredAccount(context.Context, ConfirmDiscoveredAccountRequestObject) (ConfirmDiscoveredAccountResponseObject, error) {
-	return nil, ErrNotImplemented
-}
-
-func (s *Server) DismissDiscoveredAccount(context.Context, DismissDiscoveredAccountRequestObject) (DismissDiscoveredAccountResponseObject, error) {
-	return nil, ErrNotImplemented
-}
-
 func (s *Server) ListAlertRules(context.Context, ListAlertRulesRequestObject) (ListAlertRulesResponseObject, error) {
 	return nil, ErrNotImplemented
 }

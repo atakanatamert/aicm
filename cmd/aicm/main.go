@@ -21,6 +21,7 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	"github.com/atakanatamert/aicm/internal/account"
+	"github.com/atakanatamert/aicm/internal/agenthub"
 	"github.com/atakanatamert/aicm/internal/audit"
 	"github.com/atakanatamert/aicm/internal/auth"
 	"github.com/atakanatamert/aicm/internal/charge"
@@ -277,6 +278,7 @@ func serve(ctx context.Context, args []string) error {
 		return err
 	}
 	machineSvc := machine.NewService(pool, store, cfg.PublicURL, log)
+	agentHub := agenthub.New(pool, log, machineSvc, usageSvc, quotaSvc, accounts, providers)
 
 	srv := &http.Server{
 		Addr: cfg.ListenAddr,
@@ -295,6 +297,7 @@ func serve(ctx context.Context, args []string) error {
 			Charges:   charges,
 			Providers: providers,
 			Machines:  machineSvc,
+			AgentHub:  agentHub,
 		}),
 		ReadHeaderTimeout: 10 * time.Second,
 	}
@@ -313,6 +316,10 @@ func serve(ctx context.Context, args []string) error {
 	case <-ctx.Done():
 		log.Info("shutting down")
 	}
+
+	// WebSocket handlers end only when their connection closes, so the hub
+	// goes first; otherwise srv.Shutdown waits for them until it times out.
+	agentHub.Shutdown()
 
 	shutdownCtx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
 	defer cancel()

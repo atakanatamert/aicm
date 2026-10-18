@@ -21,6 +21,8 @@ import (
 	"time"
 
 	"github.com/atakanatamert/aicm/internal/account"
+	"github.com/atakanatamert/aicm/internal/agenthub"
+	"github.com/atakanatamert/aicm/internal/agentlink"
 	"github.com/atakanatamert/aicm/internal/audit"
 	"github.com/atakanatamert/aicm/internal/auth"
 	"github.com/atakanatamert/aicm/internal/charge"
@@ -56,6 +58,7 @@ type Deps struct {
 	Charges   *charge.Service
 	Providers []provider.Provider // the compiled-in catalog, in display order
 	Machines  *machine.Service
+	AgentHub  *agenthub.Hub
 }
 
 // Server implements StrictServerInterface.
@@ -82,8 +85,15 @@ func NewRouter(d Deps) http.Handler {
 		},
 		ResponseErrorHandlerFunc: s.writeHandlerError,
 	})
+	base := http.NewServeMux()
+	if d.AgentHub != nil {
+		// The agent endpoint authenticates with the agentlink handshake and
+		// lives outside the generated router, so the role middleware never
+		// sees it.
+		base.Handle("GET "+agentlink.Path, d.AgentHub)
+	}
 	h := HandlerWithOptions(strict, StdHTTPServerOptions{
-		BaseRouter: http.NewServeMux(),
+		BaseRouter: base,
 		ErrorHandlerFunc: func(w http.ResponseWriter, _ *http.Request, err error) {
 			WriteError(w, http.StatusBadRequest, "bad_request", err.Error())
 		},

@@ -100,7 +100,7 @@ func (s *Server) ListMachines(ctx context.Context, _ ListMachinesRequestObject) 
 	}
 	out := make([]Machine, 0, len(rows))
 	for _, row := range rows {
-		out = append(out, toMachine(row))
+		out = append(out, s.toMachine(row))
 	}
 	return ListMachines200JSONResponse(out), nil
 }
@@ -137,7 +137,7 @@ func (s *Server) UpdateMachine(ctx context.Context, req UpdateMachineRequestObje
 			return nil, mapMachineError(err)
 		}
 	}
-	return UpdateMachine200JSONResponse(toMachine(m)), nil
+	return UpdateMachine200JSONResponse(s.toMachine(m)), nil
 }
 
 func toEnrollToken(t db.EnrollToken) EnrollToken {
@@ -151,8 +151,13 @@ func toEnrollToken(t db.EnrollToken) EnrollToken {
 	}
 }
 
-func toMachine(m db.Machine) Machine {
+func (s *Server) toMachine(m db.Machine) Machine {
+	online := false
 	harnesses := []string{}
+	if s.AgentHub != nil {
+		online = s.AgentHub.Online(m.ID)
+		harnesses = s.AgentHub.Harnesses(m.ID)
+	}
 	return Machine{
 		Id:           m.ID,
 		Name:         m.Name,
@@ -162,7 +167,7 @@ func toMachine(m db.Machine) Machine {
 		AgentVersion: m.AgentVersion,
 		EnrolledAt:   m.EnrolledAt,
 		LastSeenAt:   m.LastSeenAt,
-		Online:       false,
+		Online:       online,
 		RevokedAt:    m.RevokedAt,
 		Harnesses:    &harnesses,
 	}
