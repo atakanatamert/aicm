@@ -1,0 +1,76 @@
+{
+  "usage": [
+    {
+      "day": "2026-10-15T00:00:00Z",
+      "model": "gpt-4o",
+      "requests": 10,
+      "input_tokens": 12000,
+      "output_tokens": 3000,
+      "cache_read_tokens": 2000,
+      "cache_write_tokens": 0,
+      "reasoning_tokens": 0,
+      "cost_micro": 90000,
+      "cost_currency": "USD"
+    },
+    {
+      "day": "2026-10-15T00:00:00Z",
+      "model": "gpt-4o-mini",
+      "requests": 20,
+      "input_tokens": 5000,
+      "output_tokens": 1000,
+      "cache_read_tokens": 500,
+      "cache_write_tokens": 0,
+      "reasoning_tokens": 0,
+      "cost_micro": 3500,
+      "cost_currency": "USD"
+    },
+    {
+      "day": "2026-10-15T00:00:00Z",
+      "model": "other",
+      "requests": 0,
+      "input_tokens": 0,
+      "output_tokens": 0,
+      "cache_read_tokens": 0,
+      "cache_write_tokens": 0,
+      "reasoning_tokens": 0,
+      "cost_micro": 5400,
+      "cost_currency": "USD"
+    },
+    {
+      "day": "2026-10-16T00:00:00Z",
+      "model": "gpt-4o",
+      "requests": 5,
+      "input_tokens": 8000,
+      "output_tokens": 2000,
+      "cache_read_tokens": 1000,
+      "cache_write_tokens": 0,
+      "reasoning_tokens": 0,
+      "cost_micro": 60000,
+      "cost_currency": "USD"
+    },
+    {
+      "day": "2026-10-16T00:00:00Z",
+      "model": "gpt-4o-mini",
+      "requests": 4,
+      "input_tokens": 2000,
+      "output_tokens": 500,
+      "cache_read_tokens": 100,
+      "cache_write_tokens": 0,
+      "reasoning_tokens": 0,
+      "cost_micro": 1450,
+      "cost_currency": "USD"
+    },
+    {
+      "day": "2026-10-16T00:00:00Z",
+      "model": "other",
+      "requests": 0,
+      "input_tokens": 0,
+      "output_tokens": 0,
+      "cache_read_tokens": 0,
+      "cache_write_tokens": 0,
+      "reasoning_tokens": 0,
+      "cost_micro": 1000,
+      "cost_currency": "USD"
+    }
+  ]
+}

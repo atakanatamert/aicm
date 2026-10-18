@@ -8,6 +8,7 @@ import (
 	"github.com/atakanatamert/aicm/internal/provider"
 	"github.com/atakanatamert/aicm/internal/provider/deepseek"
 	"github.com/atakanatamert/aicm/internal/provider/manual"
+	"github.com/atakanatamert/aicm/internal/provider/openai"
 	"github.com/atakanatamert/aicm/internal/provider/openrouter"
 )
 
@@ -16,6 +17,7 @@ func All(c *provider.HTTPClient) []provider.Provider {
 	ps := []provider.Provider{
 		openrouter.New(c),
 		deepseek.New(c),
+		openai.New(c),
 	}
 	return append(ps, manual.All()...)
 }

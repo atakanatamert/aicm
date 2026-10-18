@@ -1,0 +1,236 @@
+{
+  "_source": "https://platform.openai.com/docs/api-reference/usage — response examples for GET /organization/usage/completions and GET /organization/costs",
+  "recorded_at": "2026-10-18T12:34:56Z",
+  "interactions": [
+    {
+      "method": "GET",
+      "url": "https://api.openai.com/v1/organization/costs?bucket_width=1d&group_by=line_item&start_time=1792195200",
+      "status": 200,
+      "header": {
+        "Content-Type": "application/json"
+      },
+      "body": {
+        "object": "page",
+        "data": [],
+        "has_more": false,
+        "next_page": null
+      }
+    },
+    {
+      "method": "GET",
+      "url": "https://api.openai.com/v1/organization/usage/completions?bucket_width=1d&end_time=1792195200&group_by=model&start_time=1792022400",
+      "status": 200,
+      "header": {
+        "Content-Type": "application/json"
+      },
+      "body": {
+        "object": "page",
+        "data": [
+          {
+            "object": "bucket",
+            "start_time": 1792022400,
+            "end_time": 1792108800,
+            "results": [
+              {
+                "object": "organization.usage.completions.result",
+                "input_tokens": 12000,
+                "input_cached_tokens": 2000,
+                "output_tokens": 3000,
+                "num_model_requests": 10,
+                "model": "gpt-4o"
+              },
+              {
+                "object": "organization.usage.completions.result",
+                "input_tokens": 5000,
+                "input_cached_tokens": 500,
+                "output_tokens": 1000,
+                "num_model_requests": 20,
+                "model": "gpt-4o-mini"
+              }
+            ]
+          }
+        ],
+        "has_more": true,
+        "next_page": "page_AAAAAGdGxdEiJdKOAAAAAGcqsYA="
+      }
+    },
+    {
+      "method": "GET",
+      "url": "https://api.openai.com/v1/organization/usage/completions?bucket_width=1d&end_time=1792195200&group_by=model&page=page_AAAAAGdGxdEiJdKOAAAAAGcqsYA%3D&start_time=1792022400",
+      "status": 200,
+      "header": {
+        "Content-Type": "application/json"
+      },
+      "body": {
+        "object": "page",
+        "data": [
+          {
+            "object": "bucket",
+            "start_time": 1792108800,
+            "end_time": 1792195200,
+            "results": [
+              {
+                "object": "organization.usage.completions.result",
+                "input_tokens": 8000,
+                "input_cached_tokens": 1000,
+                "output_tokens": 2000,
+                "num_model_requests": 5,
+                "model": "gpt-4o"
+              },
+              {
+                "object": "organization.usage.completions.result",
+                "input_tokens": 2000,
+                "input_cached_tokens": 100,
+                "output_tokens": 500,
+                "num_model_requests": 4,
+                "model": "gpt-4o-mini"
+              }
+            ]
+          }
+        ],
+        "has_more": false,
+        "next_page": null
+      }
+    },
+    {
+      "method": "GET",
+      "url": "https://api.openai.com/v1/organization/costs?bucket_width=1d&group_by=line_item&start_time=1792022400",
+      "status": 200,
+      "header": {
+        "Content-Type": "application/json"
+      },
+      "body": {
+        "object": "page",
+        "data": [
+          {
+            "object": "bucket",
+            "start_time": 1792022400,
+            "end_time": 1792108800,
+            "results": [
+              {
+                "object": "organization.costs.result",
+                "amount": {
+                  "value": 0.03,
+                  "currency": "usd"
+                },
+                "line_item": "gpt-4o, input"
+              },
+              {
+                "object": "organization.costs.result",
+                "amount": {
+                  "value": 0.06,
+                  "currency": "usd"
+                },
+                "line_item": "gpt-4o, output"
+              },
+              {
+                "object": "organization.costs.result",
+                "amount": {
+                  "value": 0.0015,
+                  "currency": "usd"
+                },
+                "line_item": "gpt-4o-mini, input"
+              },
+              {
+                "object": "organization.costs.result",
+                "amount": {
+                  "value": 0.002,
+                  "currency": "usd"
+                },
+                "line_item": "gpt-4o-mini, output"
+              },
+              {
+                "object": "organization.costs.result",
+                "amount": {
+                  "value": 0.0004,
+                  "currency": "usd"
+                },
+                "line_item": "text-embedding-3-small, input"
+              },
+              {
+                "object": "organization.costs.result",
+                "amount": {
+                  "value": 0.005,
+                  "currency": "usd"
+                },
+                "line_item": "Fine-tuning training"
+              }
+            ]
+          },
+          {
+            "object": "bucket",
+            "start_time": 1792108800,
+            "end_time": 1792195200,
+            "results": [
+              {
+                "object": "organization.costs.result",
+                "amount": {
+                  "value": 0.02,
+                  "currency": "usd"
+                },
+                "line_item": "gpt-4o, input"
+              },
+              {
+                "object": "organization.costs.result",
+                "amount": {
+                  "value": 0.04,
+                  "currency": "usd"
+                },
+                "line_item": "gpt-4o, output"
+              },
+              {
+                "object": "organization.costs.result",
+                "amount": {
+                  "value": 0.0006,
+                  "currency": "usd"
+                },
+                "line_item": "gpt-4o-mini, input"
+              },
+              {
+                "object": "organization.costs.result",
+                "amount": {
+                  "value": 0.0008,
+                  "currency": "usd"
+                },
+                "line_item": "gpt-4o-mini, output"
+              },
+              {
+                "object": "organization.costs.result",
+                "amount": {
+                  "value": 0.00005,
+                  "currency": "usd"
+                },
+                "line_item": "gpt-4o-mini, cached input"
+              },
+              {
+                "object": "organization.costs.result",
+                "amount": {
+                  "value": 0.001,
+                  "currency": "usd"
+                },
+                "line_item": "Assistants API"
+              }
+            ]
+          },
+          {
+            "object": "bucket",
+            "start_time": 1792195200,
+            "end_time": 1792281600,
+            "results": [
+              {
+                "object": "organization.costs.result",
+                "amount": {
+                  "value": 0.99,
+                  "currency": "usd"
+                },
+                "line_item": "gpt-4o, input"
+              }
+            ]
+          }
+        ],
+        "has_more": false,
+        "next_page": null
+      }
+    }
+  ]
+}
