@@ -11,6 +11,7 @@ import (
 	"fmt"
 	"io"
 	"log/slog"
+	"net"
 	"net/http"
 	"os"
 	"os/signal"
@@ -33,6 +34,7 @@ import (
 	"github.com/atakanatamert/aicm/internal/httpapi"
 	"github.com/atakanatamert/aicm/internal/jobs"
 	"github.com/atakanatamert/aicm/internal/machine"
+	"github.com/atakanatamert/aicm/internal/mcpserver"
 	"github.com/atakanatamert/aicm/internal/notify"
 	"github.com/atakanatamert/aicm/internal/pricing"
 	"github.com/atakanatamert/aicm/internal/provider"
@@ -297,6 +299,16 @@ func writeProvidersTable(path, table string) error {
 	return nil
 }
 
+// selfURL is the hub's own loopback base URL for MCP tool calls. ListenAddr
+// is ":8080", "127.0.0.1:8080" or a bare port.
+func selfURL(listenAddr string) string {
+	port := listenAddr
+	if _, p, err := net.SplitHostPort(listenAddr); err == nil {
+		port = p
+	}
+	return "http://127.0.0.1:" + port
+}
+
 func serve(ctx context.Context, args []string) error {
 	fs := flag.NewFlagSet("serve", flag.ContinueOnError)
 	autoMigrate := fs.Bool("migrate", true, "apply pending migrations before serving")
@@ -396,6 +408,7 @@ func serve(ctx context.Context, args []string) error {
 			Alerts:    alertSvc,
 			Settings:  settingsSvc,
 			Install:   install.Handler(),
+			MCP:       mcpserver.HTTPHandler(selfURL(cfg.ListenAddr)),
 		}),
 		ReadHeaderTimeout: 10 * time.Second,
 	}

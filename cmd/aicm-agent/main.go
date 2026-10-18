@@ -15,14 +15,18 @@ import (
 	"os"
 	"os/signal"
 	"path/filepath"
+	"strings"
 	"syscall"
 	"time"
+
+	"github.com/modelcontextprotocol/go-sdk/mcp"
 
 	"github.com/atakanatamert/aicm/internal/agent"
 	"github.com/atakanatamert/aicm/internal/harness"
 	"github.com/atakanatamert/aicm/internal/harness/claudecode"
 	"github.com/atakanatamert/aicm/internal/harness/codex"
 	"github.com/atakanatamert/aicm/internal/harness/omp"
+	"github.com/atakanatamert/aicm/internal/mcpserver"
 	"github.com/atakanatamert/aicm/internal/version"
 )
 
@@ -31,6 +35,7 @@ const usage = `Usage: ` + version.AgentBinary + ` <command> [flags]
 Commands:
   enroll                enroll this machine with a hub
   run                   scan harnesses and keep the hub link open
+  mcp                   serve the MCP tools over stdio
   update                update the agent to the latest release
   statusline            Claude Code statusline wrapper (called by Claude Code)
   statusline install    route Claude Code's statusline through the wrapper
@@ -42,6 +47,10 @@ Flags for enroll and run:
   --org ID       organization id
   --key BASE64   hub public key
   --token TOKEN  enrollment token
+
+Flags for mcp:
+  --hub URL          hub base URL (default AICM_HUB_URL or the enrolled config)
+  --token-file FILE  file holding the personal API token (mode 0600)
 `
 
 func main() {
@@ -62,6 +71,8 @@ func run(args []string, stdout, stderr io.Writer) int {
 		return enroll(args[1:], stdout, stderr)
 	case "run":
 		return runAgent(args[1:], stdout, stderr)
+	case "mcp":
+		return serveMCP(args[1:], stderr)
 	case "update":
 		return update(stdout, stderr)
 	case "statusline":
@@ -232,6 +243,84 @@ func runAgent(args []string, _ io.Writer, stderr io.Writer) int {
 		return 1
 	}
 	return 0
+}
+
+// serveMCP speaks the MCP tool set over stdio until stdin closes. The token
+// is a personal API token, so the hub applies its role and grants.
+func serveMCP(args []string, stderr io.Writer) int {
+	fs := flag.NewFlagSet("mcp", flag.ContinueOnError)
+	fs.SetOutput(stderr)
+	hubURL := fs.String("hub", "", "hub base URL (default AICM_HUB_URL or the enrolled config)")
+	tokenFile := fs.String("token-file", "", "file holding the personal API token")
+	if err := fs.Parse(args); err != nil {
+		return 2
+	}
+	if fs.NArg() > 0 {
+		fmt.Fprintf(stderr, "unexpected arguments: %v\n", fs.Args())
+		return 2
+	}
+
+	base := strings.TrimSpace(*hubURL)
+	if base == "" {
+		base = strings.TrimSpace(os.Getenv("AICM_HUB_URL"))
+	}
+	if base == "" {
+		dataDir, err := agent.DataDir()
+		if err != nil {
+			fmt.Fprintf(stderr, "mcp: %v\n", err)
+			return 1
+		}
+		cfg, err := agent.Load(dataDir)
+		if err != nil {
+			fmt.Fprintf(stderr, "mcp: hub URL: %v\n", err)
+			return 1
+		}
+		base = cfg.HubURL
+	}
+
+	token := strings.TrimSpace(os.Getenv("AICM_TOKEN"))
+	if *tokenFile != "" {
+		tok, err := readTokenFile(*tokenFile)
+		if err != nil {
+			fmt.Fprintf(stderr, "mcp: %v\n", err)
+			return 1
+		}
+		token = tok
+	}
+	if token == "" {
+		fmt.Fprintln(stderr, "mcp: set AICM_TOKEN or pass --token-file")
+		return 1
+	}
+
+	srv := mcpserver.New(base, func(context.Context) (string, error) { return token, nil })
+	if err := srv.Run(context.Background(), &mcp.StdioTransport{}); err != nil {
+		fmt.Fprintf(stderr, "mcp: %v\n", err)
+		return 1
+	}
+	return 0
+}
+
+// readTokenFile reads the token once and refuses a world-readable file.
+func readTokenFile(path string) (string, error) {
+	fi, err := os.Stat(path)
+	if err != nil {
+		return "", fmt.Errorf("reading token file: %w", err)
+	}
+	if !fi.Mode().IsRegular() {
+		return "", fmt.Errorf("%s is not a regular file", path)
+	}
+	if fi.Mode().Perm()&0o004 != 0 {
+		return "", fmt.Errorf("%s is world-readable; chmod 600 it", path)
+	}
+	b, err := os.ReadFile(path) //nolint:gosec // path is an explicit CLI argument
+	if err != nil {
+		return "", fmt.Errorf("reading token file: %w", err)
+	}
+	token := strings.TrimSpace(string(b))
+	if token == "" {
+		return "", fmt.Errorf("%s is empty", path)
+	}
+	return token, nil
 }
 
 // update installs a newer release once.

@@ -64,6 +64,8 @@ type Deps struct {
 	Alerts    *alert.Service
 	Settings  *settings.Service
 	Install   http.Handler // public install scripts; nil disables them
+	// MCP serves the MCP tools at /mcp when set.
+	MCP http.Handler
 }
 
 // Server implements StrictServerInterface.
@@ -102,6 +104,12 @@ func NewRouter(d Deps) http.Handler {
 		// command is the credential, not a hub session.
 		base.Handle("GET /install.sh", d.Install)
 		base.Handle("GET /install.ps1", d.Install)
+	}
+	if d.MCP != nil {
+		// MCP authenticates each request with its own bearer token and loops
+		// every tool call back through the API, so it also sits outside the
+		// generated router.
+		base.Handle("/mcp", d.MCP)
 	}
 	h := HandlerWithOptions(strict, StdHTTPServerOptions{
 		BaseRouter: base,
