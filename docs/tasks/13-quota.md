@@ -25,3 +25,5 @@ Done by Opus (task kept per the plan), merged in `de3afd1`. Decisions:
 - Expiring shares within half a percentage point tie, so reading noise doesn't reorder accounts.
 - Job size: medium needs 10% of every limit left after the horizon, large 30%.
 - Marginal cost: 3:1 input:output blend of the family's representative model from the LiteLLM price table (`quota.FamilyModels`); flat-rate subscriptions cost 0; unknown prices rank last.
+
+Follow-up after the UI critique: meters can be marked `supplemental` (Codex credits). `ScoreAccount` skips them, so an empty credits wallet no longer makes a ChatGPT plan with free 5-hour and weekly limits look infeasible. Migration `00004` adds the column and marks existing Codex credits meters.
