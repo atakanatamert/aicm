@@ -199,10 +199,6 @@ func (s *Server) GetSpend(context.Context, GetSpendRequestObject) (GetSpendRespo
 	return nil, ErrNotImplemented
 }
 
-func (s *Server) GetUsage(context.Context, GetUsageRequestObject) (GetUsageResponseObject, error) {
-	return nil, ErrNotImplemented
-}
-
 func (s *Server) ListUsers(context.Context, ListUsersRequestObject) (ListUsersResponseObject, error) {
 	return nil, ErrNotImplemented
 }

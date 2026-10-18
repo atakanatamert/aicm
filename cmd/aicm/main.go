@@ -26,8 +26,10 @@ import (
 	"github.com/atakanatamert/aicm/internal/fx"
 	"github.com/atakanatamert/aicm/internal/httpapi"
 	"github.com/atakanatamert/aicm/internal/jobs"
+	"github.com/atakanatamert/aicm/internal/pricing"
 	"github.com/atakanatamert/aicm/internal/provider"
 	"github.com/atakanatamert/aicm/internal/secrets"
+	usagepkg "github.com/atakanatamert/aicm/internal/usage"
 	"github.com/atakanatamert/aicm/internal/version"
 )
 
@@ -229,12 +231,16 @@ func serve(ctx context.Context, args []string) error {
 		return fmt.Errorf("checking secret store: %w", err)
 	}
 
-	reg := jobs.NewRegistry()
 	httpc := provider.NewHTTPClient(log, nil)
+	prices := pricing.NewService(pool, httpc, log)
+	usageSvc := usagepkg.NewService(pool, prices, log)
+
+	reg := jobs.NewRegistry()
 	fxSvc := fx.NewService(pool, log, fx.NewFrankfurter(httpc), fx.NewECB(httpc))
 	jobs.Register(reg, &fx.RefreshWorker{Service: fxSvc})
 	reg.Periodic = append(reg.Periodic, fx.PeriodicJob())
-
+	jobs.Register(reg, &pricing.ImportWorker{Service: prices})
+	reg.Periodic = append(reg.Periodic, pricing.PeriodicJob())
 	riverClient, err := jobs.NewClient(pool, log, reg)
 	if err != nil {
 		return err
@@ -250,6 +256,7 @@ func serve(ctx context.Context, args []string) error {
 			DB:      pool,
 			Secrets: store,
 			Auth:    auth.NewService(pool, log, cfg.PublicURL),
+			Usage:   usageSvc,
 		}),
 		ReadHeaderTimeout: 10 * time.Second,
 	}

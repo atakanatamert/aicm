@@ -4,7 +4,7 @@ This project includes or ports code from the projects below. Each entry keeps th
 
 | Project | License | What was used | Where in this repo |
 | --- | --- | --- | --- |
-| _none yet_ | | | |
+| BerriAI/litellm model_prices_and_context_window.json | MIT, Copyright (c) 2023 Berri AI | Model price data, imported at runtime | internal/pricing |
 
 ## Candidates already cleared (2026-10-17)
 

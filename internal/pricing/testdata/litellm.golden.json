@@ -1,0 +1,56 @@
+[
+  {
+    "Model": "azure/gpt-image-1",
+    "Provider": "azure",
+    "Currency": "USD",
+    "Input": 5000000,
+    "Output": 0,
+    "CacheRead": 1250000,
+    "CacheWrite": 0
+  },
+  {
+    "Model": "claude-haiku-4-5-20251001",
+    "Provider": "anthropic",
+    "Currency": "USD",
+    "Input": 1000000,
+    "Output": 5000000,
+    "CacheRead": 100000,
+    "CacheWrite": 1250000
+  },
+  {
+    "Model": "claude-sonnet-4-5-20250929",
+    "Provider": "anthropic",
+    "Currency": "USD",
+    "Input": 3000000,
+    "Output": 15000000,
+    "CacheRead": 300000,
+    "CacheWrite": 3750000
+  },
+  {
+    "Model": "deepseek-chat",
+    "Provider": "deepseek",
+    "Currency": "USD",
+    "Input": 280000,
+    "Output": 420000,
+    "CacheRead": 28000,
+    "CacheWrite": 0
+  },
+  {
+    "Model": "gpt-4.1-mini",
+    "Provider": "openai",
+    "Currency": "USD",
+    "Input": 400000,
+    "Output": 1600000,
+    "CacheRead": 100000,
+    "CacheWrite": 0
+  },
+  {
+    "Model": "gpt-4o",
+    "Provider": "openai",
+    "Currency": "USD",
+    "Input": 2500000,
+    "Output": 10000000,
+    "CacheRead": 1250000,
+    "CacheWrite": 0
+  }
+]

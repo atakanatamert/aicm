@@ -22,6 +22,7 @@ import (
 
 	"github.com/atakanatamert/aicm/internal/auth"
 	"github.com/atakanatamert/aicm/internal/secrets"
+	"github.com/atakanatamert/aicm/internal/usage"
 	"github.com/atakanatamert/aicm/internal/version"
 )
 
@@ -36,6 +37,7 @@ type Deps struct {
 	DB      Pinger
 	Secrets secrets.Store
 	Auth    *auth.Service
+	Usage   *usage.Service
 }
 
 // Server implements StrictServerInterface.
