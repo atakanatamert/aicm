@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { formatRelative } from "@/lib/format"
+import { HARNESS_NAMES } from "@/lib/harness-names"
 import { cn } from "@/lib/utils"
 
 type Machine = components["schemas"]["Machine"]
@@ -138,7 +139,9 @@ export function MachineTable({ machines, isAdmin }: MachineTableProps) {
                   {machine.last_seen_at ? formatRelative(machine.last_seen_at) : "Never"}
                 </TableCell>
                 <TableCell className="text-muted-foreground">
-                  {machine.harnesses?.length ? machine.harnesses.join(", ") : "–"}
+                  {machine.harnesses?.length
+                    ? machine.harnesses.map((h) => HARNESS_NAMES[h] ?? h).join(", ")
+                    : "–"}
                 </TableCell>
                 {isAdmin && (
                   <TableCell>

@@ -24,7 +24,7 @@ export function SpendHeadline({ label, total, displayCurrency, unconverted }: Sp
   return (
     <Card>
       <CardHeader>
-        <h3 className="text-sm leading-none font-medium text-muted-foreground">{label}</h3>
+        <h2 className="text-sm leading-none font-medium text-muted-foreground">{label}</h2>
       </CardHeader>
       <CardContent className="grid gap-1">
         <p className="text-3xl font-semibold tracking-tight tabular-nums">

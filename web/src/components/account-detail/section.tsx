@@ -1,6 +1,6 @@
 import type { ReactNode } from "react"
 import { errorOf } from "@/api/client"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent, CardDescription, CardHeader } from "@/components/ui/card"
 import { cn } from "@/lib/utils"
 
 interface SectionCardProps {
@@ -19,7 +19,7 @@ export function SectionCard({ title, description, action, urgent, children }: Se
     <Card className={cn("gap-4 py-5", urgent && "border-urgent")}>
       <CardHeader className="flex flex-row flex-wrap items-start justify-between gap-2">
         <div className="space-y-1">
-          <CardTitle className="text-base">{title}</CardTitle>
+          <h2 className="text-base leading-none font-semibold">{title}</h2>
           {description && <CardDescription>{description}</CardDescription>}
         </div>
         {action}

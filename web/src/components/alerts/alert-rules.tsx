@@ -102,7 +102,7 @@ export function AlertRulesPanel({ canEdit, isAdmin }: AlertRulesPanelProps) {
     <section aria-label="Alert rules" className="grid gap-4 py-6">
       <Card>
         <CardHeader>
-          <h3 className="text-base leading-none font-semibold">Org defaults</h3>
+          <h2 className="text-base leading-none font-semibold">Org defaults</h2>
           <CardDescription>
             Applied to every account. {isAdmin ? "As an admin you can change them here." : "Only admins can change them."}
           </CardDescription>
@@ -134,7 +134,7 @@ export function AlertRulesPanel({ canEdit, isAdmin }: AlertRulesPanelProps) {
 
       <Card>
         <CardHeader>
-          <h3 className="text-base leading-none font-semibold">Per-account overrides</h3>
+          <h2 className="text-base leading-none font-semibold">Per-account overrides</h2>
           <CardDescription>
             {canEdit
               ? "Tailor the rules for one account. A kind without a stored override follows the org default; saving stores an override."

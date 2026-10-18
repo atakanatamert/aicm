@@ -1,9 +1,10 @@
 import { useState } from "react"
-import { AlarmClock, CircleAlert, ExternalLink, Info, TriangleAlert } from "lucide-react"
+import { AlarmClock, CircleAlert, Info, TriangleAlert } from "lucide-react"
 import { toast } from "sonner"
 import { errorOf, query } from "@/api/client"
 import type { components } from "@/api/schema"
 import { invalidateAlertQueries } from "@/components/alerts/queries"
+import { ProviderLinks } from "@/components/quotas/provider-links"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
@@ -14,20 +15,15 @@ import { formatRelative } from "@/lib/format"
 import { cn } from "@/lib/utils"
 
 type Alert = components["schemas"]["Alert"]
+type AlertKind = components["schemas"]["AlertKind"]
 type Links = NonNullable<Alert["links"]>
 
-// Provider pages the alert may carry, in the order the card names them.
-const LINKS: { key: keyof Links; label: string }[] = [
-  { key: "manage_subscription", label: "Manage subscription" },
-  { key: "cancel", label: "Cancel subscription" },
-  { key: "top_up", label: "Top up" },
-  { key: "billing", label: "Billing" },
-]
-
-function alertLinks(alert: Alert) {
-  return LINKS.map(({ key, label }) => ({ key, label, href: alert.links?.[key] })).filter(
-    (link): link is { key: keyof Links; label: string; href: string } => link.href !== undefined,
-  )
+// The one link that leads, by alert kind: money that is running out gets its
+// action button; every other kind keeps its links in the menu.
+const PRIMARY_BY_KIND: Partial<Record<AlertKind, keyof Links>> = {
+  low_balance: "top_up",
+  renewal: "manage_subscription",
+  promo_ending: "manage_subscription",
 }
 
 function SeverityIcon({ alert }: { alert: Alert }) {
@@ -127,36 +123,8 @@ export function AlertRow({ alert, accountName }: { alert: Alert; accountName?: s
           )}
         </div>
         <div className="mt-2 flex flex-wrap items-center gap-1.5">
-          {/* Desktop: the provider links sit inline; on phones they collapse into "Links". */}
-          <div className="hidden flex-wrap items-center gap-1.5 sm:flex">
-            {alertLinks(alert).map(({ key, label, href }) => (
-              <Button key={key} asChild variant="outline" size="sm">
-                <a href={href} target="_blank" rel="noreferrer">
-                  {label}
-                  <ExternalLink aria-hidden className="size-3" />
-                </a>
-              </Button>
-            ))}
-          </div>
-          {alertLinks(alert).length > 0 && (
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="outline" size="sm" className="sm:hidden">
-                  Links
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="start">
-                {alertLinks(alert).map(({ key, label, href }) => (
-                  <DropdownMenuItem key={key} asChild>
-                    <a href={href} target="_blank" rel="noreferrer">
-                      {label}
-                      <ExternalLink aria-hidden className="size-3" />
-                    </a>
-                  </DropdownMenuItem>
-                ))}
-              </DropdownMenuContent>
-            </DropdownMenu>
-          )}
+          {/* Mapped kinds pin their link; the rest have no primary at all. */}
+          <ProviderLinks links={alert.links} primaryKey={PRIMARY_BY_KIND[alert.kind] ?? null} />
           {!alert.read && (
             <Button
               variant="ghost"

@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { Link, useSearchParams } from "react-router"
 import { Plus } from "lucide-react"
 import { errorOf, query } from "@/api/client"
 import { EmptyState } from "@/components/empty-state"
@@ -6,6 +6,7 @@ import { PageHeader } from "@/components/page-header"
 import { AccountsTable } from "@/components/accounts/accounts-table"
 import { AddAccountDialog } from "@/components/accounts/add-account-dialog"
 import { ReviewSection } from "@/components/accounts/review"
+import { AGENT_READS_TEXT } from "@/components/machines/enroll-commands"
 import { Button } from "@/components/ui/button"
 import { Vault } from "@/components/ui/hairline"
 import { Skeleton } from "@/components/ui/skeleton"
@@ -13,10 +14,22 @@ import { useMe } from "@/hooks/use-me"
 
 export default function Accounts() {
   const { canEdit, isLoading: meLoading } = useMe()
-  const [addOpen, setAddOpen] = useState(false)
+  const [searchParams, setSearchParams] = useSearchParams()
+  // The GetStarted panel links here with ?add=1, which opens the dialog;
+  // closing it clears the parameter again.
+  const addOpen = canEdit && searchParams.get("add") === "1"
+  const setAddOpen = (open: boolean) => {
+    const next = new URLSearchParams(searchParams)
+    if (open) next.set("add", "1")
+    else next.delete("add")
+    setSearchParams(next, { replace: true })
+  }
+
   const pending = query.useQuery("get", "/api/accounts", { params: { query: { status: "pending" } } })
   const active = query.useQuery("get", "/api/accounts")
   const providers = query.useQuery("get", "/api/providers")
+  const machines = query.useQuery("get", "/api/machines")
+  const noMachines = machines.isSuccess && machines.data.length === 0
 
   return (
     <>
@@ -48,11 +61,24 @@ export default function Accounts() {
             {errorOf(active.error)?.error.message ?? "Could not load accounts. Check that the hub is running."}
           </p>
         ) : active.data.length === 0 ? (
-          <EmptyState
-            figure={<Vault play />}
-            title="No accounts yet"
-            description="Provider accounts appear here once the agent discovers them or you add one."
-          />
+          <>
+            <EmptyState
+              figure={<Vault play />}
+              title="No accounts yet"
+              description={
+                noMachines
+                  ? AGENT_READS_TEXT
+                  : "Provider accounts appear here once the agent discovers them or you add one."
+              }
+            />
+            {noMachines && canEdit && (
+              <div className="-mt-4 flex justify-center">
+                <Button asChild variant="outline" size="sm">
+                  <Link to="/">Import from your computer</Link>
+                </Button>
+              </div>
+            )}
+          </>
         ) : (
           <AccountsTable accounts={active.data} providers={providers.data ?? []} />
         )}

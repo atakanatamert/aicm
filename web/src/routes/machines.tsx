@@ -47,7 +47,7 @@ export default function Machines() {
             <EmptyState
               figure={<Cabinet play />}
               title="No machines yet"
-              description="Add a machine and run the install command on it — the agent appears here once it dials in."
+              description="Add a machine and run the install command on it — the agent appears here once it dials in. It reads Claude Code, Codex and omp on the machine, read-only, and sends usage and limits here. Your logins stay on the machine."
             />
             {isAdmin && (
               <Button size="sm" className="mb-6" onClick={() => setAddOpen(true)}>

@@ -1,4 +1,3 @@
-import { ExternalLink } from "lucide-react"
 import { Link, useParams } from "react-router"
 import type { components } from "@/api/schema"
 import { query } from "@/api/client"
@@ -11,9 +10,10 @@ import { MetersCard } from "@/components/account-detail/meters-card"
 import { PlanCard } from "@/components/account-detail/plan-card"
 import { ErrorLine, SectionCard } from "@/components/account-detail/section"
 import { UsageCard } from "@/components/account-detail/usage-card"
+import { ProviderLinks } from "@/components/quotas/provider-links"
+import { hasWalletMeter } from "@/components/quotas/wallet-meter"
 import { SyncButton } from "@/components/quotas/sync-button"
 import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
 import { useMe } from "@/hooks/use-me"
 import { useProviderNames } from "@/hooks/use-provider-names"
@@ -21,15 +21,6 @@ import { formatDate } from "@/lib/format"
 
 type Account = components["schemas"]["Account"]
 type AccountQuota = components["schemas"]["AccountQuota"]
-
-// Provider page links, in the order the account card shows them.
-const LINKS: { key: keyof Account["links"]; label: string }[] = [
-  { key: "top_up", label: "Top up" },
-  { key: "billing", label: "Billing" },
-  { key: "manage_subscription", label: "Manage" },
-  { key: "cancel", label: "Cancel" },
-  { key: "usage", label: "Usage" },
-]
 
 function DetailSkeleton() {
   return (
@@ -50,7 +41,7 @@ function DetailSkeleton() {
   )
 }
 
-function AccountHeader({ account }: { account: Account }) {
+function AccountHeader({ account, wallet }: { account: Account; wallet: boolean }) {
   const { canEdit } = useMe()
   const providerName = useProviderNames()(account.provider_id)
   return (
@@ -65,16 +56,11 @@ function AccountHeader({ account }: { account: Account }) {
         {account.plan.renews_on && <span className="text-sm text-muted-foreground">renews {formatDate(account.plan.renews_on)}</span>}
       </div>
       <div className="mt-3 flex flex-wrap items-start gap-2">
-        {LINKS.map(({ key, label }) =>
-          account.links[key] ? (
-            <Button key={key} asChild variant="outline" size="sm">
-              <a href={account.links[key]!} target="_blank" rel="noreferrer">
-                {label}
-                <ExternalLink aria-hidden className="size-3" />
-              </a>
-            </Button>
-          ) : null,
-        )}
+        <ProviderLinks
+          links={account.links}
+          wallet={wallet}
+          renewal={account.plan.renews_on != null}
+        />
         {canEdit && <SyncButton accountId={account.id} />}
       </div>
     </div>
@@ -112,7 +98,7 @@ export default function AccountDetail() {
 
   return (
     <>
-      <AccountHeader account={data} />
+      <AccountHeader account={data} wallet={hasWalletMeter(accountQuota?.meters)} />
       <div className="mx-auto w-full max-w-6xl space-y-6 px-4 py-6 sm:px-6">
         <div className="grid gap-6 md:grid-cols-2">
           <SectionCard title="Plan & renewal" description="What you pay and when it renews.">

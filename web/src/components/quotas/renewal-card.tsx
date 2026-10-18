@@ -1,9 +1,8 @@
 import type { components } from "@/api/schema"
+import { ProviderLinks } from "@/components/quotas/provider-links"
 import { renewalUrgency } from "@/components/quotas/renewal-urgency"
 import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader } from "@/components/ui/card"
-import { ExternalLink } from "lucide-react"
 import { formatBilledAndConverted, formatDate } from "@/lib/format"
 import { cn } from "@/lib/utils"
 
@@ -34,22 +33,7 @@ export function RenewalCard({ renewal }: { renewal: Renewal }) {
       </CardContent>
       {(account.links.manage_subscription || account.links.cancel) && (
         <CardFooter className="flex-wrap gap-2">
-          {account.links.manage_subscription && (
-            <Button asChild variant="outline" size="sm">
-              <a href={account.links.manage_subscription} target="_blank" rel="noreferrer">
-                Manage subscription
-                <ExternalLink aria-hidden className="size-3" />
-              </a>
-            </Button>
-          )}
-          {account.links.cancel && (
-            <Button asChild variant="outline" size="sm">
-              <a href={account.links.cancel} target="_blank" rel="noreferrer">
-                Cancel subscription
-                <ExternalLink aria-hidden className="size-3" />
-              </a>
-            </Button>
-          )}
+          <ProviderLinks links={account.links} renewal />
         </CardFooter>
       )}
     </Card>

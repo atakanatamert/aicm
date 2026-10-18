@@ -1,21 +1,14 @@
 import type { components } from "@/api/schema"
+import { ProviderLinks } from "./provider-links"
+import { hasWalletMeter } from "./wallet-meter"
 import { MeterRow } from "./meter-row"
 import { SyncButton } from "./sync-button"
-import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader } from "@/components/ui/card"
-import { ExternalLink } from "lucide-react"
 import { formatRelative } from "@/lib/format"
 import { cn } from "@/lib/utils"
 
 type AccountQuota = components["schemas"]["AccountQuota"]
 type MeterView = components["schemas"]["MeterView"]
-
-const LINKS: { key: keyof AccountQuota["account"]["links"]; label: string }[] = [
-  { key: "top_up", label: "Top up" },
-  { key: "billing", label: "Billing" },
-  { key: "manage_subscription", label: "Manage subscription" },
-  { key: "usage", label: "Usage" },
-]
 
 /** The meter that sets the account's headroom, falling back to the most expiring one. */
 function bindingMeter(quota: AccountQuota): MeterView | undefined {
@@ -103,16 +96,11 @@ export function QuotaCard({ quota, canEdit }: { quota: AccountQuota; canEdit: bo
         )}
       </CardContent>
       <CardFooter className="flex-wrap gap-2">
-        {LINKS.map(({ key, label }) =>
-          account.links[key] ? (
-            <Button key={key} asChild variant="outline" size="sm">
-              <a href={account.links[key]!} target="_blank" rel="noreferrer">
-                {label}
-                <ExternalLink aria-hidden className="size-3" />
-              </a>
-            </Button>
-          ) : null,
-        )}
+        <ProviderLinks
+          links={account.links}
+          wallet={hasWalletMeter(quota.meters)}
+          renewal={account.plan.renews_on != null}
+        />
         {canEdit && <SyncButton accountId={account.id} />}
       </CardFooter>
     </Card>

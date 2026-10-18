@@ -1,11 +1,14 @@
 import { useState } from "react"
+import { useSearchParams } from "react-router"
 import { toast } from "sonner"
 import { errorOf, query } from "@/api/client"
+import { ALERT_KINDS } from "@/components/alerts/alert-kinds"
 import { AlertRow } from "@/components/alerts/alert-row"
 import { invalidateAlertQueries } from "@/components/alerts/queries"
 import { EmptyState } from "@/components/empty-state"
 import { Button } from "@/components/ui/button"
 import { Relay } from "@/components/ui/hairline"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Skeleton } from "@/components/ui/skeleton"
 
 const PAGE_SIZE = 25
@@ -35,6 +38,19 @@ interface AlertListProps {
 
 export function AlertList({ accountNames }: AlertListProps) {
   const [unreadOnly, setUnreadOnly] = useState(false)
+  const [searchParams, setSearchParams] = useSearchParams()
+
+  // Inbox filters live in the URL: ?account=<id>&kind=<kind>. Radix Select
+  // cannot use empty item values, so "all" stands for no filter.
+  const accountFilter = searchParams.get("account") ?? "all"
+  const kindFilter = searchParams.get("kind") ?? "all"
+  const setFilter = (key: "account" | "kind", value: string) => {
+    const next = new URLSearchParams(searchParams)
+    if (value === "all") next.delete(key)
+    else next.set(key, value)
+    setSearchParams(next, { replace: true })
+  }
+  const filtered = accountFilter !== "all" || kindFilter !== "all"
 
   const alerts = query.useInfiniteQuery(
     "get",
@@ -52,7 +68,12 @@ export function AlertList({ accountNames }: AlertListProps) {
     onError: (err) => toast.error(errorOf(err)?.error.message ?? "Could not mark the alerts read."),
   })
 
-  const items = alerts.data?.pages.flatMap((page) => page.items) ?? []
+  const items = (alerts.data?.pages.flatMap((page) => page.items) ?? []).filter(
+    (alert) =>
+      (accountFilter === "all" || alert.account_id === accountFilter) &&
+      (kindFilter === "all" || alert.kind === kindFilter),
+  )
+  const accountOptions = Object.entries(accountNames).sort((a, b) => a[1].localeCompare(b[1]))
 
   return (
     <section aria-label="Alert inbox">
@@ -73,6 +94,32 @@ export function AlertList({ accountNames }: AlertListProps) {
         >
           {markAllRead.isPending ? "Marking…" : "Mark all read"}
         </Button>
+        <Select value={accountFilter} onValueChange={(v) => setFilter("account", v)}>
+          <SelectTrigger size="sm" aria-label="Filter by account" className="w-44">
+            <SelectValue placeholder="All accounts" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All accounts</SelectItem>
+            {accountOptions.map(([id, name]) => (
+              <SelectItem key={id} value={id}>
+                {name}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        <Select value={kindFilter} onValueChange={(v) => setFilter("kind", v)}>
+          <SelectTrigger size="sm" aria-label="Filter by kind" className="w-44">
+            <SelectValue placeholder="All kinds" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All kinds</SelectItem>
+            {ALERT_KINDS.map(({ kind, label }) => (
+              <SelectItem key={kind} value={kind}>
+                {label}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
         {alerts.data && (
           <span className="ml-auto text-xs text-muted-foreground">
             {alerts.data.pages[0]?.unread_count ?? 0} unread
@@ -89,11 +136,13 @@ export function AlertList({ accountNames }: AlertListProps) {
       ) : items.length === 0 ? (
         <EmptyState
           figure={<Relay play />}
-          title={unreadOnly ? "No unread alerts" : "No alerts yet"}
+          title={filtered ? "No alerts match" : unreadOnly ? "No unread alerts" : "No alerts yet"}
           description={
-            unreadOnly
-              ? "Everything in the inbox has been read."
-              : "Alerts land here when a renewal comes close, a meter runs low or a machine goes quiet."
+            filtered
+              ? "Nothing for this account and kind on the loaded pages."
+              : unreadOnly
+                ? "Everything in the inbox has been read."
+                : "Alerts land here when a renewal comes close, a meter runs low or a machine goes quiet."
           }
         />
       ) : (

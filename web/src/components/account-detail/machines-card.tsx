@@ -3,6 +3,7 @@ import { EmptyState } from "@/components/empty-state"
 import { Badge } from "@/components/ui/badge"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Laptop } from "@/components/ui/hairline"
+import { HARNESS_NAMES } from "@/lib/harness-names"
 import { formatDate, formatRelative } from "@/lib/format"
 import { ErrorLine, SectionCard } from "./section"
 
@@ -45,7 +46,7 @@ export function MachinesCard({ accountId }: { accountId: string }) {
               <TableRow key={`${m.machine_id}-${m.harness}`}>
                 <TableCell className="font-medium">{m.machine_name}</TableCell>
                 <TableCell>
-                  <Badge variant="secondary">{m.harness}</Badge>
+                  <Badge variant="secondary">{HARNESS_NAMES[m.harness] ?? m.harness}</Badge>
                 </TableCell>
                 <TableCell className="whitespace-nowrap text-muted-foreground">{formatDate(m.first_seen_at)}</TableCell>
                 <TableCell className="whitespace-nowrap">

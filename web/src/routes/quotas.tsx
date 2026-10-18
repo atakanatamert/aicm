@@ -4,6 +4,7 @@ import { EmptyState } from "@/components/empty-state"
 import { PageHeader } from "@/components/page-header"
 import { QuotaCard } from "@/components/quotas/quota-card"
 import { RenewalCard } from "@/components/quotas/renewal-card"
+import { AGENT_READS_TEXT } from "@/components/machines/enroll-commands"
 import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Terrain } from "@/components/ui/hairline"
@@ -48,6 +49,8 @@ export default function Quotas() {
   const { canEdit } = useMe()
   const quotas = query.useQuery("get", "/api/quotas")
   const renewals = query.useQuery("get", "/api/renewals", { params: { query: { within_days: 30 } } })
+  const machines = query.useQuery("get", "/api/machines")
+  const noMachines = machines.isSuccess && machines.data.length === 0
 
   if (quotas.isPending || renewals.isPending) return <QuotasSkeleton />
 
@@ -62,12 +65,22 @@ export default function Quotas() {
             <EmptyState
               figure={<Terrain play />}
               title="No accounts yet"
-              description="Add a provider account and its meters and renewals appear here."
+              description={
+                noMachines
+                  ? AGENT_READS_TEXT
+                  : "Add a provider account and its meters and renewals appear here."
+              }
             />
             <div className="flex justify-center">
-              <Button asChild>
-                <Link to="/accounts">Go to accounts</Link>
-              </Button>
+              {noMachines && canEdit ? (
+                <Button asChild variant="outline" size="sm">
+                  <Link to="/">Import from your computer</Link>
+                </Button>
+              ) : (
+                <Button asChild>
+                  <Link to="/accounts">Go to accounts</Link>
+                </Button>
+              )}
             </div>
           </div>
         ) : (

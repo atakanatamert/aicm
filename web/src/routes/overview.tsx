@@ -1,4 +1,4 @@
-import { Suspense, lazy } from "react"
+import { Suspense, lazy, useEffect, useState } from "react"
 import { errorOf, query } from "@/api/client"
 import { EmptyState } from "@/components/empty-state"
 import { PageHeader } from "@/components/page-header"
@@ -14,8 +14,10 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { Terrain } from "@/components/ui/hairline"
 import { useMe } from "@/hooks/use-me"
 
-// Recharts is large; the chart loads after the screen renders.
+// Recharts is large; the chart loads after the screen renders. The import
+// panel only appears for a fresh org, so it loads the same way.
 const SpendChart = lazy(() => import("@/components/overview/spend-chart").then((m) => ({ default: m.SpendChart })))
+const GetStarted = lazy(() => import("@/components/onboarding/get-started").then((m) => ({ default: m.GetStarted })))
 
 function InlineError({ error, fallback }: { error: unknown; fallback: string }) {
   return (
@@ -31,6 +33,31 @@ export default function Overview() {
   const year = now.getUTCFullYear()
   const monthPeriod = `${year}-${String(now.getUTCMonth() + 1).padStart(2, "0")}`
   const yearPeriod = String(year)
+
+  // The import panel takes the empty state while the org has never had an
+  // account (any status: active, pending, dismissed) or machine. Once it is
+  // up it stays until an account exists: a machine connecting mid-flow must
+  // not tear the panel down before its accounts are confirmed.
+  const machines = query.useQuery("get", "/api/machines")
+  const activeAccounts = query.useQuery("get", "/api/accounts")
+  const pendingAccounts = query.useQuery("get", "/api/accounts", { params: { query: { status: "pending" } } })
+  const dismissedAccounts = query.useQuery("get", "/api/accounts", { params: { query: { status: "dismissed" } } })
+  const freshKnown =
+    machines.isSuccess && activeAccounts.isSuccess && pendingAccounts.isSuccess && dismissedAccounts.isSuccess
+  const freshOrg =
+    freshKnown &&
+    machines.data.length === 0 &&
+    activeAccounts.data.length === 0 &&
+    pendingAccounts.data.length === 0 &&
+    dismissedAccounts.data.length === 0
+  const [panelShown, setPanelShown] = useState(false)
+  useEffect(() => {
+    if (freshOrg) setPanelShown(true)
+  }, [freshOrg])
+  // Pending accounts are part of the flow ("Found N accounts"), so only an
+  // active or dismissed account ends the import and takes the panel down.
+  const showPanel =
+    freshKnown && panelShown && canEdit && activeAccounts.data.length === 0 && dismissedAccounts.data.length === 0
 
   // Month buckets cover Jan 1 → today; year buckets go back five years.
   const monthSpend = query.useQuery("get", "/api/spend", {
@@ -95,11 +122,17 @@ export default function Overview() {
           {spendLoading ? (
             <Skeleton className="h-96" />
           ) : spendError ? null : noSpend ? (
-            <EmptyState
-              figure={<Terrain play />}
-              title="No money out yet"
-              description="Record a charge or connect an account; this month's and this year's payments show up here."
-            />
+            showPanel ? (
+              <Suspense fallback={<Skeleton className="h-64" />}>
+                <GetStarted />
+              </Suspense>
+            ) : freshKnown ? (
+              <EmptyState
+                figure={<Terrain play />}
+                title="No money out yet"
+                description="Record a charge or connect an account; this month's and this year's payments show up here."
+              />
+            ) : null
           ) : (
             <Card>
               <CardHeader>

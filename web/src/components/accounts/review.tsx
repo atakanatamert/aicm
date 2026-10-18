@@ -6,6 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Checkbox } from "@/components/ui/checkbox"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { HARNESS_NAMES } from "@/lib/harness-names"
 
 type Account = components["schemas"]["Account"]
 type ProviderInfo = components["schemas"]["ProviderInfo"]
@@ -17,7 +18,7 @@ function HarnessNames({ accountId }: { accountId: string }) {
   if (machines.isPending) return <span className="text-muted-foreground">…</span>
   if (machines.isError) return <span className="text-muted-foreground">unknown</span>
   const harnesses = [...new Set(machines.data.map((m) => m.harness))]
-  return <span>{harnesses.length > 0 ? harnesses.join(", ") : "unknown"}</span>
+  return <span>{harnesses.length > 0 ? harnesses.map((h) => HARNESS_NAMES[h] ?? h).join(", ") : "unknown"}</span>
 }
 
 function PendingAccount({
