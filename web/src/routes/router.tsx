@@ -2,6 +2,7 @@ import { Navigate, Outlet, RouterProvider, createBrowserRouter, useLocation } fr
 import { errorOf, query } from "@/api/client"
 import { AppShell } from "@/components/app-shell"
 import Accounts from "@/routes/accounts"
+import AccountDetail from "@/routes/account-detail"
 import Alerts from "@/routes/alerts"
 import Login from "@/routes/login"
 import Machines from "@/routes/machines"
@@ -53,6 +54,7 @@ const router = createBrowserRouter([
           { path: "/", element: <Overview /> },
           { path: "/quotas", element: <Quotas /> },
           { path: "/accounts", element: <Accounts /> },
+          { path: "/accounts/:id", element: <AccountDetail /> },
           { path: "/usage", element: <Usage /> },
           { path: "/alerts", element: <Alerts /> },
           { path: "/machines", element: <Machines /> },
