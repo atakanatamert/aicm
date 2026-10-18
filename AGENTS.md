@@ -3,7 +3,7 @@
 This file mirrors CLAUDE.md for harnesses that read AGENTS.md (omp, opencode, Codex and others). If the two differ, CLAUDE.md wins.
 
 
-`aicm` is a placeholder name. Read `docs/PLAN.md` for the design and `docs/DECISIONS.md` for settled decisions. If you were handed a task card in `docs/tasks/`, that card is your whole job. Touch only the files it lists.
+Read `docs/PLAN.md` for the design and `docs/DECISIONS.md` for settled decisions. If you were handed a task card in `docs/tasks/`, that card is your whole job. Touch only the files it lists.
 
 ## Layout
 

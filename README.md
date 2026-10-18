@@ -1,7 +1,5 @@
 # aicm
 
-> Placeholder name. The final name will be chosen before the first public release.
-
 Open-source, self-hosted dashboard for every AI subscription and API wallet you pay for. See renewals before they hit your card, see every quota meter in the provider's own terms, get an email before anything renews or runs out, and let your coding agents ask over MCP which account to use right now.
 
 **Status:** pre-alpha, in development. See [docs/PLAN.md](docs/PLAN.md).

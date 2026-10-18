@@ -19,7 +19,7 @@ Revision 3 adds the hosted business model (AGPL hub with a CLA, Apache agent, or
 
 1. Contributor terms: the plan assumes a CLA from the first outside pull request (recommended). Not yet confirmed.
 2. Agent, MCP server and agent-link protocol license: the plan assumes Apache-2.0 (recommended). Not yet confirmed.
-3. Project name: `aicm` is a placeholder for the repo, binaries and Go module path. Pick a name you can register as a trademark before the first public release.
+3. Project name: settled as `aicm` (Decision 24).
 
 ## Your points, answered
 
