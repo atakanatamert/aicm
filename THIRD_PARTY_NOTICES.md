@@ -7,6 +7,7 @@ This project includes or ports code from the projects below. Each entry keeps th
 | BerriAI/litellm model_prices_and_context_window.json | MIT, Copyright (c) 2023 Berri AI | Model price data, imported at runtime | internal/pricing |
 | [shadcn-ui/ui](https://github.com/shadcn-ui/ui) | MIT, Copyright (c) 2023 shadcn | UI components copied into the app | web/src/components/ui |
 | [lucasmarkes/hairline](https://github.com/lucasmarkes/hairline) | MIT, Copyright (c) Lucas Markes | Line illustrations (npm dependency, bundled) | web/src/components/ui/hairline.tsx |
+| [modernc.org/sqlite](https://gitlab.com/cznic/sqlite) | BSD-3-Clause, Copyright (c) 2017 The Sqlite Authors | Go library linked into aicm-agent to read omp's agent.db | internal/harness/omp |
 
 ## Candidates already cleared (2026-10-17)
 

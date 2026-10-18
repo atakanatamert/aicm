@@ -50,16 +50,21 @@ func TestDiscoverGolden(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Discover: %v", err)
 	}
-	if len(accounts) != 2 {
-		t.Fatalf("Discover returned %d accounts, want 2", len(accounts))
+	// auth.json holds the anthropic and deepseek keys; agent.db holds the zai
+	// key plus a disabled key, an OAuth row and a provider without a catalog
+	// id, none of which may be reported.
+	if len(accounts) != 3 {
+		t.Fatalf("Discover returned %d accounts, want 3", len(accounts))
 	}
 	got := marshalGolden(t, accounts)
 	want := readGolden(t, "discover.golden.json")
 	if !bytes.Equal(got, want) {
 		t.Fatalf("discovered accounts mismatch\n got: %s\nwant: %s", got, want)
 	}
-	if bytes.Contains(want, []byte("synthetic-anthropic")) || bytes.Contains(want, []byte("synthetic-deepseek")) {
-		t.Fatal("discover golden contains a synthetic key")
+	for _, secret := range []string{"synthetic-anthropic", "synthetic-deepseek", "zai-synthetic", "synthetic-access"} {
+		if bytes.Contains(want, []byte(secret)) {
+			t.Fatalf("discover golden contains a credential (%s)", secret)
+		}
 	}
 }
 

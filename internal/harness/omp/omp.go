@@ -2,9 +2,10 @@
 
 // Package omp imports accounts and usage from omp (oh-my-pi).
 //
-// Discovery reads the plain API keys stored in auth.json. OAuth credentials
-// are ignored: subscriptions are covered by the Claude Code and Codex
-// harnesses, and subscription tokens never leave this machine.
+// Discovery reads the plain API keys omp stores in agent.db (current omp) and
+// auth.json (older omp). OAuth credentials are ignored: subscriptions are
+// covered by the Claude Code and Codex harnesses, and subscription tokens
+// never leave this machine.
 package omp
 
 import (
@@ -85,7 +86,7 @@ func New(home string) *Harness {
 // ID implements harness.Harness.
 func (h *Harness) ID() string { return ID }
 
-// keyEntry is one plain API key found in an auth.json file.
+// keyEntry is one plain API key found in agent.db or auth.json.
 type keyEntry struct {
 	// Name is the omp provider name, lower-cased for matching session lines.
 	Name string
@@ -149,7 +150,7 @@ func (h *Harness) ReadAPIKey(ctx context.Context, ref agentlink.AccountRef) (str
 	return "", fmt.Errorf("omp: no plain API key for %s/%s", ref.ProviderID, ref.ExternalID)
 }
 
-// keyEntries reads auth.json from every agent directory and returns the plain
+// keyEntries reads the keys from every agent directory and returns the plain
 // API keys with catalog providers. Entries are sorted for deterministic
 // discovery when profiles hold several keys for one provider.
 func (h *Harness) keyEntries() ([]keyEntry, error) {
@@ -170,19 +171,24 @@ func (h *Harness) keyEntries() ([]keyEntry, error) {
 	return all, nil
 }
 
-// readAPIKeys reads one agent directory's auth.json. A missing file is not an
-// error: omp installs that only use OAuth have no auth.json or no API keys.
+// readAPIKeys reads one agent directory's keys: agent.db first, then
+// auth.json. Missing files are not errors: omp installs that only use OAuth
+// have no API keys.
 func readAPIKeys(agentDir string) ([]keyEntry, error) {
+	entries, err := readDBKeys(agentDir)
+	if err != nil {
+		return nil, err
+	}
 	path := filepath.Join(agentDir, "auth.json")
 	data, err := os.ReadFile(path) //nolint:gosec // harness path built by New
 	if err != nil {
 		if os.IsNotExist(err) {
-			return nil, nil
+			return entries, nil
 		}
 		return nil, fmt.Errorf("reading %s: %w", path, err)
 	}
 	if len(bytes.TrimSpace(data)) == 0 {
-		return nil, nil
+		return entries, nil
 	}
 
 	var stored map[string]json.RawMessage
@@ -196,27 +202,35 @@ func readAPIKeys(agentDir string) ([]keyEntry, error) {
 	}
 	sort.Strings(names)
 
-	entries := make([]keyEntry, 0, len(names))
 	for _, name := range names {
-		key, ok := plainAPIKey(stored[name])
-		if !ok {
-			continue
+		if entry, ok := newKeyEntry(name, stored[name]); ok {
+			entries = append(entries, entry)
 		}
-		providerID, ok := providerIDs[strings.ToLower(name)]
-		if !ok {
-			continue
-		}
-		entries = append(entries, keyEntry{
-			Name:       strings.ToLower(name),
-			ProviderID: providerID,
-			Key:        key,
-			Ref: agentlink.AccountRef{
-				ProviderID: providerID,
-				ExternalID: keyRef(key),
-			},
-		})
 	}
 	return entries, nil
+}
+
+// newKeyEntry builds an entry from omp's provider name and stored credential,
+// or reports false for OAuth, command-backed keys and providers without a hub
+// catalog id.
+func newKeyEntry(name string, raw json.RawMessage) (keyEntry, bool) {
+	key, ok := plainAPIKey(raw)
+	if !ok {
+		return keyEntry{}, false
+	}
+	providerID, ok := providerIDs[strings.ToLower(name)]
+	if !ok {
+		return keyEntry{}, false
+	}
+	return keyEntry{
+		Name:       strings.ToLower(name),
+		ProviderID: providerID,
+		Key:        key,
+		Ref: agentlink.AccountRef{
+			ProviderID: providerID,
+			ExternalID: keyRef(key),
+		},
+	}, true
 }
 
 // plainAPIKey extracts a stored plain API key. A string value is a key; an

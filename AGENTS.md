@@ -22,7 +22,7 @@ docs/                plan, decisions, research, task cards
 
 ## Go conventions
 
-- Go 1.26+ (River and goose require it). Use stdlib `net/http` routing (method and path patterns). Allowed libraries: `pgx/v5`, `sqlc`, `goose`, `riverqueue/river`, `wneessen/go-mail`, `coder/websocket`, the official `modelcontextprotocol/go-sdk`, `golang.org/x/crypto`, `oapi-codegen/runtime` (with its `google/uuid` and `go-jsonmerge` dependencies). Ask before adding any other dependency.
+- Go 1.26+ (River and goose require it). Use stdlib `net/http` routing (method and path patterns). Allowed libraries: `pgx/v5`, `sqlc`, `goose`, `riverqueue/river`, `wneessen/go-mail`, `coder/websocket`, the official `modelcontextprotocol/go-sdk`, `golang.org/x/crypto`, `oapi-codegen/runtime` (with its `google/uuid` and `go-jsonmerge` dependencies), `modernc.org/sqlite` (agent only, for harness databases). Ask before adding any other dependency.
 - No ORM, no DI container, no global state other than the logger. Wire dependencies by hand in `cmd/*/main.go`.
 - Every query filters by `org_id`. Every table that holds tenant data has an `org_id`.
 - Errors: wrap them with `fmt.Errorf("doing x: %w", err)`. Handlers return JSON errors `{ "error": { "code", "message" } }`.
