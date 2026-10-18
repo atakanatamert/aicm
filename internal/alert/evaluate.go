@@ -487,11 +487,12 @@ func daysUntil(t, today time.Time) int {
 
 func defOf(m db.QuotaMeter) meter.Def {
 	d := meter.Def{
-		Key:       m.Key,
-		Label:     m.Label,
-		Unit:      meter.Unit(m.Unit),
-		ResetKind: meter.ResetKind(m.ResetKind),
-		Limit:     m.LimitValue,
+		Key:          m.Key,
+		Label:        m.Label,
+		Unit:         meter.Unit(m.Unit),
+		ResetKind:    meter.ResetKind(m.ResetKind),
+		Limit:        m.LimitValue,
+		Supplemental: m.Supplemental,
 	}
 	if m.UnitCurrency != nil {
 		d.UnitCurrency = *m.UnitCurrency

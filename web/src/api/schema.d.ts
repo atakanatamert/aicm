@@ -1008,6 +1008,8 @@ export interface components {
             window_minutes?: number | null;
             /** @description Known limit in the meter's unit; null when the provider doesn't say */
             limit?: number | null;
+            /** @description Drawn on only after the plan's own limits run out (for example Codex credits); never makes the account infeasible */
+            supplemental?: boolean;
         };
         /** @description A non-secret adapter option the account form asks for */
         ConfigField: {

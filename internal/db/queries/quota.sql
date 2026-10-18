@@ -1,9 +1,9 @@
 -- name: UpsertMeter :one
 -- Provider- and agent-defined meters are upserted on every report. A manual
 -- meter with the same key is never overwritten by a report.
-INSERT INTO quota_meters (org_id, account_id, key, label, unit, unit_currency, reset_kind, window_minutes, limit_value, manual)
+INSERT INTO quota_meters (org_id, account_id, key, label, unit, unit_currency, reset_kind, window_minutes, limit_value, manual, supplemental)
 VALUES (sqlc.arg(org_id), sqlc.arg(account_id), sqlc.arg(key), sqlc.arg(label), sqlc.arg(unit), sqlc.narg(unit_currency),
-        sqlc.arg(reset_kind), sqlc.narg(window_minutes), sqlc.narg(limit_value), sqlc.arg(manual))
+        sqlc.arg(reset_kind), sqlc.narg(window_minutes), sqlc.narg(limit_value), sqlc.arg(manual), sqlc.arg(supplemental))
 ON CONFLICT (account_id, key) DO UPDATE
 SET label = EXCLUDED.label,
     unit = EXCLUDED.unit,
@@ -11,6 +11,7 @@ SET label = EXCLUDED.label,
     reset_kind = EXCLUDED.reset_kind,
     window_minutes = EXCLUDED.window_minutes,
     limit_value = EXCLUDED.limit_value,
+    supplemental = EXCLUDED.supplemental,
     updated_at = now()
 WHERE quota_meters.org_id = sqlc.arg(org_id) AND quota_meters.manual = EXCLUDED.manual
 RETURNING *;

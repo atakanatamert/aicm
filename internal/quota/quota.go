@@ -133,7 +133,7 @@ func (s *Service) upsertMeter(ctx context.Context, q *db.Queries, orgID, account
 	m, err := q.UpsertMeter(ctx, db.UpsertMeterParams{
 		OrgID: orgID, AccountID: accountID, Key: def.Key, Label: def.Label, Unit: string(def.Unit),
 		UnitCurrency: unitCurrency, ResetKind: string(def.ResetKind), WindowMinutes: window,
-		LimitValue: def.Limit, Manual: manual,
+		LimitValue: def.Limit, Manual: manual, Supplemental: def.Supplemental,
 	})
 	if errors.Is(err, pgx.ErrNoRows) {
 		return m, ErrManualConflict
@@ -514,7 +514,7 @@ func roundDuration(d time.Duration) string {
 }
 
 func defOf(m db.QuotaMeter) meter.Def {
-	d := meter.Def{Key: m.Key, Label: m.Label, Unit: meter.Unit(m.Unit), ResetKind: meter.ResetKind(m.ResetKind), Limit: m.LimitValue}
+	d := meter.Def{Key: m.Key, Label: m.Label, Unit: meter.Unit(m.Unit), ResetKind: meter.ResetKind(m.ResetKind), Limit: m.LimitValue, Supplemental: m.Supplemental}
 	if m.UnitCurrency != nil {
 		d.UnitCurrency = *m.UnitCurrency
 	}

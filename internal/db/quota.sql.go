@@ -11,7 +11,7 @@ import (
 )
 
 const getMeter = `-- name: GetMeter :one
-SELECT id, org_id, account_id, key, label, unit, unit_currency, reset_kind, window_minutes, limit_value, manual, created_at, updated_at FROM quota_meters
+SELECT id, org_id, account_id, key, label, unit, unit_currency, reset_kind, window_minutes, limit_value, manual, created_at, updated_at, supplemental FROM quota_meters
 WHERE org_id = $1 AND account_id = $2 AND key = $3
 `
 
@@ -38,6 +38,7 @@ func (q *Queries) GetMeter(ctx context.Context, arg GetMeterParams) (QuotaMeter,
 		&i.Manual,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.Supplemental,
 	)
 	return i, err
 }
@@ -188,7 +189,7 @@ func (q *Queries) ListMeterReadings(ctx context.Context, arg ListMeterReadingsPa
 }
 
 const listMetersForAccounts = `-- name: ListMetersForAccounts :many
-SELECT id, org_id, account_id, key, label, unit, unit_currency, reset_kind, window_minutes, limit_value, manual, created_at, updated_at FROM quota_meters
+SELECT id, org_id, account_id, key, label, unit, unit_currency, reset_kind, window_minutes, limit_value, manual, created_at, updated_at, supplemental FROM quota_meters
 WHERE org_id = $1 AND account_id = ANY($2::uuid[])
 ORDER BY account_id, key
 `
@@ -221,6 +222,7 @@ func (q *Queries) ListMetersForAccounts(ctx context.Context, arg ListMetersForAc
 			&i.Manual,
 			&i.CreatedAt,
 			&i.UpdatedAt,
+			&i.Supplemental,
 		); err != nil {
 			return nil, err
 		}
@@ -392,9 +394,9 @@ func (q *Queries) PreviousReading(ctx context.Context, arg PreviousReadingParams
 }
 
 const upsertMeter = `-- name: UpsertMeter :one
-INSERT INTO quota_meters (org_id, account_id, key, label, unit, unit_currency, reset_kind, window_minutes, limit_value, manual)
+INSERT INTO quota_meters (org_id, account_id, key, label, unit, unit_currency, reset_kind, window_minutes, limit_value, manual, supplemental)
 VALUES ($1, $2, $3, $4, $5, $6,
-        $7, $8, $9, $10)
+        $7, $8, $9, $10, $11)
 ON CONFLICT (account_id, key) DO UPDATE
 SET label = EXCLUDED.label,
     unit = EXCLUDED.unit,
@@ -402,9 +404,10 @@ SET label = EXCLUDED.label,
     reset_kind = EXCLUDED.reset_kind,
     window_minutes = EXCLUDED.window_minutes,
     limit_value = EXCLUDED.limit_value,
+    supplemental = EXCLUDED.supplemental,
     updated_at = now()
 WHERE quota_meters.org_id = $1 AND quota_meters.manual = EXCLUDED.manual
-RETURNING id, org_id, account_id, key, label, unit, unit_currency, reset_kind, window_minutes, limit_value, manual, created_at, updated_at
+RETURNING id, org_id, account_id, key, label, unit, unit_currency, reset_kind, window_minutes, limit_value, manual, created_at, updated_at, supplemental
 `
 
 type UpsertMeterParams struct {
@@ -418,6 +421,7 @@ type UpsertMeterParams struct {
 	WindowMinutes *int32
 	LimitValue    *float64
 	Manual        bool
+	Supplemental  bool
 }
 
 // Provider- and agent-defined meters are upserted on every report. A manual
@@ -434,6 +438,7 @@ func (q *Queries) UpsertMeter(ctx context.Context, arg UpsertMeterParams) (Quota
 		arg.WindowMinutes,
 		arg.LimitValue,
 		arg.Manual,
+		arg.Supplemental,
 	)
 	var i QuotaMeter
 	err := row.Scan(
@@ -450,6 +455,7 @@ func (q *Queries) UpsertMeter(ctx context.Context, arg UpsertMeterParams) (Quota
 		&i.Manual,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.Supplemental,
 	)
 	return i, err
 }

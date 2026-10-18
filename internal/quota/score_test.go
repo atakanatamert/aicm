@@ -150,6 +150,20 @@ func TestScoreAccountWeakestMeter(t *testing.T) {
 	approx(t, "expiring", a.Expiring, 0.3)
 }
 
+// An empty Codex credits wallet must not make a plan with free limits look
+// exhausted or tight.
+func TestScoreAccountSkipsSupplemental(t *testing.T) {
+	a := ScoreAccount([]MeterScore{
+		{Key: "primary", Headroom: 0.9},
+		{Key: "secondary", Headroom: 0.7},
+		{Key: "credits", Headroom: 0, Exhausted: true, Supplemental: true},
+	})
+	if !a.Feasible || a.Binding != "secondary" {
+		t.Errorf("account = %+v", a)
+	}
+	approx(t, "headroom", a.Headroom, 0.7)
+}
+
 func TestRank(t *testing.T) {
 	cs := []Candidate{
 		{AccountID: "exhausted-sub", Score: AccountScore{Feasible: false, Expiring: 0.9, Headroom: 0}},

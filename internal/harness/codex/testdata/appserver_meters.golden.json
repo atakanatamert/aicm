@@ -50,7 +50,8 @@
       "key": "credits",
       "label": "Codex credits",
       "unit": "credits",
-      "reset_kind": "never"
+      "reset_kind": "never",
+      "supplemental": true
     },
     "reading": {
       "key": "credits",

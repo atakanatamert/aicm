@@ -363,10 +363,11 @@ func windowMeterDef(key string, minutes *int) meter.Def {
 
 func creditsMeterDef() meter.Def {
 	return meter.Def{
-		Key:       "credits",
-		Label:     "Codex credits",
-		Unit:      meter.UnitCredits,
-		ResetKind: meter.ResetNever,
+		Key:          "credits",
+		Label:        "Codex credits",
+		Unit:         meter.UnitCredits,
+		ResetKind:    meter.ResetNever,
+		Supplemental: true,
 	}
 }
 

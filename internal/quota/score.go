@@ -55,6 +55,8 @@ type MeterScore struct {
 	Exhausted bool
 	// NoData: the meter has no readings at all.
 	NoData bool
+	// Supplemental copies the definition's flag; ScoreAccount skips these.
+	Supplemental bool
 }
 
 // lookback is how far back burn rates look.
@@ -167,7 +169,7 @@ func nextReset(d meter.Def, latest meter.Reading, now time.Time) *time.Time {
 
 // ScoreMeter applies the scoring rule to one meter at time now.
 func ScoreMeter(in MeterInput, now time.Time) MeterScore {
-	s := MeterScore{Key: in.Def.Key}
+	s := MeterScore{Key: in.Def.Key, Supplemental: in.Def.Supplemental}
 	if len(in.Readings) == 0 {
 		s.NoData = true
 		s.Headroom = 1
@@ -238,10 +240,14 @@ type AccountScore struct {
 }
 
 // ScoreAccount combines meter scores: weakest headroom, largest expiring
-// share, infeasible when any meter is exhausted.
+// share, infeasible when any meter is exhausted. Supplemental meters are
+// skipped: they are drawn on only after the plan's own limits run out.
 func ScoreAccount(ms []MeterScore) AccountScore {
 	a := AccountScore{Feasible: true, Headroom: 1}
 	for _, m := range ms {
+		if m.Supplemental {
+			continue
+		}
 		if m.Exhausted {
 			a.Feasible = false
 		}

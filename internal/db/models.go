@@ -250,6 +250,7 @@ type QuotaMeter struct {
 	Manual        bool
 	CreatedAt     time.Time
 	UpdatedAt     time.Time
+	Supplemental  bool
 }
 
 type QuotaReading struct {

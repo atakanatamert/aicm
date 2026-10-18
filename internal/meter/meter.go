@@ -71,6 +71,10 @@ type Def struct {
 	WindowMinutes int `json:"window_minutes,omitempty"`
 	// Limit is the known limit in Unit; nil when the provider doesn't say.
 	Limit *float64 `json:"limit,omitempty"`
+	// Supplemental marks a meter drawn on only after the plan's own limits run
+	// out, for example Codex credits. It never makes an account infeasible
+	// and never sets its headroom.
+	Supplemental bool `json:"supplemental,omitempty"`
 }
 
 // Validate checks that the definition is well-formed.

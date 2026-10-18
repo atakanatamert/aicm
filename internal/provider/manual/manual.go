@@ -62,7 +62,7 @@ func All() []provider.Provider {
 			Meters: []meter.Def{
 				{Key: "primary", Label: "5-hour limit", Unit: meter.UnitPercent, ResetKind: meter.ResetFixed, WindowMinutes: 300},
 				{Key: "secondary", Label: "Weekly limit", Unit: meter.UnitPercent, ResetKind: meter.ResetFixed, WindowMinutes: 10080},
-				{Key: "credits", Label: "Codex credits", Unit: meter.UnitCredits, ResetKind: meter.ResetNever},
+				{Key: "credits", Label: "Codex credits", Unit: meter.UnitCredits, ResetKind: meter.ResetNever, Supplemental: true},
 			},
 			ModelFamilies: []string{"gpt"},
 		},

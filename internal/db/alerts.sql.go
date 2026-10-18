@@ -270,7 +270,7 @@ func (q *Queries) ListAlertMachines(ctx context.Context) ([]Machine, error) {
 }
 
 const listAlertMeters = `-- name: ListAlertMeters :many
-SELECT id, org_id, account_id, key, label, unit, unit_currency, reset_kind, window_minutes, limit_value, manual, created_at, updated_at FROM quota_meters
+SELECT id, org_id, account_id, key, label, unit, unit_currency, reset_kind, window_minutes, limit_value, manual, created_at, updated_at, supplemental FROM quota_meters
 ORDER BY org_id, account_id, key
 `
 
@@ -298,6 +298,7 @@ func (q *Queries) ListAlertMeters(ctx context.Context) ([]QuotaMeter, error) {
 			&i.Manual,
 			&i.CreatedAt,
 			&i.UpdatedAt,
+			&i.Supplemental,
 		); err != nil {
 			return nil, err
 		}

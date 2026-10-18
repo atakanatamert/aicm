@@ -1574,6 +1574,9 @@ components:
           type: number
           nullable: true
           description: Known limit in the meter's unit; null when the provider doesn't say
+        supplemental:
+          type: boolean
+          description: Drawn on only after the plan's own limits run out (for example Codex credits); never makes the account infeasible
 
     ConfigField:
       type: object

@@ -1076,6 +1076,9 @@ type MeterDef struct {
 	// `resets_at`. calendar_month: resets on the 1st (UTC).
 	ResetKind ResetKind `json:"reset_kind"`
 
+	// Supplemental Drawn on only after the plan's own limits run out (for example Codex credits); never makes the account infeasible
+	Supplemental *bool `json:"supplemental,omitempty"`
+
 	// Unit percent: 0–100 used. currency: values are minor units of `unit_currency`.
 	// count, tokens, requests, credits: provider-defined counts.
 	Unit MeterUnit `json:"unit"`

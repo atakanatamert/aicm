@@ -34,11 +34,15 @@ func toMeterDef(d meter.Def) MeterDef {
 	if d.WindowMinutes > 0 {
 		out.WindowMinutes = new(d.WindowMinutes)
 	}
+	if d.Supplemental {
+		out.Supplemental = new(true)
+	}
 	return out
 }
 
 func fromMeterDef(d MeterDef) meter.Def {
-	out := meter.Def{Key: d.Key, Label: d.Label, Unit: meter.Unit(d.Unit), ResetKind: meter.ResetKind(d.ResetKind), Limit: d.Limit}
+	out := meter.Def{Key: d.Key, Label: d.Label, Unit: meter.Unit(d.Unit), ResetKind: meter.ResetKind(d.ResetKind), Limit: d.Limit,
+		Supplemental: d.Supplemental != nil && *d.Supplemental}
 	if d.UnitCurrency != nil {
 		out.UnitCurrency = *d.UnitCurrency
 	}
