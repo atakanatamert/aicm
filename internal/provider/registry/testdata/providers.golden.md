@@ -1,0 +1,22 @@
+| Provider | Usage | Money out | Quota meters | Captured by | Links |
+| --- | --- | --- | --- | --- | --- |
+| OpenRouter | API | Manual | Credits remaining, Key spend limit | API key | [Top up](https://openrouter.ai/settings/credits) · [Usage](https://openrouter.ai/activity) · [Docs](https://openrouter.ai/docs/api/api-reference/credits/get-remaining-credits) |
+| Anthropic API | API | Manual | – | Admin key | [Billing](https://platform.claude.com/settings/billing) · [Usage](https://platform.claude.com/usage) · [Docs](https://platform.claude.com/docs/en/build-with-claude/usage-cost-api) |
+| OpenAI API | API | Manual | – | Admin key | [Billing](https://platform.openai.com/settings/organization/billing/overview) · [Usage](https://platform.openai.com/usage) · [Docs](https://platform.openai.com/docs/api-reference/usage) |
+| xAI API | API | API | Prepaid credits | Admin key | [Billing](https://console.x.ai) · [Docs](https://docs.x.ai/developers/rest-api-reference/management/billing) |
+| DeepSeek | – | Manual | Topped-up balance (CNY), Granted balance (CNY), Topped-up balance (USD), Granted balance (USD) | API key | [Top up](https://platform.deepseek.com/top_up) · [Usage](https://platform.deepseek.com/usage) · [Docs](https://api-docs.deepseek.com/api/get-user-balance) |
+| Moonshot (Kimi) | – | Manual | Cash balance (USD), Voucher balance (USD), Cash balance (CNY), Voucher balance (CNY) | API key | [Top up](https://platform.moonshot.ai/console/pay) · [Docs](https://platform.kimi.ai/docs/api/balance) |
+| Z.ai GLM Coding Plan (unofficial, opt-in) | – | Manual | Prompt window (5 h), Monthly tool calls, Credits | API key | [Billing](https://z.ai/manage-apikey/billing) · [Manage](https://z.ai/subscribe) |
+| GitHub Copilot | – | Manual | AI credits | API key | [Billing](https://github.com/settings/billing) · [Usage](https://github.com/settings/billing/usage) · [Manage](https://github.com/settings/copilot) · [Docs](https://docs.github.com/en/rest/billing/usage) |
+| Claude (Pro / Max) | Agent | Manual | 5-hour limit, Weekly limit, Weekly limit (Opus), Weekly limit (Sonnet) | Agent | [Billing](https://claude.ai/settings/billing) · [Usage](https://claude.ai/settings/usage) · [Manage](https://claude.ai/settings/billing) |
+| ChatGPT (Plus / Pro, Codex) | Agent | Manual | 5-hour limit, Weekly limit, Codex credits | Agent | [Billing](https://chatgpt.com/#settings/Account) · [Usage](https://chatgpt.com/codex/settings/usage) · [Manage](https://chatgpt.com/#settings/Account) |
+| Google AI Studio (Gemini API) | – | Manual | Prepaid credits, Spend this month | Manual | [Billing](https://aistudio.google.com/billing) · [Top up](https://aistudio.google.com/billing) · [Usage](https://aistudio.google.com/usage) · [Docs](https://ai.google.dev/gemini-api/docs/billing) |
+| Google AI Pro / Ultra | – | Manual | – | Manual | [Billing](https://one.google.com/settings) · [Manage](https://one.google.com/settings) |
+| SuperGrok | – | Manual | – | Manual | [Billing](https://grok.com/plans) · [Manage](https://grok.com/plans) |
+| Cursor | – | Manual | – | Manual | [Billing](https://cursor.com/dashboard) · [Usage](https://cursor.com/dashboard) · [Manage](https://cursor.com/dashboard) |
+| Mistral | – | Manual | Balance | Manual | [Billing](https://admin.mistral.ai/organization/billing) · [Top up](https://admin.mistral.ai/organization/billing) · [Usage](https://console.mistral.ai/usage) |
+| Together AI | – | Manual | Balance | Manual | [Billing](https://api.together.ai/settings/organization/~current/billing) · [Top up](https://api.together.ai/settings/organization/~current/billing) |
+| Perplexity (API and Pro) | – | Manual | API balance | Manual | [Billing](https://console.perplexity.ai/project/billing) · [Top up](https://console.perplexity.ai/project/billing) · [Usage](https://console.perplexity.ai/project/billing) · [Manage](https://www.perplexity.ai/settings/account) |
+| Cohere | – | Manual | – | Manual | [Billing](https://dashboard.cohere.com/billing) · [Top up](https://dashboard.cohere.com/billing) · [Usage](https://dashboard.cohere.com/billing) |
+| Groq | – | Manual | Balance | Manual | [Billing](https://console.groq.com/settings/billing) · [Top up](https://console.groq.com/settings/billing) · [Usage](https://console.groq.com/settings/billing) |
+| Fireworks AI | – | Manual | Balance | Manual | [Billing](https://app.fireworks.ai/account/billing) · [Top up](https://app.fireworks.ai/account/billing) · [Usage](https://app.fireworks.ai/account/billing) |

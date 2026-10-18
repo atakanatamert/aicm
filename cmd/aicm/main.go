@@ -50,6 +50,8 @@ Commands:
   rotate-key --new-key-file PATH  re-wrap every org data key with a new master key
   create-admin --email E --name N
                             create an admin (password from AICM_ADMIN_PASSWORD)
+  providers --markdown      print the supported-providers table
+  providers --write FILE    replace the providers table in FILE between the markers
   version                   print the version
 `
 
@@ -75,6 +77,8 @@ func run(args []string, stdout, stderr io.Writer) int {
 		err = rotateKey(ctx, args[1:], stdout)
 	case "create-admin":
 		err = createAdmin(ctx, args[1:], stdout)
+	case "providers":
+		err = providers(args[1:], stdout)
 	case "version":
 		fmt.Fprintln(stdout, version.Name, version.Version)
 	case "-h", "--help", "help":
@@ -211,6 +215,82 @@ func createAdmin(ctx context.Context, args []string, stdout io.Writer) error {
 		return err
 	}
 	fmt.Fprintln(stdout, "admin created:", *email)
+	return nil
+}
+
+// providers prints the catalog table or rewrites it in a file.
+func providers(args []string, stdout io.Writer) error {
+	fs := flag.NewFlagSet("providers", flag.ContinueOnError)
+	markdown := fs.Bool("markdown", false, "print the supported-providers table")
+	write := fs.String("write", "", "replace the providers block in this file")
+	if err := fs.Parse(args); err != nil {
+		return fmt.Errorf("parsing providers flags: %w", err)
+	}
+
+	table := registry.Markdown(registry.All(nil))
+	if *write != "" {
+		if err := writeProvidersTable(*write, table); err != nil {
+			return err
+		}
+		return nil
+	}
+	if !*markdown {
+		return errors.New("usage: providers --markdown | --write FILE")
+	}
+	if _, err := io.WriteString(stdout, table); err != nil {
+		return fmt.Errorf("writing providers table: %w", err)
+	}
+	return nil
+}
+
+const (
+	providersStart = "<!-- providers:start -->"
+	providersEnd   = "<!-- providers:end -->"
+)
+
+// writeProvidersTable replaces the table inside the README markers, keeping
+// the note above it. A second run leaves the file unchanged.
+func writeProvidersTable(path, table string) error {
+	b, err := os.ReadFile(path) //nolint:gosec // path is an explicit CLI argument
+	if err != nil {
+		return fmt.Errorf("reading %s: %w", path, err)
+	}
+	src := string(b)
+	start := strings.Index(src, providersStart)
+	if start < 0 {
+		return fmt.Errorf("%s: missing %q", path, providersStart)
+	}
+	body := start + len(providersStart)
+	rel := strings.Index(src[body:], providersEnd)
+	if rel < 0 {
+		return fmt.Errorf("%s: missing %q", path, providersEnd)
+	}
+	end := body + rel
+
+	// Keep the note above the table and drop the stale rows.
+	prefix := src[body:end]
+	if i := strings.Index(prefix, "\n|"); i >= 0 {
+		prefix = prefix[:i+1]
+	} else if strings.HasPrefix(prefix, "|") {
+		prefix = "\n"
+	}
+	if prefix == "" {
+		prefix = "\n"
+	}
+	if !strings.HasSuffix(prefix, "\n") {
+		prefix += "\n"
+	}
+	if !strings.HasSuffix(prefix, "\n\n") {
+		prefix += "\n"
+	}
+
+	out := src[:body] + prefix + table + src[end:]
+	if out == src {
+		return nil
+	}
+	if err := os.WriteFile(path, []byte(out), 0o600); err != nil { //nolint:gosec // existing file keeps its mode
+		return fmt.Errorf("writing %s: %w", path, err)
+	}
 	return nil
 }
 
