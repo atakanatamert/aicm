@@ -107,6 +107,14 @@ export function AppShell() {
   const me = query.useQuery("get", "/api/me")
   const health = query.useQuery("get", "/healthz")
   const settings = query.useQuery("get", "/api/settings")
+  // Unread badge on the Alerts nav item, polled every 60 s.
+  const unreadAlerts = query.useQuery(
+    "get",
+    "/api/alerts",
+    { params: { query: { unread: true, limit: 1 } } },
+    { refetchInterval: 60_000 },
+  )
+  const unreadCount = unreadAlerts.data?.unread_count ?? 0
   const isAdmin = me.data?.user.role === "admin"
   const items = isAdmin ? [...NAV, ADMIN_NAV] : NAV
   const version = health.data?.version ?? ""
@@ -130,9 +138,22 @@ export function AppShell() {
                 {items.map((item) => (
                   <SidebarMenuItem key={item.to}>
                     <SidebarMenuButton asChild isActive={location.pathname === item.to} tooltip={item.title}>
-                      <NavLink to={item.to}>
+                      <NavLink to={item.to} className="relative">
                         <item.icon />
                         <span>{item.title}</span>
+                        {item.to === "/alerts" && unreadCount > 0 && (
+                          <>
+                            <span
+                              className="ml-auto flex h-4.5 min-w-4.5 items-center justify-center rounded-full bg-primary px-1.5 text-[11px] font-medium text-primary-foreground tabular-nums group-data-[collapsible=icon]:hidden"
+                            >
+                              {unreadCount > 99 ? "99+" : unreadCount}
+                            </span>
+                            <span
+                              aria-hidden
+                              className="absolute top-1.5 right-2 hidden size-2 rounded-full bg-primary group-data-[collapsible=icon]:block"
+                            />
+                          </>
+                        )}
                       </NavLink>
                     </SidebarMenuButton>
                   </SidebarMenuItem>

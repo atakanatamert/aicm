@@ -1,16 +1,21 @@
-import { EmptyState } from "@/components/empty-state"
+import { AlertList } from "@/components/alerts/alert-list"
+import { AlertRulesPanel } from "@/components/alerts/alert-rules"
+import { useAccounts } from "@/components/alerts/queries"
 import { PageHeader } from "@/components/page-header"
-import { Relay } from "@/components/ui/hairline"
+import { useMe } from "@/hooks/use-me"
 
 export default function Alerts() {
+  const { canEdit, isAdmin } = useMe()
+  const accounts = useAccounts()
+  const accountNames: Record<string, string> = Object.fromEntries(
+    (accounts.data ?? []).map((account) => [account.id, account.name]),
+  )
+
   return (
     <>
       <PageHeader title="Alerts" description="Quota and renewal alerts in one inbox." />
-      <EmptyState
-        figure={<Relay play />}
-        title="No alerts yet"
-        description="Alerts land here as they fire, until you mark them read."
-      />
+      <AlertList accountNames={accountNames} />
+      <AlertRulesPanel canEdit={canEdit} isAdmin={isAdmin} />
     </>
   )
 }
