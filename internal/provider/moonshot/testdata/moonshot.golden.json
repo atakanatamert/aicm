@@ -1,0 +1,30 @@
+{
+  "china": [
+    {
+      "key": "cash_cny",
+      "remaining": 300,
+      "captured_at": "2026-10-18T09:00:00Z",
+      "source": "api"
+    },
+    {
+      "key": "voucher_cny",
+      "remaining": 4659,
+      "captured_at": "2026-10-18T09:00:00Z",
+      "source": "api"
+    }
+  ],
+  "global": [
+    {
+      "key": "cash_usd",
+      "remaining": 300,
+      "captured_at": "2026-10-18T09:00:00Z",
+      "source": "api"
+    },
+    {
+      "key": "voucher_usd",
+      "remaining": 4659,
+      "captured_at": "2026-10-18T09:00:00Z",
+      "source": "api"
+    }
+  ]
+}
