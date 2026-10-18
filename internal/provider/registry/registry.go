@@ -7,6 +7,7 @@ package registry
 import (
 	"github.com/atakanatamert/aicm/internal/provider"
 	"github.com/atakanatamert/aicm/internal/provider/anthropic"
+	"github.com/atakanatamert/aicm/internal/provider/copilot"
 	"github.com/atakanatamert/aicm/internal/provider/deepseek"
 	"github.com/atakanatamert/aicm/internal/provider/manual"
 	"github.com/atakanatamert/aicm/internal/provider/moonshot"
@@ -27,6 +28,7 @@ func All(c *provider.HTTPClient) []provider.Provider {
 		deepseek.New(c),
 		moonshot.New(c),
 		zai.New(c),
+		copilot.New(c),
 	}
 	return append(ps, manual.All()...)
 }

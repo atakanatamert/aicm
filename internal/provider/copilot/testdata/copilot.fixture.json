@@ -1,0 +1,140 @@
+{
+  "_source": "https://docs.github.com/en/rest/billing/usage#get-billing-ai-credit-usage-report-for-a-user",
+  "recorded_at": "2026-10-18T12:00:00Z",
+  "interactions": [
+    {
+      "method": "GET",
+      "url": "https://api.github.com/users/octocat/settings/billing/ai_credit/usage",
+      "status": 200,
+      "header": {
+        "Content-Type": "application/json",
+        "Link": "<https://api.github.com/users/octocat/settings/billing/ai_credit/usage?page=2>; rel=\"next\""
+      },
+      "body": {
+        "timePeriod": {
+          "year": 2026,
+          "month": 10
+        },
+        "user": "octocat",
+        "product": "copilot",
+        "usageItems": [
+          {
+            "product": "copilot",
+            "sku": "Copilot Pro Plus",
+            "model": "gpt-5",
+            "unitType": "credits",
+            "pricePerUnit": 1,
+            "grossQuantity": 1200,
+            "grossAmount": 1200,
+            "discountQuantity": 200,
+            "discountAmount": 200,
+            "netQuantity": 1000,
+            "netAmount": 1000
+          },
+          {
+            "product": "copilot",
+            "sku": "Copilot Pro Plus",
+            "model": "claude-sonnet-4.5",
+            "unitType": "credits",
+            "pricePerUnit": 1,
+            "grossQuantity": 500,
+            "grossAmount": 500,
+            "discountQuantity": 0,
+            "discountAmount": 0,
+            "netQuantity": 500,
+            "netAmount": 500
+          }
+        ]
+      }
+    },
+    {
+      "method": "GET",
+      "url": "https://api.github.com/users/octocat/settings/billing/ai_credit/usage",
+      "status": 200,
+      "header": {
+        "Content-Type": "application/json",
+        "Link": "<https://api.github.com/users/octocat/settings/billing/ai_credit/usage?page=2>; rel=\"next\""
+      },
+      "body": {
+        "timePeriod": {
+          "year": 2026,
+          "month": 10
+        },
+        "user": "octocat",
+        "product": "copilot",
+        "usageItems": [
+          {
+            "product": "copilot",
+            "sku": "Copilot Pro Plus",
+            "model": "gpt-5",
+            "unitType": "credits",
+            "pricePerUnit": 1,
+            "grossQuantity": 1200,
+            "grossAmount": 1200,
+            "discountQuantity": 200,
+            "discountAmount": 200,
+            "netQuantity": 1000,
+            "netAmount": 1000
+          },
+          {
+            "product": "copilot",
+            "sku": "Copilot Pro Plus",
+            "model": "claude-sonnet-4.5",
+            "unitType": "credits",
+            "pricePerUnit": 1,
+            "grossQuantity": 500,
+            "grossAmount": 500,
+            "discountQuantity": 0,
+            "discountAmount": 0,
+            "netQuantity": 500,
+            "netAmount": 500
+          }
+        ]
+      }
+    },
+    {
+      "method": "GET",
+      "url": "https://api.github.com/users/octocat/settings/billing/ai_credit/usage?page=2",
+      "status": 200,
+      "header": {
+        "Content-Type": "application/json"
+      },
+      "body": {
+        "timePeriod": {
+          "year": 2026,
+          "month": 10
+        },
+        "user": "octocat",
+        "product": "copilot",
+        "usageItems": [
+          {
+            "product": "copilot",
+            "sku": "Copilot Pro Plus",
+            "model": "gemini-2.5-pro",
+            "unitType": "credits",
+            "pricePerUnit": 1,
+            "grossQuantity": 250,
+            "grossAmount": 250,
+            "discountQuantity": 0,
+            "discountAmount": 0,
+            "netQuantity": 250,
+            "netAmount": 250
+          },
+          {
+            "product": "copilot",
+            "sku": "Copilot Pro Plus",
+            "model": "gpt-5-mini",
+            "unitType": "credits",
+            "pricePerUnit": 1,
+            "grossQuantity": 125,
+            "grossAmount": 125,
+            "discountQuantity": 0,
+            "discountAmount": 0,
+            "netQuantity": 125,
+            "netAmount": 125
+          }
+        ]
+      }
+    }
+  ]
+}

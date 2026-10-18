@@ -1,0 +1,11 @@
+[
+  {
+    "key": "ai_credits",
+    "used": 1875,
+    "remaining": 5125,
+    "limit": 7000,
+    "resets_at": "2026-11-01T00:00:00Z",
+    "captured_at": "2026-10-18T12:00:00Z",
+    "source": "api"
+  }
+]
