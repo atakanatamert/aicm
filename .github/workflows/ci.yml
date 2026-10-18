@@ -60,6 +60,8 @@ jobs:
           go run ./cmd/aicm migrate status
         env:
           AICM_DATABASE_URL: postgres://aicm:aicm@localhost:5432/aicm?sslmode=disable
+          AICM_MASTER_KEY_FILE: ${{ runner.temp }}/aicm-master.key
+          AICM_MASTER_KEY_GENERATE: "true"
 
   web:
     runs-on: ubuntu-latest
