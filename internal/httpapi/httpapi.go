@@ -20,6 +20,7 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/atakanatamert/aicm/internal/audit"
 	"github.com/atakanatamert/aicm/internal/auth"
 	"github.com/atakanatamert/aicm/internal/quota"
 	"github.com/atakanatamert/aicm/internal/secrets"
@@ -40,6 +41,7 @@ type Deps struct {
 	Auth    *auth.Service
 	Usage   *usage.Service
 	Quota   *quota.Service
+	Audit   *audit.Service
 }
 
 // Server implements StrictServerInterface.

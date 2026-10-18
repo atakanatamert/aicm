@@ -20,6 +20,7 @@ import (
 
 	"github.com/jackc/pgx/v5/pgxpool"
 
+	"github.com/atakanatamert/aicm/internal/audit"
 	"github.com/atakanatamert/aicm/internal/auth"
 	"github.com/atakanatamert/aicm/internal/config"
 	"github.com/atakanatamert/aicm/internal/db"
@@ -260,6 +261,7 @@ func serve(ctx context.Context, args []string) error {
 		return p.Info(), true
 	}
 	quotaSvc := quota.NewService(pool, log, catalog, quota.PriceFromTable(prices))
+	auditSvc := audit.NewService(pool)
 
 	srv := &http.Server{
 		Addr: cfg.ListenAddr,
@@ -270,6 +272,7 @@ func serve(ctx context.Context, args []string) error {
 			Auth:    auth.NewService(pool, log, cfg.PublicURL),
 			Usage:   usageSvc,
 			Quota:   quotaSvc,
+			Audit:   auditSvc,
 		}),
 		ReadHeaderTimeout: 10 * time.Second,
 	}

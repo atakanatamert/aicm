@@ -17,6 +17,7 @@ import (
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 
+	"github.com/atakanatamert/aicm/internal/audit"
 	"github.com/atakanatamert/aicm/internal/auth"
 	"github.com/atakanatamert/aicm/internal/db"
 	"github.com/atakanatamert/aicm/internal/meter"
@@ -134,6 +135,14 @@ func (s *Service) UpsertManualMeter(ctx context.Context, p auth.Principal, accou
 	if _, err := s.upsertMeter(ctx, s.q, p.OrgID, accountID, def, true); err != nil {
 		return def, err
 	}
+	if err := audit.Write(ctx, s.q, p, audit.Entry{
+		Action:     "meter.upsert",
+		TargetKind: "meter",
+		TargetID:   accountID + "/" + def.Key,
+		After:      def,
+	}); err != nil {
+		return def, err
+	}
 	return def, nil
 }
 
@@ -158,6 +167,14 @@ func (s *Service) RecordManualReading(ctx context.Context, p auth.Principal, acc
 		return r, err
 	}
 	if _, err := s.insertReading(ctx, s.q, p.OrgID, m.ID, r, nil); err != nil {
+		return r, err
+	}
+	if err := audit.Write(ctx, s.q, p, audit.Entry{
+		Action:     "reading.create",
+		TargetKind: "meter",
+		TargetID:   accountID + "/" + key,
+		After:      r,
+	}); err != nil {
 		return r, err
 	}
 	return r, nil

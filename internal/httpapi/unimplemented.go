@@ -75,10 +75,6 @@ func (s *Server) UpdateAlert(context.Context, UpdateAlertRequestObject) (UpdateA
 	return nil, ErrNotImplemented
 }
 
-func (s *Server) ListAuditLog(context.Context, ListAuditLogRequestObject) (ListAuditLogResponseObject, error) {
-	return nil, ErrNotImplemented
-}
-
 func (s *Server) ListCharges(context.Context, ListChargesRequestObject) (ListChargesResponseObject, error) {
 	return nil, ErrNotImplemented
 }
