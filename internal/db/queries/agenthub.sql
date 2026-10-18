@@ -3,8 +3,9 @@
 
 -- name: UpsertDiscoveredAccount :one
 -- One account per (org, provider, external id), even when several machines
--- report it at the same time. An existing account keeps its status and name.
-INSERT INTO accounts (org_id, provider_id, name, status, external_id, auth_kind, currency)
+-- report it at the same time. An existing account keeps its status and name;
+-- the plan name the harness reports fills an empty plan name.
+INSERT INTO accounts (org_id, provider_id, name, status, external_id, auth_kind, currency, plan_name)
 VALUES (
     sqlc.arg(org_id)::uuid,
     sqlc.arg(provider_id),
@@ -12,10 +13,11 @@ VALUES (
     'pending',
     sqlc.arg(external_id),
     sqlc.arg(auth_kind),
-    sqlc.arg(currency)::char(3)
+    sqlc.arg(currency)::char(3),
+    sqlc.arg(plan_name)
 )
 ON CONFLICT (org_id, provider_id, external_id) WHERE external_id IS NOT NULL
-DO UPDATE SET external_id = EXCLUDED.external_id
+DO UPDATE SET plan_name = CASE WHEN accounts.plan_name = '' THEN EXCLUDED.plan_name ELSE accounts.plan_name END
 RETURNING *, (xmax = '0'::xid) AS inserted;
 
 -- name: UpsertAccountMachine :exec

@@ -257,7 +257,7 @@ func (q *Queries) UpsertAccountMachine(ctx context.Context, arg UpsertAccountMac
 
 const upsertDiscoveredAccount = `-- name: UpsertDiscoveredAccount :one
 
-INSERT INTO accounts (org_id, provider_id, name, status, external_id, auth_kind, currency)
+INSERT INTO accounts (org_id, provider_id, name, status, external_id, auth_kind, currency, plan_name)
 VALUES (
     $1::uuid,
     $2,
@@ -265,10 +265,11 @@ VALUES (
     'pending',
     $4,
     $5,
-    $6::char(3)
+    $6::char(3),
+    $7
 )
 ON CONFLICT (org_id, provider_id, external_id) WHERE external_id IS NOT NULL
-DO UPDATE SET external_id = EXCLUDED.external_id
+DO UPDATE SET plan_name = CASE WHEN accounts.plan_name = '' THEN EXCLUDED.plan_name ELSE accounts.plan_name END
 RETURNING id, org_id, provider_id, name, status, external_id, auth_kind, secret_id, config, allow_unofficial, plan_name, price_minor, currency, billing_cycle, renews_on, auto_renew, promo_kind, promo_ends_on, notes, last_synced_at, last_sync_error, sync_failing_since, archived_at, created_at, updated_at, renewal_anchor_day, (xmax = '0'::xid) AS inserted
 `
 
@@ -279,6 +280,7 @@ type UpsertDiscoveredAccountParams struct {
 	ExternalID *string
 	AuthKind   string
 	Currency   string
+	PlanName   string
 }
 
 type UpsertDiscoveredAccountRow struct {
@@ -314,7 +316,8 @@ type UpsertDiscoveredAccountRow struct {
 // Agent ingest: accounts discovered by agents, their machine links and the
 // review actions. Every query filters by org_id.
 // One account per (org, provider, external id), even when several machines
-// report it at the same time. An existing account keeps its status and name.
+// report it at the same time. An existing account keeps its status and name;
+// the plan name the harness reports fills an empty plan name.
 func (q *Queries) UpsertDiscoveredAccount(ctx context.Context, arg UpsertDiscoveredAccountParams) (UpsertDiscoveredAccountRow, error) {
 	row := q.db.QueryRow(ctx, upsertDiscoveredAccount,
 		arg.OrgID,
@@ -323,6 +326,7 @@ func (q *Queries) UpsertDiscoveredAccount(ctx context.Context, arg UpsertDiscove
 		arg.ExternalID,
 		arg.AuthKind,
 		arg.Currency,
+		arg.PlanName,
 	)
 	var i UpsertDiscoveredAccountRow
 	err := row.Scan(

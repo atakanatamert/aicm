@@ -178,6 +178,7 @@ func (h *Hub) resolveAccount(ctx context.Context, q *db.Queries, orgID string, i
 		ExternalID: &externalID,
 		AuthKind:   kind,
 		Currency:   info.Currency,
+		PlanName:   strings.TrimSpace(item.Plan),
 	})
 	if err != nil {
 		return db.UpsertDiscoveredAccountRow{}, fmt.Errorf("upserting account: %w", err)

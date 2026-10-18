@@ -194,9 +194,11 @@ type appRateLimitWindow struct {
 	ResetsAt           *int64  `json:"resetsAt"`
 }
 
+// appCredits mirrors rolloutCredits (camelCase on the app-server protocol).
 type appCredits struct {
-	Unlimited bool    `json:"unlimited"`
-	Balance   *string `json:"balance"`
+	HasCredits bool    `json:"hasCredits"`
+	Unlimited  bool    `json:"unlimited"`
+	Balance    *string `json:"balance"`
 }
 
 func (c *appClient) readRateLimits(ctx context.Context) (*appRateLimitResponse, error) {
@@ -244,7 +246,7 @@ func appServerReports(ref agentlink.AccountRef, limits *appRateLimits, capturedA
 	appendWindow("primary", limits.Primary)
 	appendWindow("secondary", limits.Secondary)
 
-	if credits := limits.Credits; credits != nil && !credits.Unlimited && credits.Balance != nil {
+	if credits := limits.Credits; credits != nil && credits.HasCredits && !credits.Unlimited && credits.Balance != nil {
 		if balance, err := strconv.ParseFloat(*credits.Balance, 64); err == nil {
 			reports = append(reports, agentlink.MeterReport{
 				Account: ref,

@@ -193,9 +193,13 @@ type rolloutRateLimitWindow struct {
 	ResetsInSeconds *int64  `json:"resets_in_seconds"`
 }
 
+// rolloutCredits is Codex's add-on credit balance. Accounts without
+// purchased credits report has_credits false and balance "0"; that is not an
+// exhausted meter, so only accounts with credits get a reading.
 type rolloutCredits struct {
-	Unlimited bool    `json:"unlimited"`
-	Balance   *string `json:"balance"`
+	HasCredits bool    `json:"has_credits"`
+	Unlimited  bool    `json:"unlimited"`
+	Balance    *string `json:"balance"`
 }
 
 func parseRolloutLine(raw []byte, st *rolloutState, ref agentlink.AccountRef) ([]agentlink.UsageEvent, []agentlink.MeterReport) {
@@ -302,7 +306,7 @@ func rolloutMeterReports(ref agentlink.AccountRef, limits *rolloutRateLimits, ca
 	appendWindow("primary", limits.Primary)
 	appendWindow("secondary", limits.Secondary)
 
-	if c := limits.Credits; c != nil && !c.Unlimited && c.Balance != nil {
+	if c := limits.Credits; c != nil && c.HasCredits && !c.Unlimited && c.Balance != nil {
 		if balance, err := strconv.ParseFloat(*c.Balance, 64); err == nil {
 			reports = append(reports, agentlink.MeterReport{
 				Account: ref,
@@ -494,7 +498,7 @@ func hasReadings(limits *rolloutRateLimits) bool {
 	if limits.Primary != nil || limits.Secondary != nil {
 		return true
 	}
-	return limits.Credits != nil && !limits.Credits.Unlimited && limits.Credits.Balance != nil
+	return limits.Credits != nil && limits.Credits.HasCredits && !limits.Credits.Unlimited && limits.Credits.Balance != nil
 }
 
 // sessionIDFromPath extracts the thread id from
