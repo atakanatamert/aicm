@@ -22,7 +22,7 @@ export function SyncButton({ accountId }: { accountId: string }) {
 
   return (
     <div className="flex flex-col items-start gap-1">
-      <Button variant="outline" size="xs" disabled={sync.isPending} onClick={() => void onSync()}>
+      <Button variant="outline" size="sm" disabled={sync.isPending} onClick={() => void onSync()}>
         Sync now
       </Button>
       {note && (

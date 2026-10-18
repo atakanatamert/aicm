@@ -2,8 +2,10 @@ import { Link } from "react-router"
 import { Bar, BarChart, CartesianGrid, XAxis, YAxis } from "recharts"
 import type { components } from "@/api/schema"
 import { ChartContainer, ChartLegend, ChartLegendContent, ChartTooltip, ChartTooltipContent, type ChartConfig } from "@/components/ui/chart"
+import { providerColor } from "@/lib/provider-colors"
 import { useProviderNames } from "@/hooks/use-provider-names"
 import { currencyExponent, formatMoney } from "@/lib/format"
+import { currencySymbol } from "./spend-format"
 
 type SpendRow = components["schemas"]["SpendRow"]
 type CurrencyCode = components["schemas"]["CurrencyCode"]
@@ -22,14 +24,20 @@ interface SpendChartProps {
 export function SpendChart({ rows, displayCurrency, year }: SpendChartProps) {
   const providerName = useProviderNames()
   const exp = currencyExponent(displayCurrency)
+  const symbol = currencySymbol(displayCurrency)
   const totals = new Map<string, number>()
   for (const row of rows) {
     totals.set(row.provider_id, (totals.get(row.provider_id) ?? 0) + (row.converted?.amount_minor ?? 0))
   }
   const providers = [...totals.keys()].sort((a, b) => (totals.get(b) ?? 0) - (totals.get(a) ?? 0))
 
+  // Start at the first month that has data, at most 12 months back.
+  const currentMonth = new Date().getUTCMonth()
+  const monthsWithData = rows.map((row) => Number(row.period.slice(5, 7)) - 1).filter((m) => m >= 0 && m <= currentMonth)
+  const firstMonth = monthsWithData.length > 0 ? Math.min(...monthsWithData) : 0
+
   const data = []
-  for (let m = 0; m <= new Date().getUTCMonth(); m++) {
+  for (let m = firstMonth; m <= currentMonth; m++) {
     const period = `${year}-${String(m + 1).padStart(2, "0")}`
     const point: Record<string, number | string> = { month: MONTHS[m] }
     for (const provider of providers) {
@@ -40,7 +48,7 @@ export function SpendChart({ rows, displayCurrency, year }: SpendChartProps) {
   }
 
   const config: ChartConfig = Object.fromEntries(
-    providers.map((provider, i) => [provider, { label: providerName(provider), color: `var(--chart-${(i % 5) + 1})` }]),
+    providers.map((provider) => [provider, { label: providerName(provider), color: providerColor(provider) }]),
   )
 
   return (
@@ -49,7 +57,12 @@ export function SpendChart({ rows, displayCurrency, year }: SpendChartProps) {
         <BarChart data={data}>
           <CartesianGrid vertical={false} />
           <XAxis dataKey="month" tickLine={false} axisLine={false} tickMargin={8} />
-          <YAxis tickLine={false} axisLine={false} width={44} tickFormatter={(v) => compactNumber.format(Number(v))} />
+          <YAxis
+            tickLine={false}
+            axisLine={false}
+            width={48}
+            tickFormatter={(v) => `${symbol}${compactNumber.format(Number(v))}`}
+          />
           <ChartTooltip
             content={
               <ChartTooltipContent
@@ -64,7 +77,7 @@ export function SpendChart({ rows, displayCurrency, year }: SpendChartProps) {
           />
           <ChartLegend content={<ChartLegendContent />} />
           {providers.map((provider) => (
-            <Bar key={provider} dataKey={provider} stackId="money" fill={`var(--color-${provider})`} />
+            <Bar key={provider} dataKey={provider} stackId="money" fill={providerColor(provider)} />
           ))}
         </BarChart>
       </ChartContainer>

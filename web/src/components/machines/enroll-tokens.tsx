@@ -12,8 +12,14 @@ import { formatDate, formatRelative } from "@/lib/format"
 
 type EnrollToken = components["schemas"]["EnrollToken"]
 
+/** Past its expiry (and not revoked): it can no longer enroll machines. */
+function isExpired(token: EnrollToken): boolean {
+  return token.expires_at !== null && token.expires_at !== undefined && new Date(token.expires_at).getTime() <= Date.now()
+}
+
 function ExpiresCell({ token }: { token: EnrollToken }) {
   if (token.revoked_at) return <Badge variant="outline">Revoked</Badge>
+  if (isExpired(token)) return <Badge variant="outline">Expired</Badge>
   if (!token.expires_at) return <span className="text-sm">Permanent</span>
   return (
     <span className="text-sm text-muted-foreground">
@@ -76,14 +82,15 @@ export function EnrollTokens() {
                 </TableCell>
                 <TableCell className="tabular-nums">{token.use_count}</TableCell>
                 <TableCell>
-                  {!token.revoked_at && (
+                  {!token.revoked_at && !isExpired(token) && (
                     <Button
                       variant="ghost"
                       size="icon-xs"
+                      className="group/revoke"
                       aria-label="Revoke token"
                       onClick={() => setRevoking(token)}
                     >
-                      <X className="text-destructive" />
+                      <X className="text-muted-foreground group-hover/revoke:text-destructive group-focus-visible/revoke:text-destructive" />
                     </Button>
                   )}
                 </TableCell>

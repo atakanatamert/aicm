@@ -3,6 +3,7 @@ import { RefreshCw } from "lucide-react"
 import { toast } from "sonner"
 import { query, queryClient } from "@/api/client"
 import type { components } from "@/api/schema"
+import { ConfirmDialog } from "@/components/machines/confirm-dialog"
 import { EmptyState } from "@/components/empty-state"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -38,7 +39,7 @@ export function UsersTab() {
   const [resetTarget, setResetTarget] = useState<User | null>(null)
 
   return (
-    <section className="px-6 py-6">
+    <section className="py-6">
       <div className="mb-4 flex items-center justify-between gap-4">
         <p className="text-sm text-muted-foreground">
           Admins manage everything, editors change data, viewers only look. Invited people sign in with the
@@ -95,59 +96,92 @@ function UserRow({ user, onReset }: { user: User; onReset: () => void }) {
   const patch = query.useMutation("patch", "/api/users/{userId}", {
     onSuccess: (updated) => {
       toast.success(`Saved ${updated.email}.`)
+      setConfirming(undefined)
       refresh()
     },
     onError: (err) => {
       toastMutationError(err, "Could not save the user.")
+      setConfirming(undefined)
       refresh()
     },
   })
+  // Set when the change is destructive enough to ask first: disabling a user
+  // or demoting an admin.
+  const [confirming, setConfirming] = useState<{ title: string; description: string; body: { role?: Role; disabled?: boolean } } | undefined>(undefined)
 
   return (
-    <TableRow>
-      <TableCell className="text-sm">{user.email}</TableCell>
-      <TableCell className="text-sm">{user.name || <span className="text-muted-foreground">—</span>}</TableCell>
-      <TableCell>
-        <Select
-          value={user.role}
-          onValueChange={(role) =>
-            patch.mutate({ params: { path: { userId: user.id } }, body: { role: role as Role } })
-          }
-        >
-          <SelectTrigger size="sm" className="w-28" aria-label={`Role for ${user.email}`}>
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            {ROLES.map((role) => (
-              <SelectItem key={role.value} value={role.value}>
-                {role.label}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </TableCell>
-      <TableCell>
-        <div className="flex items-center gap-2">
-          <Switch
-            checked={!user.disabled}
-            aria-label={`Account active for ${user.email}`}
-            disabled={patch.isPending}
-            onCheckedChange={(active) =>
-              patch.mutate({ params: { path: { userId: user.id } }, body: { disabled: !active } })
-            }
-          />
-          {user.disabled && <Badge variant="outline">Disabled</Badge>}
-        </div>
-      </TableCell>
-      <TableCell className="text-sm text-muted-foreground">
-        {user.last_login_at ? formatRelative(user.last_login_at) : "Never"}
-      </TableCell>
-      <TableCell className="text-right">
-        <Button variant="ghost" size="sm" onClick={onReset}>
-          Reset password
-        </Button>
-      </TableCell>
-    </TableRow>
+    <>
+      <TableRow>
+        <TableCell className="text-sm">{user.email}</TableCell>
+        <TableCell className="text-sm">{user.name || <span className="text-muted-foreground">—</span>}</TableCell>
+        <TableCell>
+          <Select
+            value={user.role}
+            onValueChange={(role) => {
+              const next = role as Role
+              if (user.role === "admin" && next !== "admin") {
+                setConfirming({
+                  title: `Demote ${user.email}?`,
+                  description: "They lose admin access to users, groups, settings and the audit log.",
+                  body: { role: next },
+                })
+              } else {
+                patch.mutate({ params: { path: { userId: user.id } }, body: { role: next } })
+              }
+            }}
+          >
+            <SelectTrigger size="sm" className="w-28" aria-label={`Role for ${user.email}`}>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {ROLES.map((role) => (
+                <SelectItem key={role.value} value={role.value}>
+                  {role.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </TableCell>
+        <TableCell>
+          <div className="flex items-center gap-2">
+            <Switch
+              checked={!user.disabled}
+              aria-label={`Account active for ${user.email}`}
+              disabled={patch.isPending}
+              onCheckedChange={(active) => {
+                if (active) {
+                  patch.mutate({ params: { path: { userId: user.id } }, body: { disabled: false } })
+                } else {
+                  setConfirming({
+                    title: `Disable ${user.email}?`,
+                    description: "They sign out and can no longer sign in until an admin enables them again.",
+                    body: { disabled: true },
+                  })
+                }
+              }}
+            />
+            {user.disabled && <Badge variant="outline">Disabled</Badge>}
+          </div>
+        </TableCell>
+        <TableCell className="text-sm text-muted-foreground">
+          {user.last_login_at ? formatRelative(user.last_login_at) : "Never"}
+        </TableCell>
+        <TableCell className="text-right">
+          <Button variant="ghost" size="sm" onClick={onReset}>
+            Reset password
+          </Button>
+        </TableCell>
+      </TableRow>
+      <ConfirmDialog
+        open={confirming !== undefined}
+        onOpenChange={(open) => !open && setConfirming(undefined)}
+        title={confirming?.title ?? ""}
+        description={confirming?.description ?? ""}
+        confirmLabel="Confirm"
+        pending={patch.isPending}
+        onConfirm={() => confirming && patch.mutate({ params: { path: { userId: user.id } }, body: confirming.body })}
+      />
+    </>
   )
 }
 

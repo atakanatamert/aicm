@@ -18,7 +18,7 @@ function OnlineCell({ machine }: { machine: Machine }) {
     return <Badge variant="outline">Revoked</Badge>
   }
   return (
-    <span className="inline-flex items-center gap-1.5 text-xs text-muted-foreground">
+    <span className={cn("inline-flex items-center gap-1.5 text-xs", machine.online ? "text-foreground" : "text-muted-foreground")}>
       <span
         aria-hidden
         className={cn("size-2 rounded-full", machine.online ? "bg-foreground" : "bg-muted-foreground/30")}
@@ -103,59 +103,95 @@ export function MachineTable({ machines, isAdmin }: MachineTableProps) {
 
   return (
     <>
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead>Name</TableHead>
-            <TableHead>Hostname</TableHead>
-            <TableHead>OS / arch</TableHead>
-            <TableHead>Agent</TableHead>
-            <TableHead>Status</TableHead>
-            <TableHead>Last seen</TableHead>
-            <TableHead>Harnesses</TableHead>
-            {isAdmin && <TableHead className="w-10">
-              <span className="sr-only">Actions</span>
-            </TableHead>}
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {machines.map((machine) => (
-            <TableRow key={machine.id}>
-              <TableCell>
-                <NameCell machine={machine} canEdit={isAdmin} />
-              </TableCell>
-              <TableCell className="text-muted-foreground">{machine.hostname}</TableCell>
-              <TableCell className="tabular-nums">
-                {machine.os}/{machine.arch}
-              </TableCell>
-              <TableCell className="text-muted-foreground">{machine.agent_version}</TableCell>
-              <TableCell>
-                <OnlineCell machine={machine} />
-              </TableCell>
-              <TableCell className="text-muted-foreground" title={machine.last_seen_at ?? undefined}>
-                {machine.last_seen_at ? formatRelative(machine.last_seen_at) : "Never"}
-              </TableCell>
-              <TableCell className="text-muted-foreground">
-                {machine.harnesses?.length ? machine.harnesses.join(", ") : "–"}
-              </TableCell>
-              {isAdmin && (
-                <TableCell>
-                  {!machine.revoked_at && (
-                    <Button
-                      variant="ghost"
-                      size="icon-xs"
-                      aria-label={`Revoke ${machine.name}`}
-                      onClick={() => setRevoking(machine)}
-                    >
-                      <X className="text-destructive" />
-                    </Button>
-                  )}
-                </TableCell>
-              )}
+      {/* Desktop: the full table. */}
+      <div className="hidden overflow-x-auto sm:block">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Name</TableHead>
+              <TableHead>Hostname</TableHead>
+              <TableHead>OS / arch</TableHead>
+              <TableHead>Agent</TableHead>
+              <TableHead>Status</TableHead>
+              <TableHead>Last seen</TableHead>
+              <TableHead>Harnesses</TableHead>
+              {isAdmin && <TableHead className="w-10">
+                <span className="sr-only">Actions</span>
+              </TableHead>}
             </TableRow>
-          ))}
-        </TableBody>
-      </Table>
+          </TableHeader>
+          <TableBody>
+            {machines.map((machine) => (
+              <TableRow key={machine.id}>
+                <TableCell>
+                  <NameCell machine={machine} canEdit={isAdmin} />
+                </TableCell>
+                <TableCell className="text-muted-foreground">{machine.hostname}</TableCell>
+                <TableCell className="tabular-nums">
+                  {machine.os}/{machine.arch}
+                </TableCell>
+                <TableCell className="text-muted-foreground">{machine.agent_version}</TableCell>
+                <TableCell>
+                  <OnlineCell machine={machine} />
+                </TableCell>
+                <TableCell className="text-muted-foreground" title={machine.last_seen_at ?? undefined}>
+                  {machine.last_seen_at ? formatRelative(machine.last_seen_at) : "Never"}
+                </TableCell>
+                <TableCell className="text-muted-foreground">
+                  {machine.harnesses?.length ? machine.harnesses.join(", ") : "–"}
+                </TableCell>
+                {isAdmin && (
+                  <TableCell>
+                    {!machine.revoked_at && (
+                      <Button
+                        variant="ghost"
+                        size="icon-xs"
+                        className="group/revoke"
+                        aria-label={`Revoke ${machine.name}`}
+                        onClick={() => setRevoking(machine)}
+                      >
+                        <X className="text-muted-foreground group-hover/revoke:text-destructive group-focus-visible/revoke:text-destructive" />
+                      </Button>
+                    )}
+                  </TableCell>
+                )}
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </div>
+
+      {/* Mobile: stacked rows with the essentials. */}
+      <ul className="grid gap-3 sm:hidden">
+        {machines.map((machine) => (
+          <li key={machine.id} className="flex items-start justify-between gap-3 border-b pb-3 last:border-b-0 last:pb-0">
+            <div className="min-w-0">
+              <p className="truncate font-medium">{machine.name}</p>
+              {machine.hostname !== machine.name && (
+                <p className="truncate text-xs text-muted-foreground">{machine.hostname}</p>
+              )}
+              <p className="mt-0.5 text-sm">
+                <OnlineCell machine={machine} />
+              </p>
+              <p className="text-sm text-muted-foreground" title={machine.last_seen_at ?? undefined}>
+                {machine.last_seen_at ? `Seen ${formatRelative(machine.last_seen_at)}` : "Never seen"}
+              </p>
+            </div>
+            {isAdmin && !machine.revoked_at && (
+              <Button
+                variant="ghost"
+                size="icon-xs"
+                className="group/revoke"
+                aria-label={`Revoke ${machine.name}`}
+                onClick={() => setRevoking(machine)}
+              >
+                <X className="text-muted-foreground group-hover/revoke:text-destructive group-focus-visible/revoke:text-destructive" />
+              </Button>
+            )}
+          </li>
+        ))}
+      </ul>
+
       <ConfirmDialog
         open={revoking !== undefined}
         onOpenChange={(open) => !open && setRevoking(undefined)}

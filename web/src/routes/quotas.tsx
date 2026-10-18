@@ -9,19 +9,21 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { Terrain } from "@/components/ui/hairline"
 import { useMe } from "@/hooks/use-me"
 
+const CONTAINER = "mx-auto w-full max-w-6xl px-4 sm:px-6"
+
 function QuotasSkeleton() {
   return (
-    <div className="mx-auto w-full max-w-6xl space-y-10 px-6 py-6" aria-hidden>
+    <div className={`${CONTAINER} space-y-10 py-6`} aria-hidden>
       <section className="space-y-3">
         <Skeleton className="h-4 w-44" />
         <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
           {Array.from({ length: 3 }, (_, i) => (
-            <Skeleton key={i} className="h-36" />
+            <Skeleton key={i} className="h-64" />
           ))}
         </div>
       </section>
       <section className="space-y-3">
-        <Skeleton className="h-4 w-16" />
+        <Skeleton className="h-4 w-32" />
         <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
           {Array.from({ length: 3 }, (_, i) => (
             <Skeleton key={i} className="h-64" />
@@ -40,7 +42,8 @@ function ErrorLine({ error }: { error: unknown }) {
   )
 }
 
-// Renewals next 30 days, then one card per account in the API's urgency order.
+// One card per account in the API's urgency order, then renewals for the next
+// 30 days (the Overview already leads with this week's renewals).
 export default function Quotas() {
   const { canEdit } = useMe()
   const quotas = query.useQuery("get", "/api/quotas")
@@ -53,7 +56,7 @@ export default function Quotas() {
   return (
     <>
       <PageHeader title="Quotas" description="Provider meters and renewals, sorted by urgency." />
-      <div className="mx-auto w-full max-w-6xl space-y-10 px-6 py-6">
+      <div className={`${CONTAINER} space-y-10 py-6`}>
         {noAccounts ? (
           <div>
             <EmptyState
@@ -69,22 +72,6 @@ export default function Quotas() {
           </div>
         ) : (
           <>
-            <section aria-labelledby="renewals-heading" className="space-y-3">
-              <h2 id="renewals-heading" className="text-sm font-medium text-muted-foreground">
-                Renewals · next 30 days
-              </h2>
-              {renewals.isError ? (
-                <ErrorLine error={renewals.error} />
-              ) : renewals.data.length === 0 ? (
-                <p className="text-sm text-muted-foreground">Nothing renews in the next 30 days.</p>
-              ) : (
-                <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-                  {renewals.data.map((renewal) => (
-                    <RenewalCard key={renewal.account.id} renewal={renewal} />
-                  ))}
-                </div>
-              )}
-            </section>
             <section aria-labelledby="quotas-heading" className="space-y-3">
               <h2 id="quotas-heading" className="text-sm font-medium text-muted-foreground">
                 Quotas
@@ -97,6 +84,22 @@ export default function Quotas() {
                 <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
                   {quotas.data.map((quota) => (
                     <QuotaCard key={quota.account.id} quota={quota} canEdit={canEdit} />
+                  ))}
+                </div>
+              )}
+            </section>
+            <section aria-labelledby="renewals-heading" className="space-y-3">
+              <h2 id="renewals-heading" className="text-sm font-medium text-muted-foreground">
+                Renewals · next 30 days
+              </h2>
+              {renewals.isError ? (
+                <ErrorLine error={renewals.error} />
+              ) : renewals.data.length === 0 ? (
+                <p className="text-sm text-muted-foreground">Nothing renews in the next 30 days.</p>
+              ) : (
+                <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+                  {renewals.data.map((renewal) => (
+                    <RenewalCard key={renewal.account.id} renewal={renewal} />
                   ))}
                 </div>
               )}

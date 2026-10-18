@@ -1,7 +1,7 @@
 import type { components } from "@/api/schema"
 import { errorOf, query, queryClient } from "@/api/client"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent, CardDescription, CardHeader } from "@/components/ui/card"
 import { formatBilledAndConverted, formatDate } from "@/lib/format"
 
 type Charge = components["schemas"]["Charge"]
@@ -18,7 +18,7 @@ export function SuggestedCharges({ charges, canEdit }: { charges: Charge[]; canE
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="text-base">Suggested top-ups</CardTitle>
+        <h3 className="text-base leading-none font-semibold">Suggested top-ups</h3>
         <CardDescription>Balance jumps we detected. Confirming counts them as money out.</CardDescription>
       </CardHeader>
       <CardContent>

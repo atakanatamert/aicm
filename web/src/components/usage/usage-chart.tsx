@@ -9,6 +9,16 @@ type UsageRow = components["schemas"]["UsageRow"]
 const compact = new Intl.NumberFormat(undefined, { notation: "compact", maximumFractionDigits: 1 })
 const axisDay = new Intl.DateTimeFormat(undefined, { month: "short", day: "numeric", timeZone: "UTC" })
 
+// One colour per currency, stable whatever the rows contain; rarer currencies
+// fall back to neutral instead of shifting the palette by rank.
+const CURRENCY_COLOR: Record<string, string> = {
+  USD: "var(--chart-3)",
+  EUR: "var(--chart-1)",
+  GBP: "var(--chart-5)",
+  JPY: "var(--chart-2)",
+  CNY: "var(--chart-4)",
+}
+
 /**
  * Estimated cost per day, one line per currency in the estimates. Estimates
  * only: money out lives on the Overview.
@@ -23,7 +33,10 @@ export function UsageChart({ rows }: { rows: UsageRow[] }) {
     return point
   })
   const config = Object.fromEntries(
-    currencies.map((currency, i) => [currency, { label: currency, color: `var(--chart-${(i % 5) + 1})` }]),
+    currencies.map((currency) => [
+      currency,
+      { label: currency, color: CURRENCY_COLOR[currency] ?? "var(--muted-foreground)" },
+    ]),
   ) as ChartConfig
 
   return (
@@ -70,7 +83,7 @@ export function UsageChart({ rows }: { rows: UsageRow[] }) {
                 key={currency}
                 dataKey={currency}
                 type="monotone"
-                stroke={`var(--color-${currency})`}
+                stroke={CURRENCY_COLOR[currency] ?? "var(--muted-foreground)"}
                 strokeWidth={2}
                 dot={false}
                 isAnimationActive={false}

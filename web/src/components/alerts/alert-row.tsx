@@ -1,5 +1,5 @@
 import { useState } from "react"
-import { AlarmClock, CircleAlert, Info, TriangleAlert } from "lucide-react"
+import { AlarmClock, CircleAlert, ExternalLink, Info, TriangleAlert } from "lucide-react"
 import { toast } from "sonner"
 import { errorOf, query } from "@/api/client"
 import type { components } from "@/api/schema"
@@ -18,11 +18,17 @@ type Links = NonNullable<Alert["links"]>
 
 // Provider pages the alert may carry, in the order the card names them.
 const LINKS: { key: keyof Links; label: string }[] = [
-  { key: "manage_subscription", label: "Manage" },
-  { key: "cancel", label: "Cancel" },
+  { key: "manage_subscription", label: "Manage subscription" },
+  { key: "cancel", label: "Cancel subscription" },
   { key: "top_up", label: "Top up" },
   { key: "billing", label: "Billing" },
 ]
+
+function alertLinks(alert: Alert) {
+  return LINKS.map(({ key, label }) => ({ key, label, href: alert.links?.[key] })).filter(
+    (link): link is { key: keyof Links; label: string; href: string } => link.href !== undefined,
+  )
+}
 
 function SeverityIcon({ alert }: { alert: Alert }) {
   if (alert.severity === "critical") {
@@ -51,7 +57,7 @@ function SnoozeMenu({ onSnooze }: { onSnooze: (iso: string | null) => void }) {
     <>
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <Button variant="ghost" size="xs">
+          <Button variant="ghost" size="sm">
             <AlarmClock />
             Snooze
           </Button>
@@ -100,7 +106,7 @@ export function AlertRow({ alert, accountName }: { alert: Alert; accountName?: s
   const alertPath = { params: { path: { alertId: alert.id } } }
 
   return (
-    <article className="flex gap-3 border-b px-4 py-3 sm:px-6">
+    <article className="flex gap-3 border-b py-3">
       <SeverityIcon alert={alert} />
       <div className="min-w-0 flex-1">
         <div className="flex items-baseline gap-2">
@@ -121,19 +127,40 @@ export function AlertRow({ alert, accountName }: { alert: Alert; accountName?: s
           )}
         </div>
         <div className="mt-2 flex flex-wrap items-center gap-1.5">
-          {LINKS.map(({ key, label }) =>
-            alert.links?.[key] ? (
-              <Button key={key} asChild variant="outline" size="xs">
-                <a href={alert.links[key] ?? "#"} target="_blank" rel="noreferrer">
+          {/* Desktop: the provider links sit inline; on phones they collapse into "Links". */}
+          <div className="hidden flex-wrap items-center gap-1.5 sm:flex">
+            {alertLinks(alert).map(({ key, label, href }) => (
+              <Button key={key} asChild variant="outline" size="sm">
+                <a href={href} target="_blank" rel="noreferrer">
                   {label}
+                  <ExternalLink aria-hidden className="size-3" />
                 </a>
               </Button>
-            ) : null,
+            ))}
+          </div>
+          {alertLinks(alert).length > 0 && (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" size="sm" className="sm:hidden">
+                  Links
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="start">
+                {alertLinks(alert).map(({ key, label, href }) => (
+                  <DropdownMenuItem key={key} asChild>
+                    <a href={href} target="_blank" rel="noreferrer">
+                      {label}
+                      <ExternalLink aria-hidden className="size-3" />
+                    </a>
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
           )}
           {!alert.read && (
             <Button
               variant="ghost"
-              size="xs"
+              size="sm"
               disabled={patch.isPending}
               onClick={() => patch.mutate({ ...alertPath, body: { read: true } })}
             >
@@ -146,7 +173,7 @@ export function AlertRow({ alert, accountName }: { alert: Alert; accountName?: s
           {alert.snoozed_until && (
             <Button
               variant="ghost"
-              size="xs"
+              size="sm"
               disabled={patch.isPending}
               onClick={() => patch.mutate({ ...alertPath, body: { snoozed_until: null } })}
             >
@@ -157,6 +184,7 @@ export function AlertRow({ alert, accountName }: { alert: Alert; accountName?: s
       </div>
       {!alert.read && (
         <span
+          role="img"
           aria-label="Unread"
           className={cn("mt-1.5 size-2 shrink-0 rounded-full", alert.severity === "critical" ? "bg-urgent" : "bg-foreground")}
         />

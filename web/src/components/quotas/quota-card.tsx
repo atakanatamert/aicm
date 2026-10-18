@@ -2,11 +2,13 @@ import type { components } from "@/api/schema"
 import { MeterRow } from "./meter-row"
 import { SyncButton } from "./sync-button"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent, CardDescription, CardFooter, CardHeader } from "@/components/ui/card"
+import { ExternalLink } from "lucide-react"
 import { formatRelative } from "@/lib/format"
 import { cn } from "@/lib/utils"
 
 type AccountQuota = components["schemas"]["AccountQuota"]
+type MeterView = components["schemas"]["MeterView"]
 
 const LINKS: { key: keyof AccountQuota["account"]["links"]; label: string }[] = [
   { key: "top_up", label: "Top up" },
@@ -15,44 +17,77 @@ const LINKS: { key: keyof AccountQuota["account"]["links"]; label: string }[] = 
   { key: "usage", label: "Usage" },
 ]
 
-// "Weakest: Weekly limit · 30% of the 5-hour window expires unused" — the
-// headroom-setting meter plus the meter expiring the biggest share.
-function scoreLine(quota: AccountQuota): string | undefined {
-  if (quota.meters.length === 0) return undefined
-  const binding = quota.score.binding_meter
+/** The meter that sets the account's headroom, falling back to the most expiring one. */
+function bindingMeter(quota: AccountQuota): MeterView | undefined {
+  const byKey = quota.score.binding_meter
     ? quota.meters.find((m) => m.def.key === quota.score.binding_meter)
     : undefined
-  const expiring = [...quota.meters].sort(
-    (a, b) => (b.score.expiring_share ?? 0) - (a.score.expiring_share ?? 0),
-  )[0]
-  const weakest = binding?.def.label ?? expiring?.def.label
-  if (!weakest) return undefined
+  return (
+    byKey ??
+    [...quota.meters].sort((a, b) => a.score.headroom - b.score.headroom)[0]
+  )
+}
+
+// "Unused before reset: Weekly limit, 31%" — only when a meaningful share of
+// the window would expire unused.
+function expiringLine(quota: AccountQuota): string | undefined {
+  if (quota.meters.length === 0) return undefined
   const share = quota.score.expiring_share
-  if (expiring && share > 0) {
-    return `Weakest: ${weakest} · ${Math.round(share * 100)}% of the ${expiring.def.label} expires unused`
+  if (share < 0.1) return undefined
+  const expiring = [...quota.meters].sort(
+    (a, b) => b.score.expiring_share - a.score.expiring_share,
+  )[0]
+  return `Unused before reset: ${expiring.def.label}, ${Math.round(share * 100)}%`
+}
+
+/** One line of text saying why the card is urgent; never colour alone. */
+function urgentReason(quota: AccountQuota): string | undefined {
+  if (!quota.score.feasible) return "Runs out before it resets at current use"
+  if (quota.score.headroom < 0.3) {
+    const hours = bindingMeter(quota)?.score.hours_to_empty
+    return hours !== null && hours !== undefined
+      ? `Runs out in about ${Math.round(hours)} h`
+      : "Less than 30% left before reset"
   }
-  return `Weakest: ${weakest}`
+  return undefined
+}
+
+// "synced 3 h ago"; a never-synced account with readings says when they were
+// captured instead.
+function syncText(quota: AccountQuota): string | undefined {
+  if (quota.account.last_synced_at) return `synced ${formatRelative(quota.account.last_synced_at)}`
+  const captured = quota.meters
+    .map((m) => m.latest?.captured_at)
+    .filter((at): at is string => at !== undefined)
+    .sort()
+  return captured.length > 0 ? `updated ${formatRelative(captured[captured.length - 1])}` : "not synced yet"
 }
 
 // One account: provider-native meters, provider links, and for editors a sync.
-// The urgent border marks infeasible accounts or headroom below 0.3.
+// The urgent border marks infeasible accounts or headroom below 0.3, and the
+// reason line next to it says which.
 export function QuotaCard({ quota, canEdit }: { quota: AccountQuota; canEdit: boolean }) {
-  const { account, score: accountScore } = quota
-  const urgent = !accountScore.feasible || accountScore.headroom < 0.3
-  const score = scoreLine(quota)
+  const { account } = quota
+  const reason = urgentReason(quota)
   const subtitle = [
     account.provider_name,
     account.plan.name,
-    account.last_synced_at ? `synced ${formatRelative(account.last_synced_at)}` : "never",
+    syncText(quota),
   ]
     .filter(Boolean)
     .join(" · ")
+  const binding = bindingMeter(quota)
+  const expiring = expiringLine(quota)
   return (
-    <Card className={cn("gap-4 py-5", urgent && "border-urgent")}>
+    <Card className={cn("gap-4 py-5", reason && "border-urgent")}>
       <CardHeader>
-        <CardTitle className="text-base">{account.name}</CardTitle>
+        <h3 className="text-base leading-none font-semibold">{account.name}</h3>
         <CardDescription>{subtitle}</CardDescription>
-        {score && <p className="text-xs text-muted-foreground">{score}</p>}
+        {reason && <p className="text-xs font-medium text-urgent">{reason}</p>}
+        {binding && quota.meters.length > 0 && (
+          <p className="text-xs text-muted-foreground">Tightest: {binding.def.label}</p>
+        )}
+        {expiring && <p className="text-xs text-muted-foreground">{expiring}</p>}
       </CardHeader>
       <CardContent>
         {quota.meters.length > 0 ? (
@@ -68,9 +103,10 @@ export function QuotaCard({ quota, canEdit }: { quota: AccountQuota; canEdit: bo
       <CardFooter className="flex-wrap gap-2">
         {LINKS.map(({ key, label }) =>
           account.links[key] ? (
-            <Button key={key} asChild variant="outline" size="xs">
+            <Button key={key} asChild variant="outline" size="sm">
               <a href={account.links[key]!} target="_blank" rel="noreferrer">
                 {label}
+                <ExternalLink aria-hidden className="size-3" />
               </a>
             </Button>
           ) : null,

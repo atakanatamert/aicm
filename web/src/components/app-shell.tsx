@@ -12,6 +12,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel,
 import { Separator } from "@/components/ui/separator"
 import { Sidebar, SidebarContent, SidebarGroup, SidebarGroupContent, SidebarHeader, SidebarInset, SidebarMenu, SidebarMenuButton, SidebarMenuItem, SidebarProvider, SidebarRail, SidebarTrigger } from "@/components/ui/sidebar"
 import { APP_NAME, DEFAULT_SOURCE_URL } from "@/lib/brand"
+import { cn } from "@/lib/utils"
 
 type Me = components["schemas"]["Me"]
 
@@ -31,10 +32,6 @@ const NAV: NavItem[] = [
 ]
 
 const ADMIN_NAV: NavItem = { to: "/settings", title: "Settings", icon: Settings }
-
-const TITLES: Record<string, string> = Object.fromEntries(
-  [...NAV, ADMIN_NAV].map((item) => [item.to, item.title]),
-)
 
 const THEME_OPTIONS: { value: Theme; label: string; icon: LucideIcon }[] = [
   { value: "light", label: "Light", icon: Sun },
@@ -107,14 +104,17 @@ export function AppShell() {
   const me = query.useQuery("get", "/api/me")
   const health = query.useQuery("get", "/healthz")
   const settings = query.useQuery("get", "/api/settings")
-  // Unread badge on the Alerts nav item, polled every 60 s.
+  // Unread badge on the Alerts nav item, polled every 60 s. The badge turns
+  // urgent only when an unread critical alert exists; other unread alerts
+  // keep the neutral badge.
   const unreadAlerts = query.useQuery(
     "get",
     "/api/alerts",
-    { params: { query: { unread: true, limit: 1 } } },
+    { params: { query: { unread: true, limit: 100 } } },
     { refetchInterval: 60_000 },
   )
   const unreadCount = unreadAlerts.data?.unread_count ?? 0
+  const criticalUnread = (unreadAlerts.data?.items ?? []).some((alert) => alert.severity === "critical")
   const isAdmin = me.data?.user.role === "admin"
   const items = isAdmin ? [...NAV, ADMIN_NAV] : NAV
   const version = health.data?.version ?? ""
@@ -144,13 +144,19 @@ export function AppShell() {
                         {item.to === "/alerts" && unreadCount > 0 && (
                           <>
                             <span
-                              className="ml-auto flex h-4.5 min-w-4.5 items-center justify-center rounded-full bg-primary px-1.5 text-[11px] font-medium text-primary-foreground tabular-nums group-data-[collapsible=icon]:hidden"
+                              className={cn(
+                                "ml-auto flex h-4.5 min-w-4.5 items-center justify-center rounded-full px-1.5 text-[11px] font-medium tabular-nums group-data-[collapsible=icon]:hidden",
+                                criticalUnread ? "bg-urgent text-white dark:text-black" : "bg-primary text-primary-foreground",
+                              )}
                             >
                               {unreadCount > 99 ? "99+" : unreadCount}
                             </span>
                             <span
                               aria-hidden
-                              className="absolute top-1.5 right-2 hidden size-2 rounded-full bg-primary group-data-[collapsible=icon]:block"
+                              className={cn(
+                                "absolute top-1.5 right-2 hidden size-2 rounded-full group-data-[collapsible=icon]:block",
+                                criticalUnread ? "bg-urgent" : "bg-primary",
+                              )}
                             />
                           </>
                         )}
@@ -168,7 +174,6 @@ export function AppShell() {
         <header className="flex h-14 shrink-0 items-center gap-2 border-b px-4">
           <SidebarTrigger className="-ml-1" />
           <Separator orientation="vertical" className="mr-1 !h-4" />
-          <div className="text-sm font-medium">{TITLES[location.pathname] ?? APP_NAME}</div>
           <div className="ml-auto flex items-center gap-1">
             <ThemeMenu />
             {me.data && <UserMenu me={me.data} />}

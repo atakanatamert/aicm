@@ -37,7 +37,7 @@ export function GroupsTab() {
       .join(", ")
 
   return (
-    <section className="px-6 py-6">
+    <section className="py-6">
       <div className="mb-4 flex items-center justify-between gap-4">
         <p className="text-sm text-muted-foreground">
           Groups receive grants as a whole: add an account to a group and everyone in it can use it.

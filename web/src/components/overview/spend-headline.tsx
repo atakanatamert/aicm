@@ -1,5 +1,5 @@
 import type { components } from "@/api/schema"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent, CardHeader } from "@/components/ui/card"
 import { formatMoney } from "@/lib/format"
 import { billedSummary } from "./spend-format"
 
@@ -24,7 +24,7 @@ export function SpendHeadline({ label, total, displayCurrency, unconverted }: Sp
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="text-sm font-medium text-muted-foreground">{label}</CardTitle>
+        <h3 className="text-sm leading-none font-medium text-muted-foreground">{label}</h3>
       </CardHeader>
       <CardContent className="grid gap-1">
         <p className="text-3xl font-semibold tracking-tight tabular-nums">

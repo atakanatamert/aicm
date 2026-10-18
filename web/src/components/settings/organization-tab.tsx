@@ -17,7 +17,7 @@ export function OrganizationTab() {
   const [savedAt, setSavedAt] = useState(0)
 
   return (
-    <section className="px-6 py-6">
+    <section className="py-6">
       <Card className="max-w-xl">
         {settings.isPending ? (
           <CardContent>
@@ -115,7 +115,7 @@ function OrganizationForm({ initial, onSaved }: { initial: Settings; onSaved: ()
             </Select>
           )}
           <p className="text-xs text-muted-foreground">
-            Any ISO 4217 code works — the FX source only carries the common ones.
+            Pick any currency; exchange rates exist for the common ones.
           </p>
         </div>
         <div className="grid gap-2">

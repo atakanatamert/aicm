@@ -25,7 +25,7 @@ export function EmailTab() {
   const [savedAt, setSavedAt] = useState(0)
 
   return (
-    <section className="px-6 py-6">
+    <section className="py-6">
       <Card className="max-w-xl">
         {settings.isPending ? (
           <CardContent>
@@ -190,33 +190,6 @@ function EmailForm({ initial, onSaved }: { initial: Settings; onSaved: () => voi
             {error}
           </p>
         )}
-        <div className="grid gap-2 rounded-lg border bg-muted/30 p-4">
-          <Label htmlFor="smtp-test">Send test email</Label>
-          <div className="flex gap-2">
-            <Input
-              id="smtp-test"
-              type="email"
-              placeholder="you@example.com"
-              required
-              value={testTo}
-              onChange={(e) => setTestTo(e.target.value)}
-            />
-            <Button
-              type="button"
-              variant="outline"
-              disabled={send.isPending || testTo.length === 0}
-              onClick={() => send.mutate({ body: { to: testTo } })}
-            >
-              {send.isPending ? "Sending…" : "Send"}
-            </Button>
-          </div>
-          <p className="text-xs text-muted-foreground">Uses the saved SMTP settings, not the form above.</p>
-          {testError && (
-            <p role="alert" className="text-sm text-destructive">
-              {testError}
-            </p>
-          )}
-        </div>
       </CardContent>
       <CardFooter className="gap-2">
         <Button
@@ -227,6 +200,33 @@ function EmailForm({ initial, onSaved }: { initial: Settings; onSaved: () => voi
         </Button>
         {save.isSuccess && <span className="text-sm text-muted-foreground">Saved.</span>}
       </CardFooter>
+      <CardContent className="grid gap-2 rounded-lg border bg-muted/30 p-4">
+        <Label htmlFor="smtp-test">Send test email</Label>
+        <div className="flex gap-2">
+          <Input
+            id="smtp-test"
+            type="email"
+            placeholder="you@example.com"
+            required
+            value={testTo}
+            onChange={(e) => setTestTo(e.target.value)}
+          />
+          <Button
+            type="button"
+            variant="outline"
+            disabled={send.isPending || testTo.length === 0}
+            onClick={() => send.mutate({ body: { to: testTo } })}
+          >
+            {send.isPending ? "Sending…" : "Send"}
+          </Button>
+        </div>
+        <p className="text-xs text-muted-foreground">Uses the saved settings.</p>
+        {testError && (
+          <p role="alert" className="text-sm text-destructive">
+            {testError}
+          </p>
+        )}
+      </CardContent>
     </form>
   )
 }

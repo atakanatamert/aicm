@@ -1,11 +1,21 @@
 import type { components } from "@/api/schema"
-import { Badge } from "@/components/ui/badge"
 import { formatMeterValue, formatRelative } from "@/lib/format"
 import { MeterBar } from "./meter-bar"
 
 type MeterView = components["schemas"]["MeterView"]
+type ReadingSource = NonNullable<MeterView["latest"]>["source"]
 
 const absoluteTime = new Intl.DateTimeFormat(undefined, { dateStyle: "medium", timeStyle: "short" })
+
+/** Where a reading came from, in the user's words: "read 12 min ago · agent". */
+const SOURCE_LABEL: Record<ReadingSource, string> = {
+  api: "API",
+  rollout: "agent",
+  app_server: "agent",
+  statusline: "agent",
+  stream_json: "agent",
+  manual: "entered manually",
+}
 
 /** Used, remaining and limit as a filled fraction, or null when no bar applies. */
 function barOf(meter: MeterView): { value: number; max: number } | null {
@@ -27,7 +37,8 @@ function barOf(meter: MeterView): { value: number; max: number } | null {
 }
 
 // One provider-native meter: the provider's label and numbers, reset time,
-// where the reading came from, and a bar only when a limit is known.
+// when the reading was captured and where it came from, and a bar only when a
+// limit is known.
 export function MeterRow({ meter }: { meter: MeterView }) {
   const reading = meter.latest
   const bar = barOf(meter)
@@ -39,7 +50,8 @@ export function MeterRow({ meter }: { meter: MeterView }) {
   if (reading?.remaining !== null && reading?.remaining !== undefined) {
     parts.push(`${formatMeterValue(meter.def, reading.remaining)} remaining`)
   }
-  if (reading?.limit !== null && reading?.limit !== undefined) {
+  // Percent meters drop "limit 100%": it says nothing the bar doesn't.
+  if (reading?.limit !== null && reading?.limit !== undefined && meter.def.unit !== "percent") {
     parts.push(`limit ${formatMeterValue(meter.def, reading.limit)}`)
   }
 
@@ -47,7 +59,11 @@ export function MeterRow({ meter }: { meter: MeterView }) {
     <li className="space-y-1.5">
       <div className="flex items-center justify-between gap-2">
         <span className="text-sm font-medium">{meter.def.label}</span>
-        {reading && <Badge variant="secondary">{reading.source}</Badge>}
+        {reading && (
+          <span className="text-xs text-muted-foreground">
+            read {formatRelative(reading.captured_at)} · {SOURCE_LABEL[reading.source]}
+          </span>
+        )}
       </div>
       {bar && (
         <MeterBar

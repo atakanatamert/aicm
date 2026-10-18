@@ -17,6 +17,12 @@ export function billedSummary(billed: Money[]): string {
   return billed.map((m) => formatMoney(m)).join(" · ")
 }
 
+/** The currency's symbol ("$", "CN¥") for axis ticks and compact labels. */
+export function currencySymbol(currency: string): string {
+  const parts = new Intl.NumberFormat(undefined, { style: "currency", currency })
+  return parts.formatToParts(1).find((part) => part.type === "currency")?.value ?? currency
+}
+
 /** Charges in `period` ("2026-10" or "2026") that had no rate for their date. */
 export function unconvertedCount(rows: SpendRow[], period: string): number {
   return rows

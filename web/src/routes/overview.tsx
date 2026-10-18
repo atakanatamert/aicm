@@ -8,7 +8,7 @@ import { RenewalsStrip } from "@/components/overview/renewals-strip"
 import { SpendHeadline } from "@/components/overview/spend-headline"
 import { isoDay, unconvertedCount } from "@/components/overview/spend-format"
 import { SuggestedCharges } from "@/components/overview/suggested-charges"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent, CardDescription, CardHeader } from "@/components/ui/card"
 import { Separator } from "@/components/ui/separator"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Terrain } from "@/components/ui/hairline"
@@ -53,72 +53,77 @@ export default function Overview() {
 
   return (
     <>
-      <PageHeader title="Overview" description="Money out this month and year, by provider." />
-      <div className="grid gap-6 p-6">
-        <section className="flex flex-wrap items-center justify-between gap-4">
+      <PageHeader
+        title="Overview"
+        description="Money out this month and year, by provider."
+        actions={canEdit ? <RecordChargeDialog /> : undefined}
+      />
+      <div className="mx-auto w-full max-w-6xl px-4 py-6 sm:px-6">
+        <div className="grid gap-6">
+          <section className="flex flex-wrap items-center justify-between gap-4">
+            {spendLoading ? (
+              <div className="grid flex-1 gap-4 sm:grid-cols-2">
+                <Skeleton className="h-32" />
+                <Skeleton className="h-32" />
+              </div>
+            ) : spendError ? (
+              <InlineError error={spendError} fallback="Could not load spending." />
+            ) : (
+              <div className="grid flex-1 gap-4 sm:grid-cols-2">
+                <SpendHeadline
+                  label="This month"
+                  total={monthSpend.data?.totals.find((t) => t.period === monthPeriod)}
+                  displayCurrency={displayCurrency}
+                  unconverted={unconvertedCount(monthRows, monthPeriod)}
+                />
+                <SpendHeadline
+                  label="This year"
+                  total={yearSpend.data?.totals.find((t) => t.period === yearPeriod)}
+                  displayCurrency={displayCurrency}
+                  unconverted={unconvertedCount(yearRows, yearPeriod)}
+                />
+              </div>
+            )}
+          </section>
+
+          {suggested.isError ? (
+            <InlineError error={suggested.error} fallback="Could not load suggested top-ups." />
+          ) : suggested.data && suggested.data.items.length > 0 ? (
+            <SuggestedCharges charges={suggested.data.items} canEdit={canEdit} />
+          ) : null}
+
           {spendLoading ? (
-            <div className="grid flex-1 gap-4 sm:grid-cols-2">
-              <Skeleton className="h-32" />
-              <Skeleton className="h-32" />
-            </div>
-          ) : spendError ? (
-            <InlineError error={spendError} fallback="Could not load spending." />
+            <Skeleton className="h-96" />
+          ) : spendError ? null : noSpend ? (
+            <EmptyState
+              figure={<Terrain play />}
+              title="No money out yet"
+              description="Record a charge or connect an account; this month's and this year's payments show up here."
+            />
           ) : (
-            <div className="grid flex-1 gap-4 sm:grid-cols-2">
-              <SpendHeadline
-                label="This month"
-                total={monthSpend.data?.totals.find((t) => t.period === monthPeriod)}
-                displayCurrency={displayCurrency}
-                unconverted={unconvertedCount(monthRows, monthPeriod)}
-              />
-              <SpendHeadline
-                label="This year"
-                total={yearSpend.data?.totals.find((t) => t.period === yearPeriod)}
-                displayCurrency={displayCurrency}
-                unconverted={unconvertedCount(yearRows, yearPeriod)}
-              />
-            </div>
+            <Card>
+              <CardHeader>
+                <h3 className="text-base leading-none font-semibold">Money out per month</h3>
+                <CardDescription>
+                  {year}, converted to {displayCurrency}
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="grid gap-4">
+                <Suspense fallback={<Skeleton className="h-64" />}>
+                  <SpendChart rows={monthRows} displayCurrency={displayCurrency} year={year} />
+                </Suspense>
+                <Separator />
+                <ProviderTable monthRows={monthRowsNow} yearRows={yearRowsNow} displayCurrency={displayCurrency} />
+              </CardContent>
+            </Card>
           )}
-          {canEdit && <RecordChargeDialog />}
-        </section>
 
-        {suggested.isError ? (
-          <InlineError error={suggested.error} fallback="Could not load suggested top-ups." />
-        ) : suggested.data && suggested.data.items.length > 0 ? (
-          <SuggestedCharges charges={suggested.data.items} canEdit={canEdit} />
-        ) : null}
-
-        {spendLoading ? (
-          <Skeleton className="h-96" />
-        ) : spendError ? null : noSpend ? (
-          <EmptyState
-            figure={<Terrain play />}
-            title="No money out yet"
-            description="Record a charge or connect an account; this month's and this year's payments show up here."
-          />
-        ) : (
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-base">Money out per month</CardTitle>
-              <CardDescription>
-                {year}, converted to {displayCurrency}
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="grid gap-4">
-              <Suspense fallback={<Skeleton className="h-64" />}>
-                <SpendChart rows={monthRows} displayCurrency={displayCurrency} year={year} />
-              </Suspense>
-              <Separator />
-              <ProviderTable monthRows={monthRowsNow} yearRows={yearRowsNow} displayCurrency={displayCurrency} />
-            </CardContent>
-          </Card>
-        )}
-
-        {renewals.isError ? (
-          <InlineError error={renewals.error} fallback="Could not load renewals." />
-        ) : renewals.data && renewals.data.length > 0 ? (
-          <RenewalsStrip renewals={renewals.data} />
-        ) : null}
+          {renewals.isError ? (
+            <InlineError error={renewals.error} fallback="Could not load renewals." />
+          ) : renewals.data && renewals.data.length > 0 ? (
+            <RenewalsStrip renewals={renewals.data} />
+          ) : null}
+        </div>
       </div>
     </>
   )

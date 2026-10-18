@@ -19,7 +19,7 @@ type ApiTokenCreated = components["schemas"]["ApiTokenCreated"]
 
 export function ProfileTab() {
   return (
-    <div className="grid grid-cols-1 items-start gap-6 px-6 py-6 xl:grid-cols-2">
+    <div className="grid grid-cols-1 items-start gap-6 py-6 xl:grid-cols-2">
       <PasswordCard />
       <TokensCard />
     </div>
@@ -181,7 +181,7 @@ function TokensCard() {
           </div>
         ) : (tokens.data?.length ?? 0) === 0 ? (
           <EmptyState
-            figure={<Terminal play />}
+            figure={<Terminal play style={{ maxWidth: 200 }} />}
             title="No API tokens yet"
             description="Create one to connect the agent's MCP tools under your account."
             className="py-6"
@@ -217,6 +217,7 @@ function TokensCard() {
                       <Button
                         variant="ghost"
                         size="sm"
+                        className="text-muted-foreground hover:text-destructive focus-visible:text-destructive"
                         aria-label={`Revoke token ${token.name}`}
                         onClick={() => revoke.mutate({ params: { path: { tokenId: token.id } } })}
                       >

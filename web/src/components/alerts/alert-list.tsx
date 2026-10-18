@@ -12,7 +12,7 @@ const PAGE_SIZE = 25
 
 function InboxSkeleton() {
   return (
-    <div className="px-4 py-4 sm:px-6">
+    <div className="py-4">
       <div className="grid gap-3">
         {Array.from({ length: 5 }, (_, i) => (
           <div key={i} className="flex items-start gap-3">
@@ -56,7 +56,7 @@ export function AlertList({ accountNames }: AlertListProps) {
 
   return (
     <section aria-label="Alert inbox">
-      <div className="flex flex-wrap items-center gap-2 border-b px-4 py-3 sm:px-6">
+      <div className="flex flex-wrap items-center gap-2 border-b py-3">
         <Button
           variant={unreadOnly ? "default" : "outline"}
           size="sm"
@@ -83,7 +83,7 @@ export function AlertList({ accountNames }: AlertListProps) {
       {alerts.isPending ? (
         <InboxSkeleton />
       ) : alerts.isError ? (
-        <p role="alert" className="px-4 py-6 text-sm text-destructive sm:px-6">
+        <p role="alert" className="py-6 text-sm text-destructive">
           {errorOf(alerts.error)?.error.message ?? "Could not load the inbox."}
         </p>
       ) : items.length === 0 ? (

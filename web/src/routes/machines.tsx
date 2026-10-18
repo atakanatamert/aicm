@@ -18,52 +18,56 @@ export default function Machines() {
 
   return (
     <>
-      <PageHeader title="Machines" description="Enrolled agents reporting from your machines." />
-
-      <div className="flex justify-end px-4 py-3 sm:px-6">
-        {isAdmin && (
-          <Button size="sm" onClick={() => setAddOpen(true)}>
-            <Plus />
-            Add a machine
-          </Button>
-        )}
-      </div>
-
-      {machines.isPending ? (
-        <div className="grid gap-2 px-4 sm:px-6">
-          {Array.from({ length: 3 }, (_, i) => (
-            <Skeleton key={i} className="h-10 w-full" />
-          ))}
-        </div>
-      ) : machines.isError ? (
-        <p role="alert" className="px-4 py-6 text-sm text-destructive sm:px-6">
-          {errorOf(machines.error)?.error.message ?? "Could not load the machines."}
-        </p>
-      ) : machines.data.length === 0 ? (
-        <div className="flex flex-col items-center">
-          <EmptyState
-            figure={<Cabinet play />}
-            title="No machines yet"
-            description="Add a machine and run the install command on it — the agent appears here once it dials in."
-          />
-          {isAdmin && (
-            <Button size="sm" className="mb-6" onClick={() => setAddOpen(true)}>
+      <PageHeader
+        title="Machines"
+        description="Enrolled agents reporting from your machines."
+        actions={
+          isAdmin ? (
+            <Button size="sm" onClick={() => setAddOpen(true)}>
               <Plus />
               Add a machine
             </Button>
-          )}
-        </div>
-      ) : (
-        <section aria-label="Machines" className="px-4 sm:px-6">
-          <MachineTable machines={machines.data} isAdmin={isAdmin} />
-        </section>
-      )}
+          ) : undefined
+        }
+      />
 
-      {isAdmin && (
-        <div className="px-4 py-8 sm:px-6">
-          <EnrollTokens />
-        </div>
-      )}
+      <div className="mx-auto w-full max-w-6xl px-4 sm:px-6">
+        {machines.isPending ? (
+          <div className="grid gap-2 py-4">
+            {Array.from({ length: 3 }, (_, i) => (
+              <Skeleton key={i} className="h-10 w-full" />
+            ))}
+          </div>
+        ) : machines.isError ? (
+          <p role="alert" className="py-6 text-sm text-destructive">
+            {errorOf(machines.error)?.error.message ?? "Could not load the machines."}
+          </p>
+        ) : machines.data.length === 0 ? (
+          <div className="flex flex-col items-center">
+            <EmptyState
+              figure={<Cabinet play />}
+              title="No machines yet"
+              description="Add a machine and run the install command on it — the agent appears here once it dials in."
+            />
+            {isAdmin && (
+              <Button size="sm" className="mb-6" onClick={() => setAddOpen(true)}>
+                <Plus />
+                Add a machine
+              </Button>
+            )}
+          </div>
+        ) : (
+          <section aria-label="Machines" className="py-4">
+            <MachineTable machines={machines.data} isAdmin={isAdmin} />
+          </section>
+        )}
+
+        {isAdmin && (
+          <div className="py-8">
+            <EnrollTokens />
+          </div>
+        )}
+      </div>
 
       <AddMachineDialog open={addOpen} onOpenChange={setAddOpen} />
     </>
