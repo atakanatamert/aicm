@@ -70,3 +70,5 @@ Touch nothing else. No Go or API changes.
 - [ ] As a viewer, no panel and no edit controls.
 
 ## Outcome (filled in by Opus)
+
+Merged in `48f4453` after the first attempt (GLM, ~34 min). The panel stays while the org has no active or dismissed account (pending accounts are the flow itself), so it does not vanish the moment the machine connects.
