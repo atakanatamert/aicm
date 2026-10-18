@@ -14,20 +14,28 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"path/filepath"
 	"syscall"
 	"time"
 
 	"github.com/atakanatamert/aicm/internal/agent"
+	"github.com/atakanatamert/aicm/internal/harness"
+	"github.com/atakanatamert/aicm/internal/harness/claudecode"
+	"github.com/atakanatamert/aicm/internal/harness/codex"
+	"github.com/atakanatamert/aicm/internal/harness/omp"
 	"github.com/atakanatamert/aicm/internal/version"
 )
 
 const usage = `Usage: ` + version.AgentBinary + ` <command> [flags]
 
 Commands:
-  enroll    enroll this machine with a hub
-  run       scan harnesses and keep the hub link open
-  update    update the agent to the latest release
-  version   print the version
+  enroll                enroll this machine with a hub
+  run                   scan harnesses and keep the hub link open
+  update                update the agent to the latest release
+  statusline            Claude Code statusline wrapper (called by Claude Code)
+  statusline install    route Claude Code's statusline through the wrapper
+  statusline uninstall  restore the original statusline
+  version               print the version
 
 Flags for enroll and run:
   --hub URL      hub base URL
@@ -56,6 +64,8 @@ func run(args []string, stdout, stderr io.Writer) int {
 		return runAgent(args[1:], stdout, stderr)
 	case "update":
 		return update(stdout, stderr)
+	case "statusline":
+		return statusline(args[1:], stdout, stderr)
 	default:
 		fmt.Fprintf(stderr, "unknown command %q\n\n%s", args[0], usage)
 		return 2
@@ -88,17 +98,82 @@ func parseEnrollFlags(name string, args []string, stderr io.Writer) (enrollFlags
 }
 
 // newAgent opens the agent state in the default data dir.
+// harnesses returns every local harness importer, rooted at the user's home
+// (AICM_AGENT_HOME in Docker) and the agent's data dir.
+func harnesses(dataDir string) ([]harness.Harness, error) {
+	home, err := agent.HomeDir()
+	if err != nil {
+		return nil, err
+	}
+	return []harness.Harness{
+		claudecode.New(home, dataDir),
+		codex.New(home),
+		omp.New(home),
+	}, nil
+}
+
 func newAgent(stderr io.Writer) (*agent.Agent, string, error) {
 	dataDir, err := agent.DataDir()
 	if err != nil {
 		return nil, "", err
 	}
+	hs, err := harnesses(dataDir)
+	if err != nil {
+		return nil, "", err
+	}
 	log := slog.New(slog.NewTextHandler(stderr, &slog.HandlerOptions{Level: slog.LevelInfo}))
-	a, err := agent.New(dataDir, nil, log)
+	a, err := agent.New(dataDir, hs, log)
 	if err != nil {
 		return nil, "", err
 	}
 	return a, dataDir, nil
+}
+
+// statusline is the Claude Code statusline wrapper and its installer. The
+// wrapper must never fail Claude Code's statusline: errors only skip capture.
+func statusline(args []string, stdout, stderr io.Writer) int {
+	dataDir, err := agent.DataDir()
+	if err != nil {
+		if len(args) == 0 {
+			return claudecode.RunStatusline(os.Stdin, stdout, "")
+		}
+		fmt.Fprintf(stderr, "statusline: %v\n", err)
+		return 1
+	}
+	if len(args) == 0 {
+		return claudecode.RunStatusline(os.Stdin, stdout, dataDir)
+	}
+	home, err := agent.HomeDir()
+	if err != nil {
+		fmt.Fprintf(stderr, "statusline: %v\n", err)
+		return 1
+	}
+	h := claudecode.New(home, dataDir)
+	switch args[0] {
+	case "install":
+		exe, err := os.Executable()
+		if err == nil {
+			exe, err = filepath.EvalSymlinks(exe)
+		}
+		if err == nil {
+			err = h.Install(exe)
+		}
+		if err != nil {
+			fmt.Fprintf(stderr, "statusline install: %v\n", err)
+			return 1
+		}
+		fmt.Fprintln(stdout, "Claude Code statusline now records rate limits; your own statusline still runs.")
+	case "uninstall":
+		if err := h.Uninstall(); err != nil {
+			fmt.Fprintf(stderr, "statusline uninstall: %v\n", err)
+			return 1
+		}
+		fmt.Fprintln(stdout, "Claude Code statusline restored.")
+	default:
+		fmt.Fprintf(stderr, "unknown statusline command %q\n", args[0])
+		return 2
+	}
+	return 0
 }
 
 // enroll pins the hub key and stores the machine token.

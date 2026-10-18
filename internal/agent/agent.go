@@ -520,11 +520,15 @@ func (a *Agent) scanHarness(ctx context.Context, h harness.Harness) {
 		all = map[string]harness.Cursors{}
 	}
 	started := time.Now()
-	batch, err := h.Scan(ctx, all[id])
-	if err != nil {
-		a.log.Warn("scanning harness failed", "harness", id, "err", err)
-		a.setScan(id, started, err)
-		return
+	batch, scanErr := h.Scan(ctx, all[id])
+	if scanErr != nil {
+		a.log.Warn("scanning harness failed", "harness", id, "err", scanErr)
+		if batch.Cursors == nil {
+			a.setScan(id, started, scanErr)
+			return
+		}
+		// A harness may return what it could read plus an error about the
+		// rest (for example skipped compressed files): keep the partial batch.
 	}
 	if err := a.spoolBatch(id, batch); err != nil {
 		a.log.Warn("spooling scan failed", "harness", id, "err", err)
@@ -534,7 +538,7 @@ func (a *Agent) scanHarness(ctx context.Context, h harness.Harness) {
 	if err := a.cursors.Save(id, batch.Cursors); err != nil {
 		a.log.Warn("saving cursors failed", "harness", id, "err", err)
 	}
-	a.setScan(id, started, nil)
+	a.setScan(id, started, scanErr)
 }
 
 // pollHarnesses polls due pollers, backing off after errors.
