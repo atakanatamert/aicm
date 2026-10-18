@@ -203,6 +203,9 @@ func (s *Server) writeHandlerError(w http.ResponseWriter, r *http.Request, err e
 		WriteError(w, ae.Status, ae.Code, ae.Message)
 		return
 	}
+	if r.Context().Err() != nil {
+		return // the client went away; nobody reads the response
+	}
 	s.Log.ErrorContext(r.Context(), "handler failed", "method", r.Method, "path", r.URL.Path, "err", err)
 	WriteError(w, http.StatusInternalServerError, "internal", "internal error")
 }

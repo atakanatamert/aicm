@@ -6,12 +6,14 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"maps"
 	"os"
 	"path/filepath"
 	"strings"
 	"testing"
 
 	"github.com/atakanatamert/aicm/internal/agentlink"
+	harnesspkg "github.com/atakanatamert/aicm/internal/harness"
 )
 
 const syntheticHome = "testdata/home"
@@ -137,8 +139,8 @@ func TestSessionsGolden(t *testing.T) {
 	if len(batch.Meters) != 0 {
 		t.Fatalf("Scan returned %d meters, want 0", len(batch.Meters))
 	}
-	if len(batch.Cursors) != 1 {
-		t.Fatalf("Scan returned %d cursors, want 1", len(batch.Cursors))
+	if len(batch.Cursors) != 2 {
+		t.Fatalf("Scan returned %d cursors, want 2 (one session file, one key fingerprint)", len(batch.Cursors))
 	}
 
 	got := marshalGolden(t, batch.Usage)
@@ -156,5 +158,17 @@ func TestSessionsGolden(t *testing.T) {
 	}
 	if len(again.Usage) != 0 {
 		t.Fatalf("second Scan returned %d events, want 0", len(again.Usage))
+	}
+
+	// Cursors saved while a key was missing: lines for that provider were
+	// skipped, so a different key set must read every file again.
+	stale := maps.Clone(batch.Cursors)
+	stale[keysCursor] = harnesspkg.Cursor{Offset: stale[keysCursor].Offset + 1}
+	rescan, err := harness.Scan(context.Background(), stale)
+	if err != nil {
+		t.Fatalf("Scan after key change: %v", err)
+	}
+	if len(rescan.Usage) != len(batch.Usage) {
+		t.Fatalf("Scan after key change returned %d events, want %d", len(rescan.Usage), len(batch.Usage))
 	}
 }

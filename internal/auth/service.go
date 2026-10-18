@@ -227,7 +227,7 @@ func (s *Service) AuthenticateSession(ctx context.Context, token string) (Princi
 	if row.DisabledAt != nil {
 		return Principal{}, ErrUnauthenticated
 	}
-	if err := s.queries.TouchSession(ctx, sum); err != nil {
+	if err := s.queries.TouchSession(ctx, sum); err != nil && ctx.Err() == nil {
 		s.log.WarnContext(ctx, "touching session failed", "session_id", row.SessionID, "err", err)
 	}
 	return Principal{

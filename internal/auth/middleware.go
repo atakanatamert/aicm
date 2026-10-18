@@ -93,7 +93,7 @@ func (s *Service) authenticate(ctx context.Context, token string, bearer bool) (
 		p, err = s.AuthenticateSession(ctx, token)
 	}
 	if err != nil {
-		if !errors.Is(err, ErrUnauthenticated) {
+		if !errors.Is(err, ErrUnauthenticated) && ctx.Err() == nil {
 			s.log.WarnContext(ctx, "authenticating request failed", "err", err)
 		}
 		return Principal{}, false

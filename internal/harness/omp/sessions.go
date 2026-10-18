@@ -8,6 +8,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"hash/fnv"
 	"io"
 	"io/fs"
 	"os"
@@ -30,15 +31,11 @@ func (h *Harness) Scan(ctx context.Context, cursors harness.Cursors) (harness.Ba
 		return harness.Batch{}, fmt.Errorf("scanning omp sessions: %w", err)
 	}
 
-	batch := harness.Batch{Cursors: make(harness.Cursors, len(cursors))}
-	for path, cursor := range cursors {
-		batch.Cursors[path] = cursor
-	}
-
-	for _, dir := range h.dirs {
+	keysByDir := make([]map[string]keyEntry, len(h.dirs))
+	for i, dir := range h.dirs {
 		entries, err := readAPIKeys(dir)
 		if err != nil {
-			return batch, fmt.Errorf("reading omp auth in %s: %w", dir, err)
+			return harness.Batch{}, fmt.Errorf("reading omp auth in %s: %w", dir, err)
 		}
 		byProvider := make(map[string]keyEntry, len(entries))
 		for _, entry := range entries {
@@ -46,13 +43,30 @@ func (h *Harness) Scan(ctx context.Context, cursors harness.Cursors) (harness.Ba
 				byProvider[entry.Name] = entry
 			}
 		}
+		keysByDir[i] = byProvider
+	}
 
+	// Lines for providers without a key are skipped, so when the key set
+	// changes every file is read again from the start; the hub dedupes on
+	// message id.
+	fingerprint := keySetFingerprint(h.dirs, keysByDir)
+	if cursors[keysCursor].Offset != fingerprint {
+		cursors = nil
+	}
+
+	batch := harness.Batch{Cursors: make(harness.Cursors, len(cursors)+1)}
+	for path, cursor := range cursors {
+		batch.Cursors[path] = cursor
+	}
+	batch.Cursors[keysCursor] = harness.Cursor{Offset: fingerprint}
+
+	for i, dir := range h.dirs {
 		files, err := sessionFiles(filepath.Join(dir, "sessions"))
 		if err != nil {
 			return batch, fmt.Errorf("listing omp sessions in %s: %w", dir, err)
 		}
 		for _, path := range files {
-			events, cursor, err := scanSessionFile(ctx, path, cursors[path], byProvider)
+			events, cursor, err := scanSessionFile(ctx, path, cursors[path], keysByDir[i])
 			if err != nil {
 				return batch, fmt.Errorf("scanning omp session %s: %w", path, err)
 			}
@@ -61,6 +75,26 @@ func (h *Harness) Scan(ctx context.Context, cursors harness.Cursors) (harness.Ba
 		}
 	}
 	return batch, nil
+}
+
+// keysCursor is a pseudo cursor entry holding the key-set fingerprint.
+const keysCursor = "omp:keys"
+
+// keySetFingerprint hashes which providers have a key in which directory,
+// and which key, so a new, removed or replaced key triggers a rescan.
+func keySetFingerprint(dirs []string, keysByDir []map[string]keyEntry) int64 {
+	var parts []string
+	for i, dir := range dirs {
+		for name, entry := range keysByDir[i] {
+			parts = append(parts, dir+"\x00"+name+"\x00"+entry.Ref.ExternalID)
+		}
+	}
+	sort.Strings(parts)
+	sum := fnv.New64a()
+	for _, p := range parts {
+		_, _ = sum.Write([]byte(p + "\n"))
+	}
+	return int64(sum.Sum64() >> 1) //nolint:gosec // top bit dropped to fit int64
 }
 
 // sessionLine is the subset of one JSONL line this importer reads.
