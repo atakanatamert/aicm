@@ -46,7 +46,9 @@ function urgentReason(quota: AccountQuota): string | undefined {
   if (quota.score.headroom < 0.3) {
     const hours = bindingMeter(quota)?.score.hours_to_empty
     return hours !== null && hours !== undefined
-      ? `Runs out in about ${Math.round(hours)} h`
+      ? hours >= 48
+        ? `Runs out in about ${Math.round(hours / 24)} days`
+        : `Runs out in about ${Math.round(hours)} h`
       : "Less than 30% left before reset"
   }
   return undefined

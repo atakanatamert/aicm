@@ -33,7 +33,7 @@ export function RenewalCard({ renewal }: { renewal: Renewal }) {
         </p>
       </CardContent>
       {(account.links.manage_subscription || account.links.cancel) && (
-        <CardFooter className="gap-2">
+        <CardFooter className="flex-wrap gap-2">
           {account.links.manage_subscription && (
             <Button asChild variant="outline" size="sm">
               <a href={account.links.manage_subscription} target="_blank" rel="noreferrer">

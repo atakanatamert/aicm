@@ -8,7 +8,6 @@ import (
 	"errors"
 	"fmt"
 	"math"
-	"strings"
 	"time"
 
 	"github.com/jackc/pgx/v5"
@@ -155,7 +154,7 @@ func (s *Service) Evaluate(ctx context.Context, now time.Time) (int, error) {
 					eventKey:  fmt.Sprintf("renewal:%s:%s:%dd", a.ID, dateOf(*a.RenewsOn), n),
 					severity:  severity,
 					title:     fmt.Sprintf("%s renews in %s", name, dayCount(n)),
-					body:      renewalBody(a, *a.RenewsOn, firstLink(info.Links.ManageSubscription, info.Links.Billing, info.Links.Cancel)),
+					body:      renewalBody(a, *a.RenewsOn),
 					data:      alertData{Price: priceOf(a), Links: links},
 				}); err != nil {
 					return len(fresh), err
@@ -177,7 +176,7 @@ func (s *Service) Evaluate(ctx context.Context, now time.Time) (int, error) {
 					eventKey:  fmt.Sprintf("promo:%s:%s:%dd", a.ID, dateOf(*a.PromoEndsOn), n),
 					severity:  "warning",
 					title:     fmt.Sprintf("%s promo ends in %s", name, dayCount(n)),
-					body:      promoBody(a, *a.PromoEndsOn, firstLink(info.Links.ManageSubscription, info.Links.Billing)),
+					body:      promoBody(a, *a.PromoEndsOn),
 					data:      alertData{Price: priceOf(a), Links: links},
 				}); err != nil {
 					return len(fresh), err
@@ -231,7 +230,6 @@ func (s *Service) Evaluate(ctx context.Context, now time.Time) (int, error) {
 					}
 				}
 				if low {
-					topUp := firstLink(info.Links.TopUp, info.Links.Billing)
 					if err := emit(candidate{
 						orgID:     a.OrgID,
 						accountID: &a.ID,
@@ -239,7 +237,7 @@ func (s *Service) Evaluate(ctx context.Context, now time.Time) (int, error) {
 						eventKey:  fmt.Sprintf("low_balance:%s:%s:%s", a.ID, m.Key, dateOf(now)),
 						severity:  "warning",
 						title:     fmt.Sprintf("%s %s is running low", name, def.Label),
-						body:      lowBalanceBody(def, *score.Remaining, topUp),
+						body:      lowBalanceBody(def, *score.Remaining),
 						data:      alertData{Links: links},
 					}); err != nil {
 						return len(fresh), err
@@ -372,6 +370,11 @@ func readableTime(t time.Time) string {
 	return t.UTC().Format("Jan 2, 15:04 UTC")
 }
 
+// readableDate formats a calendar day for alert text: "Oct 21, 2026".
+func readableDate(t time.Time) string {
+	return t.UTC().Format("Jan 2, 2006")
+}
+
 // untilReset reads "in 4h 10m (Oct 18, 17:07 UTC)", or "now" when the reset
 // has already passed.
 func untilReset(resetsAt, now time.Time) string {
@@ -406,17 +409,11 @@ func priceOf(a db.Account) *money.Amount {
 	return &money.Amount{Minor: *a.PriceMinor, Currency: a.Currency}
 }
 
-func renewalBody(a db.Account, on time.Time, link string) string {
-	var b strings.Builder
+func renewalBody(a db.Account, on time.Time) string {
 	if a.PriceMinor != nil {
-		fmt.Fprintf(&b, "%s on %s.", money.Amount{Minor: *a.PriceMinor, Currency: a.Currency}.String(), dateOf(on))
-	} else {
-		fmt.Fprintf(&b, "Renews on %s.", dateOf(on))
+		return fmt.Sprintf("%s on %s.", money.Amount{Minor: *a.PriceMinor, Currency: a.Currency}.String(), readableDate(on))
 	}
-	if link != "" {
-		fmt.Fprintf(&b, " Manage: %s", link)
-	}
-	return b.String()
+	return fmt.Sprintf("Renews on %s.", readableDate(on))
 }
 
 func promoLabel(a db.Account) string {
@@ -426,29 +423,12 @@ func promoLabel(a db.Account) string {
 	return a.Name
 }
 
-func promoBody(a db.Account, on time.Time, link string) string {
-	body := fmt.Sprintf("%s ends on %s.", promoLabel(a), dateOf(on))
-	if link != "" {
-		body += " Manage: " + link
-	}
-	return body
+func promoBody(a db.Account, on time.Time) string {
+	return fmt.Sprintf("%s ends on %s.", promoLabel(a), readableDate(on))
 }
 
-func lowBalanceBody(def meter.Def, remaining float64, link string) string {
-	body := formatValue(def, remaining) + " remaining."
-	if link != "" {
-		body += " Top up: " + link
-	}
-	return body
-}
-
-func firstLink(links ...string) string {
-	for _, l := range links {
-		if l != "" {
-			return l
-		}
-	}
-	return ""
+func lowBalanceBody(def meter.Def, remaining float64) string {
+	return formatValue(def, remaining) + " remaining."
 }
 
 func daysList(got []int, fallback []int) []int {

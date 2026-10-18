@@ -2,12 +2,13 @@ import { Link, useNavigate } from "react-router"
 import type { components } from "@/api/schema"
 import { formatDate, formatMoney, formatRelative } from "@/lib/format"
 import { cn } from "@/lib/utils"
+import { renewalUrgency } from "@/components/quotas/renewal-urgency"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 
 type Account = components["schemas"]["Account"]
 type ProviderInfo = components["schemas"]["ProviderInfo"]
 
-const RENEW_SOON_MS = 7 * 24 * 60 * 60 * 1000
+const DAY_MS = 24 * 60 * 60 * 1000
 
 /** What to show for the credential: last 4, or where the key lives. */
 function keyText(a: Account): string {
@@ -38,8 +39,12 @@ export function AccountsTable({ accounts, providers }: { accounts: Account[]; pr
         <TableBody>
           {accounts.map((a) => {
             const provider = providers.find((p) => p.id === a.provider_id)
-            const renewsSoon =
-              a.plan.renews_on != null && new Date(a.plan.renews_on).getTime() - Date.now() <= RENEW_SOON_MS
+            const renewal = a.plan.renews_on
+              ? renewalUrgency({
+                  days_left: Math.ceil((new Date(a.plan.renews_on).getTime() - Date.now()) / DAY_MS),
+                  auto_renew: a.plan.auto_renew,
+                })
+              : undefined
             const failing = a.sync.failing_since != null
             return (
               <TableRow
@@ -61,8 +66,11 @@ export function AccountsTable({ accounts, providers }: { accounts: Account[]; pr
                 <TableCell className="text-right whitespace-nowrap tabular-nums">
                   {a.plan.price ? formatMoney(a.plan.price) : "–"}
                 </TableCell>
-                <TableCell className={cn("whitespace-nowrap", renewsSoon && "font-medium text-urgent")}>
-                  {a.plan.renews_on ? formatDate(a.plan.renews_on) : "–"}
+                <TableCell className="whitespace-nowrap">
+                  <span className={cn(renewal?.urgent && "font-medium text-urgent")}>
+                    {a.plan.renews_on ? formatDate(a.plan.renews_on) : "–"}
+                  </span>
+                  {renewal?.reason && <span className="block text-xs text-muted-foreground">{renewal.reason}</span>}
                 </TableCell>
                 <TableCell className="whitespace-nowrap">{keyText(a)}</TableCell>
                 <TableCell className="whitespace-nowrap">
@@ -74,7 +82,7 @@ export function AccountsTable({ accounts, providers }: { accounts: Account[]; pr
                       aria-hidden
                       className={cn("size-1.5 shrink-0 rounded-full", failing ? "bg-urgent" : "bg-muted-foreground/40")}
                     />
-                    {a.sync.last_synced_at ? `Synced ${formatRelative(a.sync.last_synced_at)}` : "Never synced"}
+                    {a.sync.last_synced_at ? `Synced ${formatRelative(a.sync.last_synced_at)}` : a.auth_kind === "api_key" || a.auth_kind === "admin_key" ? "Not synced yet" : "–"}
                   </span>
                 </TableCell>
               </TableRow>

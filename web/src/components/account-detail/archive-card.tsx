@@ -38,7 +38,7 @@ export function ArchiveCard({ accountId, accountName }: { accountId: string; acc
   return (
     <SectionCard title="Archive" description="Hides the account and stops syncing it. Its history is kept.">
       <div>
-        <Button variant="destructive" size="sm" onClick={() => setOpen(true)}>
+        <Button variant="outline" size="sm" onClick={() => setOpen(true)}>
           Archive account
         </Button>
       </div>

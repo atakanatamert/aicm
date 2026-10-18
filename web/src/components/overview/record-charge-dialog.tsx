@@ -28,7 +28,7 @@ export function RecordChargeDialog() {
   const [description, setDescription] = useState("")
 
   const accounts = query.useQuery("get", "/api/accounts", undefined, { enabled: open })
-  const account = accounts.data?.find((a) => a.id === accountId) ?? accounts.data?.[0]
+  const account = accounts.data?.find((a) => a.id === accountId)
   const create = query.useMutation("post", "/api/charges", {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["get", "/api/spend"] })
@@ -72,8 +72,8 @@ export function RecordChargeDialog() {
         <form onSubmit={submit} className="grid gap-4" noValidate>
           <div className="grid gap-2">
             <Label htmlFor="charge-account">Account</Label>
-            {account ? (
-              <Select value={account.id} onValueChange={setAccountId}>
+            {(accounts.data?.length ?? 0) > 0 ? (
+              <Select value={accountId} onValueChange={setAccountId}>
                 <SelectTrigger id="charge-account" className="w-full">
                   <SelectValue placeholder="Choose an account" />
                 </SelectTrigger>

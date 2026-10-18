@@ -7,7 +7,7 @@ type Renewal = components["schemas"]["Renewal"]
  * with auto-renew off. Ordinary auto-renewing renewals 2–7 days out stay
  * neutral. Every urgent case names its reason.
  */
-export function renewalUrgency(renewal: Renewal): { urgent: boolean; reason: string | undefined } {
+export function renewalUrgency(renewal: Pick<Renewal, "days_left" | "auto_renew">): { urgent: boolean; reason: string | undefined } {
   if (renewal.days_left <= 0) return { urgent: true, reason: "Renews today" }
   if (renewal.days_left === 1) return { urgent: true, reason: "Renews tomorrow" }
   if (!renewal.auto_renew && renewal.days_left <= 7) {
