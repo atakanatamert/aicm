@@ -1,0 +1,13 @@
+{"type":"title","title":"synthetic omp session"}
+{"type":"session","version":1,"id":"sess-synthetic-0001","timestamp":"2026-01-02T03:04:05Z","cwd":"/tmp/synthetic"}
+{"type":"message","id":"msg-user-1","timestamp":"2026-01-02T03:04:06Z","message":{"role":"user","content":[{"type":"text","text":"hello"}],"timestamp":1767323046000}}
+{"type":"message","id":"msg-user-2","timestamp":"2026-01-02T03:04:06.250Z","message":{"role":"user","provider":"deepseek","model":"deepseek-chat","usage":{"input":99,"output":99,"cacheRead":0,"cacheWrite":0},"timestamp":1767323046250}}
+{"type":"message","id":"msg-a1","timestamp":"2026-01-02T03:04:07.500Z","message":{"role":"assistant","provider":"deepseek","model":"deepseek-chat","usage":{"input":1200,"output":345,"cacheRead":67,"cacheWrite":8,"totalTokens":1620,"cost":{"input":0.00012,"output":0.00034,"cacheRead":0.00001,"cacheWrite":0.000002,"total":0.0125775}},"timestamp":1767323047500}}
+{"type":"message","id":"msg-tool-1","timestamp":"2026-01-02T03:04:07.750Z","message":{"role":"toolResult","provider":"deepseek","model":"deepseek-chat","usage":{"input":1,"output":2,"cacheRead":0,"cacheWrite":0},"timestamp":1767323047750}}
+{"type":"message","id":"msg-a2","timestamp":"2026-01-02T03:04:08Z","message":{"role":"assistant","provider":"anthropic","model":"claude-synthetic","usage":{"input":10,"output":20,"cacheRead":0,"cacheWrite":0,"cost":{"total":0.0000015}},"timestamp":1767323048000}}
+{"type":"message","id":"msg-a3","timestamp":"2026-01-02T03:04:08.500Z","message":{"role":"assistant","provider":"openai-codex","model":"gpt-synthetic","usage":{"input":30,"output":40,"cacheRead":0,"cacheWrite":0},"timestamp":1767323048500}}
+{"type":"message","id":"msg-a4","timestamp":"2026-01-02T03:04:08.750Z","message":{"role":"assistant","provider":"google","model":"gemini-synthetic","usage":{"input":50,"output":60,"cacheRead":0,"cacheWrite":0},"timestamp":1767323048750}}
+{ this is not json
+{"type":"message","timestamp":"2026-01-02T03:04:09Z","message":{"role":"assistant","provider":"deepseek","model":"deepseek-reasoner","usage":{"input":5,"output":6,"cacheRead":0,"cacheWrite":0},"timestamp":1767323049000}}
+{"type":"message","id":"msg-a5","timestamp":"2026-01-02T03:04:09.500Z","message":{"role":"assistant","provider":"anthropic","model":"claude-synthetic","timestamp":1767323049500}}
+{"type":"message","id":"msg-partial","timestamp":"2026-01-02T03:04:10Z","message":{"role":"assistant","provider":"deepseek",

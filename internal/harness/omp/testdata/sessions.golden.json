@@ -1,0 +1,51 @@
+[
+  {
+    "account": {
+      "provider_id": "deepseek",
+      "external_id": "key:a6f49ddedeebc46f"
+    },
+    "source": "omp",
+    "message_id": "sess-synthetic-0001:msg-a1",
+    "occurred_at": "2026-01-02T03:04:07.5Z",
+    "model": "deepseek-chat",
+    "input_tokens": 1200,
+    "output_tokens": 345,
+    "cache_read_tokens": 67,
+    "cache_write_tokens": 8,
+    "reasoning_tokens": 0,
+    "cost_micro": 12578,
+    "cost_currency": "USD"
+  },
+  {
+    "account": {
+      "provider_id": "anthropic",
+      "external_id": "key:b8a396dbd449816b"
+    },
+    "source": "omp",
+    "message_id": "sess-synthetic-0001:msg-a2",
+    "occurred_at": "2026-01-02T03:04:08Z",
+    "model": "claude-synthetic",
+    "input_tokens": 10,
+    "output_tokens": 20,
+    "cache_read_tokens": 0,
+    "cache_write_tokens": 0,
+    "reasoning_tokens": 0,
+    "cost_micro": 2,
+    "cost_currency": "USD"
+  },
+  {
+    "account": {
+      "provider_id": "deepseek",
+      "external_id": "key:a6f49ddedeebc46f"
+    },
+    "source": "omp",
+    "message_id": "sess-synthetic-0001:2026-01-02T03:04:09Z",
+    "occurred_at": "2026-01-02T03:04:09Z",
+    "model": "deepseek-reasoner",
+    "input_tokens": 5,
+    "output_tokens": 6,
+    "cache_read_tokens": 0,
+    "cache_write_tokens": 0,
+    "reasoning_tokens": 0
+  }
+]

@@ -1,0 +1,22 @@
+[
+  {
+    "ref": {
+      "provider_id": "anthropic",
+      "external_id": "key:b8a396dbd449816b"
+    },
+    "harness": "omp",
+    "label": "anthropic key …0001",
+    "auth_kind": "api_key",
+    "has_api_key": true
+  },
+  {
+    "ref": {
+      "provider_id": "deepseek",
+      "external_id": "key:a6f49ddedeebc46f"
+    },
+    "harness": "omp",
+    "label": "deepseek key …0002",
+    "auth_kind": "api_key",
+    "has_api_key": true
+  }
+]
