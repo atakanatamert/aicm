@@ -1,0 +1,62 @@
+{
+  "usage": [
+    {
+      "day": "2026-09-20T00:00:00Z",
+      "model": "claude-opus-4-6",
+      "requests": 0,
+      "input_tokens": 1500,
+      "output_tokens": 500,
+      "cache_read_tokens": 4000,
+      "cache_write_tokens": 500,
+      "reasoning_tokens": 0,
+      "cost_micro": 170000,
+      "cost_currency": "USD"
+    },
+    {
+      "day": "2026-09-20T00:00:00Z",
+      "model": "claude-sonnet-4-6",
+      "requests": 0,
+      "input_tokens": 1000,
+      "output_tokens": 100,
+      "cache_read_tokens": 250,
+      "cache_write_tokens": 0,
+      "reasoning_tokens": 0,
+      "cost_micro": 3000,
+      "cost_currency": "USD"
+    },
+    {
+      "day": "2026-09-27T00:00:00Z",
+      "model": "claude-sonnet-4-6",
+      "requests": 0,
+      "input_tokens": 2500,
+      "output_tokens": 800,
+      "cache_read_tokens": 750,
+      "cache_write_tokens": 200,
+      "reasoning_tokens": 0,
+      "cost_micro": 30000,
+      "cost_currency": "USD"
+    },
+    {
+      "day": "2026-09-28T00:00:00Z",
+      "model": "claude-opus-4-6",
+      "requests": 0,
+      "input_tokens": 600,
+      "output_tokens": 200,
+      "cache_read_tokens": 100,
+      "cache_write_tokens": 0,
+      "reasoning_tokens": 0,
+      "cost_micro": 12346,
+      "cost_currency": "USD"
+    },
+    {
+      "day": "2026-09-29T00:00:00Z",
+      "model": "claude-haiku-4-5",
+      "requests": 0,
+      "input_tokens": 400,
+      "output_tokens": 60,
+      "cache_read_tokens": 50,
+      "cache_write_tokens": 0,
+      "reasoning_tokens": 0
+    }
+  ]
+}
