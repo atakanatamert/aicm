@@ -1,0 +1,25 @@
+[
+  {
+    "key": "tokens_limit",
+    "used": 15,
+    "resets_at": "2026-10-18T12:00:00Z",
+    "captured_at": "2026-10-18T09:00:00Z",
+    "source": "api"
+  },
+  {
+    "key": "time_limit",
+    "used": 1828,
+    "remaining": 2172,
+    "limit": 4000,
+    "captured_at": "2026-10-18T09:00:00Z",
+    "source": "api"
+  },
+  {
+    "key": "credit_limit",
+    "used": 3000,
+    "remaining": 9000,
+    "limit": 12000,
+    "captured_at": "2026-10-18T09:00:00Z",
+    "source": "api"
+  }
+]

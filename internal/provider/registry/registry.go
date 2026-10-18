@@ -12,6 +12,7 @@ import (
 	"github.com/atakanatamert/aicm/internal/provider/moonshot"
 	"github.com/atakanatamert/aicm/internal/provider/openai"
 	"github.com/atakanatamert/aicm/internal/provider/openrouter"
+	"github.com/atakanatamert/aicm/internal/provider/zai"
 )
 
 // All returns every provider, in catalog display order: API adapters first,
@@ -23,6 +24,7 @@ func All(c *provider.HTTPClient) []provider.Provider {
 		openai.New(c),
 		deepseek.New(c),
 		moonshot.New(c),
+		zai.New(c),
 	}
 	return append(ps, manual.All()...)
 }
