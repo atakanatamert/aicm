@@ -254,9 +254,9 @@ func serve(ctx context.Context, args []string) error {
 	fxSvc := fx.NewService(pool, log, fx.NewFrankfurter(httpc), fx.NewECB(httpc))
 	quotaSvc := quota.NewService(pool, log, catalog, quota.PriceFromTable(prices))
 	auditSvc := audit.NewService(pool)
-	syncSvc := syncer.NewService(pool, log, providers, store, quotaSvc, usageSvc, nil)
 	accounts := account.NewService(pool, store, providers, log)
 	charges := charge.NewService(pool, fxSvc, log)
+	syncSvc := syncer.NewService(pool, log, providers, store, quotaSvc, usageSvc, charges)
 	quotaSvc.SetBalanceHook(charges.TopUpHook())
 
 	reg := jobs.NewRegistry()
