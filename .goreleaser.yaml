@@ -1,0 +1,115 @@
+# Release pipeline (task 30). `goreleaser release --snapshot --clean` builds
+# everything locally without publishing.
+version: 2
+
+project_name: aicm
+
+before:
+  hooks:
+    - go mod download
+    - sh -c "test ! -f web/package.json || (cd web && pnpm install --frozen-lockfile && pnpm build)"
+
+builds:
+  - id: hub
+    main: ./cmd/aicm
+    binary: aicm
+    env: [CGO_ENABLED=0]
+    goos: [linux]
+    goarch: [amd64, arm64]
+    flags: [-trimpath]
+    ldflags:
+      - -s -w -X github.com/atakanatamert/aicm/internal/version.Version={{ .Tag }}
+
+  - id: agent
+    main: ./cmd/aicm-agent
+    binary: aicm-agent
+    env: [CGO_ENABLED=0]
+    goos: [darwin, linux, windows]
+    goarch: [amd64, arm64]
+    flags: [-trimpath]
+    ldflags:
+      - -s -w -X github.com/atakanatamert/aicm/internal/version.Version={{ .Tag }}
+
+archives:
+  # Asset names are a contract with internal/agent/update.go and
+  # deploy/install/install.sh: aicm-agent_<version>_<os>_<arch>.tar.gz (.zip on Windows).
+  - id: agent
+    ids: [agent]
+    name_template: "aicm-agent_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
+    formats: [tar.gz]
+    format_overrides:
+      - goos: windows
+        formats: [zip]
+    files:
+      - LICENSES/Apache-2.0.txt
+      - THIRD_PARTY_NOTICES.md
+  - id: hub
+    ids: [hub]
+    name_template: "aicm_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
+    formats: [tar.gz]
+    files:
+      - LICENSE
+      - THIRD_PARTY_NOTICES.md
+
+checksum:
+  name_template: checksums.txt
+
+sboms:
+  - artifacts: archive
+
+dockers_v2:
+  - id: hub
+    ids: [hub]
+    dockerfile: deploy/release/hub.Dockerfile
+    images: ["ghcr.io/atakanatamert/aicm"]
+    tags: ["{{ .Version }}", "{{ if not .Prerelease }}latest{{ end }}"]
+    platforms: [linux/amd64, linux/arm64]
+    extra_files: [LICENSE, THIRD_PARTY_NOTICES.md]
+    labels:
+      org.opencontainers.image.source: https://github.com/atakanatamert/aicm
+      org.opencontainers.image.licenses: AGPL-3.0-or-later
+  - id: agent
+    ids: [agent]
+    dockerfile: deploy/release/agent.Dockerfile
+    images: ["ghcr.io/atakanatamert/aicm-agent"]
+    tags: ["{{ .Version }}", "{{ if not .Prerelease }}latest{{ end }}"]
+    platforms: [linux/amd64, linux/arm64]
+    extra_files: [LICENSES/Apache-2.0.txt, THIRD_PARTY_NOTICES.md]
+    labels:
+      org.opencontainers.image.source: https://github.com/atakanatamert/aicm
+      org.opencontainers.image.licenses: Apache-2.0
+
+# Formula (not a cask) because `brew services` needs a formula service block.
+# GoReleaser marks `brews` deprecated in favour of casks; revisit when casks
+# support services.
+brews:
+  - name: aicm-agent
+    ids: [agent]
+    repository:
+      owner: atakanatamert
+      name: homebrew-tap
+      token: "{{ .Env.HOMEBREW_TAP_TOKEN }}"
+    homepage: https://github.com/atakanatamert/aicm
+    description: Agent for aicm, the self-hosted AI cost and subscription manager
+    license: Apache-2.0
+    install: |
+      bin.install "aicm-agent"
+    service: |
+      run [opt_bin/"aicm-agent", "run"]
+      keep_alive true
+      log_path var/"log/aicm-agent.log"
+      error_log_path var/"log/aicm-agent.log"
+    test: |
+      system "#{bin}/aicm-agent", "version"
+
+changelog:
+  use: github
+  sort: asc
+  filters:
+    exclude: ["^docs", "^chore\\(deps\\)", "^test"]
+
+release:
+  github:
+    owner: atakanatamert
+    name: aicm
+  prerelease: auto

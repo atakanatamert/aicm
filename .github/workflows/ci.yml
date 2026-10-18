@@ -30,6 +30,14 @@ jobs:
           go-version-file: go.mod
       - run: go build ./...
       - run: go vet ./...
+      - name: agent and hub cross-compile for every release target
+        run: |
+          for t in darwin/amd64 darwin/arm64 linux/amd64 linux/arm64 windows/amd64 windows/arm64; do
+            GOOS=${t%/*} GOARCH=${t#*/} go build -o /dev/null ./cmd/aicm-agent
+          done
+          for t in linux/amd64 linux/arm64; do
+            GOOS=${t%/*} GOARCH=${t#*/} go build -o /dev/null ./cmd/aicm
+          done
       - uses: golangci/golangci-lint-action@v8
         with:
           version: v2.15.0
