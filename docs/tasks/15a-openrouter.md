@@ -64,3 +64,5 @@ If the live docs differ from `docs/research/` (endpoint path, auth header, field
 - [ ] The verification checklist in `docs/DELEGATION.md` passes.
 
 ## Outcome (filled in by Opus)
+
+Merged in `93f3da2` after the first attempt. Docs differences reported: `/activity` is grouped by endpoint and unpaged; management key confirmed for credits and activity. Fixture hand-built from docs; needs a live re-record.

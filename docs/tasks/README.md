@@ -2,39 +2,45 @@
 
 Task cards live next to this file as `NN-short-name.md`, written by Opus from `TEMPLATE.md` when a task is about to start. Order and dependencies come from `docs/PLAN.md` ("Build order and delegation").
 
-Tasks 1–5 are the contracts Opus writes before any delegation. After Atakan approves them, tasks 6–12 run in parallel, then 15–28. Merge in number order.
+Tasks 1–5 are the contracts Opus writes before any delegation. Large tasks were split (7b, 14a/b, 18a/b, 15–17 one card per adapter) and two were added (S: sync engine, 33: exports). Each card's Outcome section records the merge commit, attempts and decisions.
 
-| # | Phase | Task | Writer | Needs | Done when |
+| # | Phase | Task | Writer | Needs | Status |
 | --- | --- | --- | --- | --- | --- |
-| 1 | Contracts | Repo skeleton, both `cmd/` binaries, config, Dockerfile, Compose, license files, CI with REUSE and CLA checks | Opus | none | `docker compose up` serves a health check |
-| 2 | Contracts | Migrations for all tables with org\_id, sqlc config, River setup | Opus | 1 | `migrate up` runs clean |
-| 3 | Contracts | OpenAPI spec for UI, MCP and export endpoints | Opus | 2 | Spec lints; Go and TS types generate |
-| 4 | Contracts | Provider, harness, `MeterDef` and `MeterReading` types; shared HTTP client with fixture recorder | Opus | 1 | A fake adapter passes a golden test |
-| 5 | Contracts | `agentlink` protocol: enroll, handshake, message types | Opus | 1 | Spec doc plus a loopback test |
-| 6 | Core | `secrets`: envelope encryption, key versions, `rotate-key` | Flash | 2 | Round-trip and rotation tests pass |
-| 7 | Core | `auth`: users, sessions, tokens, roles, grants | Flash | 2, 3 | Viewer cannot read an ungranted account (test) |
-| 8 | Core | `audit` writes on every mutation, admin view endpoint | Flash | 7 | Each write leaves one row |
-| 9 | Core | `account` CRUD, plans, renewal roll-forward | Flash | 7 | Roll-forward test passes |
-| 10 | Core | `charge`: fees on renewal, top-ups, top-up detection from balance jumps | Flash | 9 | Money-math tests pass |
-| 11 | Core | `fx`: ECB fetch job, rate-at-date lookup | Flash | 2 | Known date converts correctly (test) |
-| 12 | Core | `usage` rollups and `pricing` table import | Flash | 2 | Aggregation test passes |
-| 13 | Core | `quota`: meters, readings, staleness, scoring, forecast | Opus | 4 | Scoring cases agree with the written rule |
-| 14 | Core | `alert`: rules, inbox, go-mail notifier, River jobs with uniqueness | Flash | 9, 13 | One email per event under restarts |
-| 15 | Hub sync | Adapters: OpenRouter, DeepSeek, Moonshot (one task each) | Flash | 4 | Golden test passes |
-| 16 | Hub sync | Adapters: Anthropic Admin, OpenAI Admin, xAI (one task each) | Flash | 4 | Golden test passes; paging handled |
-| 17 | Hub sync | Adapters: Z.ai coding plan, GitHub Copilot billing (one task each) | Flash | 4 | Golden test passes |
-| 18 | Agent | Agent core: enroll, WebSocket link, reconnect, spool, self-update | Flash | 5 | Survives hub restart; no duplicate pushes |
-| 19 | Agent | Install scripts (sh, Homebrew, PowerShell) as user-level services | Flash | 18 | Fresh macOS and Linux installs enroll |
-| 20 | Agent | `harness/claudecode`: discover, tail logs, statusline wrapper that chains the user's own | Flash | 18 | Sample log and sample stdin parse to expected rows |
-| 21 | Agent | `harness/codex`: rollout tailing and `codex app-server` rate-limit reads | Flash | 18 | Sample rollout parses; app-server read works locally |
-| 22 | Agent | `harness/omp` | Flash | 18 | Sample session parses |
-| 23 | Agent | Opt-in Claude usage poll with cache, backoff, 15-minute floor | Flash | 20 | Off by default; respects `Retry-After` |
-| 24 | UI | Shell, login, theme, generated client, Hairline on empty states | Flash | 3 | Login works |
-| 25 | UI | Quotas and renewals page with provider-native meters and one-click links | Flash | 13, 24 | Sorted by urgency; links open provider pages |
-| 26 | UI | Overview: money out by month and year, billed and converted | Flash | 10, 11, 24 | Matches API totals |
-| 27 | UI | Accounts, account detail, usage, discovered-account review | Flash | 9, 24 | Viewer sees no edit controls |
-| 28 | UI | Alerts inbox, Machines page, Settings (users, grants, SMTP, currency, audit log) | Flash | 14, 18, 24 | All settings save |
-| 29 | MCP | `aicm-agent mcp` and hub `/mcp` with every tool | Flash | 3, 13 | Works from Claude Code; viewer blocked on writes |
-| 30 | Release | GoReleaser: GHCR images, agent binaries, Homebrew tap, SBOM | Opus | 19 | Snapshot release installs end to end |
-| 31 | Catalog | Links and manual meters for every provider in the table | Flash | 4 | Every listed provider has links |
-| 32 | Release | README supported-providers table generated from the catalog, plus CI drift check; THIRD\_PARTY\_NOTICES | Flash | 31 | CI fails when the README table is stale |
+| 1 | Contracts | Repo skeleton, binaries, config, Docker, licenses, CI | Opus | none | merged |
+| 2 | Contracts | Migrations, sqlc, River setup | Opus | 1 | merged |
+| 3 | Contracts | OpenAPI spec (+ generated Go server/client) | Opus | 2 | merged |
+| 4 | Contracts | Provider/meter/money contracts, HTTP client, fixtures | Opus | 1 | merged |
+| 5 | Contracts | agentlink protocol, harness interface | Opus | 1 | merged |
+| 6 | Core | `secrets`: envelope encryption, rotate-key | DeepSeek | 2 | merged |
+| 7 | Core | `auth`: passwords, sessions, middleware, roles, setup, login | DeepSeek | 2, 3 | merged |
+| 7b | Core | Users, groups, API tokens, grants | DeepSeek | 7 | merged |
+| 8 | Core | `audit` list endpoint, rows for existing mutations | DeepSeek | 7 | merged |
+| 9 | Core | `account` CRUD, plans, keys, catalog, renewals, roll-forward | DeepSeek | 7 | merged |
+| 10 | Core | `charge`: renewal fees, top-ups, spend, charges CSV | DeepSeek | 9 | merged |
+| 11 | Core | `fx`: Frankfurter + ECB, conversion | DeepSeek | 2 | merged |
+| 12 | Core | `usage` rollups, `pricing` import | DeepSeek | 2 | merged |
+| 13 | Core | `quota`: meters, scoring, recommend, forecast | Opus | 4 | merged |
+| S | Hub sync | Sync engine: dispatcher, per-account jobs, sync now | Opus | 9, 12, 13 | merged |
+| 14a | Core | `alert`: evaluation, inbox, rules API | DeepSeek | 9, 13 | merged |
+| 14b | Core | `notify`: SMTP, one email per alert; org settings | DeepSeek | 14a | merged |
+| 15a–c | Hub sync | Adapters: OpenRouter, DeepSeek, Moonshot | DeepSeek | 4 | merged |
+| 16a–c | Hub sync | Adapters: Anthropic, OpenAI, xAI | DeepSeek | 4 | merged |
+| 17a–b | Hub sync | Adapters: Z.ai, GitHub Copilot | DeepSeek | 4 | merged |
+| 18 | Agent | Agent core: enroll, link, spool, cursors, self-update | DeepSeek | 5 | merged |
+| 18a | Agent | Hub: enroll tokens, machines API, hub key | DeepSeek | 5, 6, 7 | merged |
+| 18b | Agent | Hub: agent WebSocket, ingest, confirm/dismiss | DeepSeek | 18a | merged |
+| 19 | Agent | Install scripts (sh, PowerShell), hub-served | DeepSeek | 18 | in progress |
+| 20 | Agent | `harness/claudecode` + statusline wrapper | DeepSeek | 5 | merged |
+| 21 | Agent | `harness/codex` + app-server poll | DeepSeek | 5 | merged |
+| 22 | Agent | `harness/omp` | DeepSeek | 5 | merged |
+| 23 | Agent | Opt-in Claude usage poll | DeepSeek | 20 | in progress |
+| 24 | UI | Shell, login, theme, generated client, embedding | GLM | 3 | in progress |
+| 25 | UI | Quotas and renewals page | GLM | 13, 24 | to do |
+| 26 | UI | Overview: money out | GLM | 10, 11, 24 | to do |
+| 27 | UI | Accounts, detail, usage, discovered review | GLM | 9, 24 | to do |
+| 28 | UI | Alerts, Machines, Settings | GLM | 14, 18, 24 | to do |
+| 29 | MCP | `aicm-agent mcp` and hub `/mcp` | DeepSeek | 3, 13 | in progress |
+| 30 | Release | GoReleaser, GHCR, Homebrew tap, SBOM | Opus | 19 | to do |
+| 31 | Catalog | Manual and agent-captured providers | DeepSeek | 4 | merged |
+| 32 | Release | README providers table + CI drift check | DeepSeek | 31 | merged |
+| 33 | Core | Usage and readings CSV exports | DeepSeek | 12, 13 | merged |

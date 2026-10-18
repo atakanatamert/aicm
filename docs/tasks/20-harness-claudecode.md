@@ -72,3 +72,5 @@ Files: `<configdir>/projects/*/*.jsonl`. Read appended lines using the cursor (`
 - [ ] If you ported logic from an MIT project, add its row to `THIRD_PARTY_NOTICES.md` with the copyright line.
 
 ## Outcome (filled in by Opus)
+
+Merged in `b4c46d9` after the first attempt. Note: reading the plan from the macOS Keychain makes macOS ask the user to allow `aicm-agent` once.

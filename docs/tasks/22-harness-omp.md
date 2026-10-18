@@ -47,3 +47,5 @@ var _ harness.KeyReader = (*Harness)(nil)
 - [ ] `go build ./... && go vet ./... && ~/go/bin/golangci-lint run` clean; `./scripts/check-licenses.sh` passes.
 
 ## Outcome (filled in by Opus)
+
+Merged in `c1868ff` after the first attempt. On this machine omp keeps keys in `agent.db` (SQLite, out of scope), so discovery finds nothing here; session usage parsing works. Open item: SQLite access.

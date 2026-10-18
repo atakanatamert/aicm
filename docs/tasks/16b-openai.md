@@ -63,3 +63,5 @@ If the live docs differ from `docs/research/` (endpoint path, auth header, field
 - [ ] The verification checklist in `docs/DELEGATION.md` passes.
 
 ## Outcome (filled in by Opus)
+
+Merged in `1b66a0f` after the first attempt. No docs differences; costs return lowercase `usd`, mapped to `USD`.

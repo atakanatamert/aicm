@@ -105,3 +105,5 @@ Evaluation reads all orgs (system job; comment the SQL).
 - [ ] The verification checklist in `docs/DELEGATION.md` passes.
 
 ## Outcome (filled in by Opus)
+
+Merged in `b96f8ab` after the first attempt. Smoke: renewal alert after the on-start job, read/snooze, editor 403 on org defaults.

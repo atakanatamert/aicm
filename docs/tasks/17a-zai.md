@@ -62,3 +62,5 @@ If the live docs differ from `docs/research/` (endpoint path, auth header, field
 - [ ] The verification checklist in `docs/DELEGATION.md` passes.
 
 ## Outcome (filled in by Opus)
+
+Merged in `e1c4419` after the first attempt. Docs differences: the ceiling is in `usage`/`total` (not `number`, which is the window length); newer plans use `CREDIT_LIMIT` for token windows. Meter set needs a revisit with a live key (open item for Atakan).

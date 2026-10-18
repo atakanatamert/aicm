@@ -112,3 +112,5 @@ var (
 - [ ] The verification checklist in `docs/DELEGATION.md` passes; no OAuth token or plain key is logged.
 
 ## Outcome (filled in by Opus)
+
+Merged in `bbd7334` after the first attempt. Opus later made discovered accounts keep the harness plan name.

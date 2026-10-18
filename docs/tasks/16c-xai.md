@@ -62,3 +62,5 @@ If the live docs differ from `docs/research/` (endpoint path, auth header, field
 - [ ] The verification checklist in `docs/DELEGATION.md` passes.
 
 ## Outcome (filled in by Opus)
+
+Merged in `e6b9a0b` after the first attempt. Docs differences: all amounts are USD cents as strings; prepaid ledger is inverted (purchases negative); usage analytics report cost by description only, so usage records carry cost but no token counts.

@@ -67,3 +67,5 @@ Files `<codex home>/sessions/YYYY/MM/DD/rollout-*.jsonl`, read with cursors as i
 - [ ] `go build ./... && go vet ./... && ~/go/bin/golangci-lint run` clean; `./scripts/check-licenses.sh` passes.
 
 ## Outcome (filled in by Opus)
+
+Merged in `0aad775` after the first attempt. Opus changed credits handling afterwards: a reading only when `has_credits` is true (a zero balance on accounts without credits was being scored as an exhausted meter).

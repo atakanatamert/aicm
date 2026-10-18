@@ -68,3 +68,5 @@ If the live docs differ from `docs/research/` (endpoint path, auth header, field
 ## Attempt history
 
 - Attempt 1 (DeepSeek Flash) implemented the card as first written (premium requests). The writer reported that GitHub moved individual plans to AI credits in June 2026; Opus verified the live docs, discarded the attempt and rewrote the meter section. Not a research contradiction: `docs/research/quota-capture.md` already lists the `ai_credit/usage` endpoint first.
+
+Merged in `96a2a52` after the second attempt (see Attempt history).

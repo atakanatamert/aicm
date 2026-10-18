@@ -117,3 +117,5 @@ func Update(ctx context.Context, client *http.Client) (string, error)
 - [ ] The verification checklist in `docs/DELEGATION.md` passes.
 
 ## Outcome (filled in by Opus)
+
+Merged in `6d35f34` after the first attempt. Opus wired the three harnesses and the statusline commands afterwards, and made the agent keep partial scan batches when a harness reports a non-fatal error. End-to-end on this Mac: enrolled, 8,143 Claude Code and 3,583 Codex usage events delivered, Codex windows from the app-server, spool empty after acks.

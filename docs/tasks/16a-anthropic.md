@@ -63,3 +63,5 @@ If the live docs differ from `docs/research/` (endpoint path, auth header, field
 - [ ] The verification checklist in `docs/DELEGATION.md` passes.
 
 ## Outcome (filled in by Opus)
+
+Merged in `e43afb6` after the first attempt. Docs differences: cost report amounts are decimal strings in cents; no request counts in the usage report; `claude_code` report not documented on that page.

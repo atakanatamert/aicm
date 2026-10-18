@@ -139,3 +139,5 @@ Implement `ListAccounts`, `CreateAccount`, `GetAccount`, `UpdateAccount`, `Archi
 - [ ] The verification checklist in `docs/DELEGATION.md` passes.
 
 ## Outcome (filled in by Opus)
+
+Merged in `d11c6d4` after the first attempt (DeepSeek Flash). Opus fixed audit calls to `p.Actor()` after the audit refactor and resolved wiring conflicts with the sync engine.

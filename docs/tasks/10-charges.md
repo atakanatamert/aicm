@@ -137,3 +137,5 @@ and call it from `RecordReadings` after each reading that was actually inserted 
 - [ ] The verification checklist in `docs/DELEGATION.md` passes.
 
 ## Outcome (filled in by Opus)
+
+Merged in `e32707e` after the first attempt. Opus added `RecordAPICharges` (idempotent on `external_id`) afterwards so the sync engine stores adapter invoices and top-ups.

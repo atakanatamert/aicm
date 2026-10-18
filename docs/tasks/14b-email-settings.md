@@ -124,3 +124,5 @@ Wiring: `alerts.SetHook(notify.Hook())`; `jobs.Register(reg, &notify.SendAlertWo
 - [ ] The verification checklist in `docs/DELEGATION.md` passes. No new tests are required.
 
 ## Outcome (filled in by Opus)
+
+Merged in `b8a97a7` after the first attempt. Smoke with mailpit: test email, exactly one email per alert across two forced re-evaluations and restarts; password never returned.

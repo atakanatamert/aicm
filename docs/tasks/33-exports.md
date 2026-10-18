@@ -37,3 +37,5 @@ Touch nothing else.
 - [ ] `go build ./... && go vet ./... && ~/go/bin/golangci-lint run` clean; `~/go/bin/sqlc generate` no diff; `./scripts/check-licenses.sh` passes.
 
 ## Outcome (filled in by Opus)
+
+Merged in `bf598df` after the second attempt: the first duplicated SQL in Go to stream rows; sent back with the failing check (structure), fixed to use the sqlc methods.

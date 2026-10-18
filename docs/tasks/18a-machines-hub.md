@@ -104,3 +104,5 @@ Handlers: `Machine.online` is false in this task (18b adds live connections); `h
 - [ ] The verification checklist in `docs/DELEGATION.md` passes.
 
 ## Outcome (filled in by Opus)
+
+Merged in `03a8c24` after the first attempt. Writer's choice accepted: re-enrolling a revoked fingerprint returns `machine_revoked`.
