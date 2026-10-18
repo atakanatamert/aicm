@@ -197,7 +197,7 @@ func (s *Service) Evaluate(ctx context.Context, now time.Time) (int, error) {
 					eventKey:  fmt.Sprintf("sync:%s:%s", a.ID, dateOf(*a.SyncFailingSince)),
 					severity:  "warning",
 					title:     fmt.Sprintf("%s sync has been failing", name),
-					body:      fmt.Sprintf("Sync has been failing since %s.", a.SyncFailingSince.UTC().Format(time.RFC3339)),
+					body:      fmt.Sprintf("Sync has been failing since %s.", readableTime(*a.SyncFailingSince)),
 					data:      alertData{Links: links},
 				}); err != nil {
 					return len(fresh), err
@@ -262,7 +262,7 @@ func (s *Service) Evaluate(ctx context.Context, now time.Time) (int, error) {
 					}
 					reset := "Resets at an unknown time."
 					if score.ResetsAt != nil {
-						reset = "Resets at " + score.ResetsAt.UTC().Format(time.RFC3339) + "."
+						reset = "Resets " + untilReset(*score.ResetsAt, now) + "."
 					}
 					if err := emit(candidate{
 						orgID:     a.OrgID,
@@ -292,7 +292,7 @@ func (s *Service) Evaluate(ctx context.Context, now time.Time) (int, error) {
 						eventKey:  fmt.Sprintf("waste:%s:%s:%s", a.ID, m.Key, score.ResetsAt.UTC().Format(time.RFC3339)),
 						severity:  "info",
 						title:     fmt.Sprintf("%s %s: %d%% unused before reset", name, def.Label, int(math.Round(score.Expiring*100))),
-						body:      fmt.Sprintf("Resets at %s with quota left. Use it or lose it.", score.ResetsAt.UTC().Format(time.RFC3339)),
+						body:      fmt.Sprintf("Resets %s with quota left. Use it or lose it.", untilReset(*score.ResetsAt, now)),
 						data:      alertData{Links: links},
 					}); err != nil {
 						return len(fresh), err
@@ -318,7 +318,7 @@ func (s *Service) Evaluate(ctx context.Context, now time.Time) (int, error) {
 			eventKey:  fmt.Sprintf("offline:%s:%s", m.ID, dateOf(*m.LastSeenAt)),
 			severity:  "warning",
 			title:     fmt.Sprintf("%s is offline", m.Name),
-			body:      fmt.Sprintf("Last seen %s.", m.LastSeenAt.UTC().Format(time.RFC3339)),
+			body:      fmt.Sprintf("Last seen %s.", readableTime(*m.LastSeenAt)),
 		}); err != nil {
 			return len(fresh), err
 		}
@@ -364,6 +364,30 @@ func displayName(a db.Account, info provider.Info) string {
 		return info.Name
 	}
 	return a.ProviderID
+}
+
+// readableTime formats t for alert text read in the inbox and in email,
+// where the reader's time zone is unknown: "Oct 18, 17:07 UTC".
+func readableTime(t time.Time) string {
+	return t.UTC().Format("Jan 2, 15:04 UTC")
+}
+
+// untilReset reads "in 4h 10m (Oct 18, 17:07 UTC)", or "now" when the reset
+// has already passed.
+func untilReset(resetsAt, now time.Time) string {
+	d := resetsAt.Sub(now).Round(time.Minute)
+	if d <= 0 {
+		return "now"
+	}
+	h, m := int(d.Hours()), int(d.Minutes())%60
+	rel := fmt.Sprintf("%dm", m)
+	switch {
+	case h >= 48:
+		rel = fmt.Sprintf("%dd", h/24)
+	case h > 0:
+		rel = fmt.Sprintf("%dh %dm", h, m)
+	}
+	return fmt.Sprintf("in %s (%s)", rel, readableTime(resetsAt))
 }
 
 func linksOf(info provider.Info) *provider.Links {
