@@ -1,0 +1,44 @@
+{
+  "quota": [
+    {
+      "key": "credits",
+      "remaining": 7475,
+      "captured_at": "2026-10-18T12:00:00Z",
+      "source": "api"
+    },
+    {
+      "key": "key_limit",
+      "remaining": 4250,
+      "limit": 6000,
+      "resets_at": "2026-11-01T00:00:00Z",
+      "captured_at": "2026-10-18T12:00:00Z",
+      "source": "api"
+    }
+  ],
+  "usage": [
+    {
+      "day": "2026-10-16T00:00:00Z",
+      "model": "openai/gpt-4.1",
+      "requests": 8,
+      "input_tokens": 80,
+      "output_tokens": 200,
+      "cache_read_tokens": 15,
+      "cache_write_tokens": 0,
+      "reasoning_tokens": 25,
+      "cost_micro": 24000,
+      "cost_currency": "USD"
+    },
+    {
+      "day": "2026-10-17T00:00:00Z",
+      "model": "anthropic/claude-sonnet-4",
+      "requests": 2,
+      "input_tokens": 1000,
+      "output_tokens": 500,
+      "cache_read_tokens": 200,
+      "cache_write_tokens": 0,
+      "reasoning_tokens": 0,
+      "cost_micro": 21500,
+      "cost_currency": "USD"
+    }
+  ]
+}

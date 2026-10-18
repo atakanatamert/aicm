@@ -1,0 +1,134 @@
+{
+  "_source": "https://openrouter.ai/docs/api/api-reference/credits/get-remaining-credits and https://openrouter.ai/docs/api/api-reference/analytics/get-user-activity-grouped-by-endpoint and https://openrouter.ai/docs/api/reference/limits",
+  "recorded_at": "2026-10-18T12:00:00Z",
+  "interactions": [
+    {
+      "method": "GET",
+      "url": "https://openrouter.ai/api/v1/key",
+      "status": 200,
+      "header": { "Content-Type": "application/json" },
+      "body": {
+        "data": {
+          "label": "sk-or-v1-...redacted",
+          "limit": 60,
+          "limit_reset": "monthly",
+          "limit_remaining": 42.5,
+          "include_byok_in_limit": false,
+          "usage": 17.5,
+          "usage_daily": 0.5,
+          "usage_weekly": 2.5,
+          "usage_monthly": 17.5,
+          "byok_usage": 0,
+          "byok_usage_daily": 0,
+          "byok_usage_weekly": 0,
+          "byok_usage_monthly": 0,
+          "is_free_tier": false,
+          "free_model_daily_requests": { "used": 0, "limit": 1000, "remaining": 1000 }
+        }
+      }
+    },
+    {
+      "method": "GET",
+      "url": "https://openrouter.ai/api/v1/credits",
+      "status": 200,
+      "header": { "Content-Type": "application/json" },
+      "body": {
+        "data": {
+          "total_credits": 100.5,
+          "total_usage": 25.75
+        }
+      }
+    },
+    {
+      "method": "GET",
+      "url": "https://openrouter.ai/api/v1/key",
+      "status": 200,
+      "header": { "Content-Type": "application/json" },
+      "body": {
+        "data": {
+          "label": "sk-or-v1-...redacted",
+          "limit": 60,
+          "limit_reset": "monthly",
+          "limit_remaining": 42.5,
+          "include_byok_in_limit": false,
+          "usage": 17.5,
+          "usage_daily": 0.5,
+          "usage_weekly": 2.5,
+          "usage_monthly": 17.5,
+          "byok_usage": 0,
+          "byok_usage_daily": 0,
+          "byok_usage_weekly": 0,
+          "byok_usage_monthly": 0,
+          "is_free_tier": false,
+          "free_model_daily_requests": { "used": 0, "limit": 1000, "remaining": 1000 }
+        }
+      }
+    },
+    {
+      "method": "GET",
+      "url": "https://openrouter.ai/api/v1/activity",
+      "status": 200,
+      "header": { "Content-Type": "application/json" },
+      "body": {
+        "data": [
+          {
+            "date": "2026-10-16",
+            "model": "openai/gpt-4.1",
+            "model_permaslug": "openai/gpt-4.1-2025-04-14",
+            "endpoint_id": "550e8400-e29b-41d4-a716-446655440000",
+            "provider_name": "OpenAI",
+            "usage": 0.015,
+            "byok_usage_inference": 0.012,
+            "requests": 5,
+            "prompt_tokens": 50,
+            "completion_tokens": 125,
+            "reasoning_tokens": 25,
+            "cached_tokens": 10
+          },
+          {
+            "date": "2026-10-16",
+            "model": "openai/gpt-4.1",
+            "model_permaslug": "openai/gpt-4.1-2025-04-14",
+            "endpoint_id": "6ba7b810-9dad-11d1-80b4-00c04fd430c8",
+            "provider_name": "Azure",
+            "usage": 0.009,
+            "byok_usage_inference": 0,
+            "requests": 3,
+            "prompt_tokens": 30,
+            "completion_tokens": 75,
+            "reasoning_tokens": 0,
+            "cached_tokens": 5
+          },
+          {
+            "date": "2026-10-17",
+            "model": "anthropic/claude-sonnet-4",
+            "model_permaslug": "anthropic/claude-sonnet-4-20250514",
+            "endpoint_id": "6ba7b811-9dad-11d1-80b4-00c04fd430c8",
+            "provider_name": "Anthropic",
+            "usage": 0.0215,
+            "byok_usage_inference": 0,
+            "requests": 2,
+            "prompt_tokens": 1000,
+            "completion_tokens": 500,
+            "reasoning_tokens": 0,
+            "cached_tokens": 200
+          },
+          {
+            "date": "2026-10-01",
+            "model": "openai/gpt-4.1",
+            "model_permaslug": "openai/gpt-4.1-2025-04-14",
+            "endpoint_id": "550e8400-e29b-41d4-a716-446655440000",
+            "provider_name": "OpenAI",
+            "usage": 0.1,
+            "byok_usage_inference": 0,
+            "requests": 10,
+            "prompt_tokens": 5000,
+            "completion_tokens": 1000,
+            "reasoning_tokens": 0,
+            "cached_tokens": 0
+          }
+        ]
+      }
+    }
+  ]
+}
