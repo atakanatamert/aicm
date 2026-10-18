@@ -23,8 +23,10 @@ import (
 	"github.com/atakanatamert/aicm/internal/auth"
 	"github.com/atakanatamert/aicm/internal/config"
 	"github.com/atakanatamert/aicm/internal/db"
+	"github.com/atakanatamert/aicm/internal/fx"
 	"github.com/atakanatamert/aicm/internal/httpapi"
 	"github.com/atakanatamert/aicm/internal/jobs"
+	"github.com/atakanatamert/aicm/internal/provider"
 	"github.com/atakanatamert/aicm/internal/secrets"
 	"github.com/atakanatamert/aicm/internal/version"
 )
@@ -228,6 +230,11 @@ func serve(ctx context.Context, args []string) error {
 	}
 
 	reg := jobs.NewRegistry()
+	httpc := provider.NewHTTPClient(log, nil)
+	fxSvc := fx.NewService(pool, log, fx.NewFrankfurter(httpc), fx.NewECB(httpc))
+	jobs.Register(reg, &fx.RefreshWorker{Service: fxSvc})
+	reg.Periodic = append(reg.Periodic, fx.PeriodicJob())
+
 	riverClient, err := jobs.NewClient(pool, log, reg)
 	if err != nil {
 		return err

@@ -1,0 +1,14 @@
+{
+  "recorded_at": "2026-10-18T11:16:37Z",
+  "interactions": [
+    {
+      "method": "GET",
+      "url": "https://www.ecb.europa.eu/stats/eurofxref/eurofxref-hist-90d.xml",
+      "status": 200,
+      "header": {
+        "Content-Type": "text/xml"
+      },
+      "body_text": "<?xml version=\"1.0\" encoding=\"UTF-8\"?><gesmes:Envelope xmlns:gesmes=\"http://www.gesmes.org/xml/2002-08-01\" xmlns=\"http://www.ecb.int/vocabulary/2002-08-01/eurofxref\"><gesmes:subject>Reference rates</gesmes:subject><gesmes:Sender><gesmes:name>European Central Bank</gesmes:name></gesmes:Sender><Cube><Cube time=\"2026-10-14\"><Cube currency=\"USD\" rate=\"1.1195\"/><Cube currency=\"JPY\" rate=\"177.39\"/><Cube currency=\"GBP\" rate=\"0.84385\"/><Cube currency=\"CHF\" rate=\"0.933\"/><Cube currency=\"CNY\" rate=\"7.4925\"/></Cube><Cube time=\"2026-10-15\"><Cube currency=\"USD\" rate=\"1.1208\"/><Cube currency=\"JPY\" rate=\"177.06\"/><Cube currency=\"GBP\" rate=\"0.8461\"/><Cube currency=\"CHF\" rate=\"0.9305\"/><Cube currency=\"CNY\" rate=\"7.4993\"/></Cube><Cube time=\"2026-10-16\"><Cube currency=\"USD\" rate=\"1.1253\"/><Cube currency=\"JPY\" rate=\"177.82\"/><Cube currency=\"GBP\" rate=\"0.84385\"/><Cube currency=\"CHF\" rate=\"0.9272\"/><Cube currency=\"CNY\" rate=\"7.524\"/></Cube></Cube></gesmes:Envelope>"
+    }
+  ]
+}
