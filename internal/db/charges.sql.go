@@ -54,6 +54,70 @@ func (q *Queries) GetVisibleCharge(ctx context.Context, arg GetVisibleChargePara
 	return i, err
 }
 
+const insertAPICharge = `-- name: InsertAPICharge :one
+INSERT INTO charges (
+    org_id, account_id, kind, status, source, amount_minor, currency,
+    occurred_on, period_start, period_end, external_id, description
+) VALUES (
+    $1, $2, $3, 'confirmed', 'api',
+    $4, $5, $6::date,
+    $7::date, $8::date,
+    $9, $10
+)
+ON CONFLICT (account_id, kind, external_id) WHERE external_id IS NOT NULL DO NOTHING
+RETURNING id, org_id, account_id, kind, status, source, amount_minor, currency, occurred_on, period_start, period_end, external_id, description, created_by, created_at, updated_at
+`
+
+type InsertAPIChargeParams struct {
+	OrgID       string
+	AccountID   string
+	Kind        string
+	AmountMinor int64
+	Currency    string
+	OccurredOn  time.Time
+	PeriodStart *time.Time
+	PeriodEnd   *time.Time
+	ExternalID  *string
+	Description string
+}
+
+// Charges an adapter fetched (invoices, top-ups) are keyed by the provider's
+// id, so repeated syncs insert each one once.
+func (q *Queries) InsertAPICharge(ctx context.Context, arg InsertAPIChargeParams) (Charge, error) {
+	row := q.db.QueryRow(ctx, insertAPICharge,
+		arg.OrgID,
+		arg.AccountID,
+		arg.Kind,
+		arg.AmountMinor,
+		arg.Currency,
+		arg.OccurredOn,
+		arg.PeriodStart,
+		arg.PeriodEnd,
+		arg.ExternalID,
+		arg.Description,
+	)
+	var i Charge
+	err := row.Scan(
+		&i.ID,
+		&i.OrgID,
+		&i.AccountID,
+		&i.Kind,
+		&i.Status,
+		&i.Source,
+		&i.AmountMinor,
+		&i.Currency,
+		&i.OccurredOn,
+		&i.PeriodStart,
+		&i.PeriodEnd,
+		&i.ExternalID,
+		&i.Description,
+		&i.CreatedBy,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
+}
+
 const insertCharge = `-- name: InsertCharge :one
 
 INSERT INTO charges (

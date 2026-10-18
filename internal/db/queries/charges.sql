@@ -64,3 +64,18 @@ WHERE c.org_id = sqlc.arg(org_id)
        OR (c.occurred_on = sqlc.narg(cursor_date)::date AND c.id < sqlc.narg(cursor_id)::uuid))
 ORDER BY c.occurred_on DESC, c.id DESC
 LIMIT sqlc.narg(row_limit)::int;
+
+-- name: InsertAPICharge :one
+-- Charges an adapter fetched (invoices, top-ups) are keyed by the provider's
+-- id, so repeated syncs insert each one once.
+INSERT INTO charges (
+    org_id, account_id, kind, status, source, amount_minor, currency,
+    occurred_on, period_start, period_end, external_id, description
+) VALUES (
+    sqlc.arg(org_id), sqlc.arg(account_id), sqlc.arg(kind), 'confirmed', 'api',
+    sqlc.arg(amount_minor), sqlc.arg(currency), sqlc.arg(occurred_on)::date,
+    sqlc.narg(period_start)::date, sqlc.narg(period_end)::date,
+    sqlc.arg(external_id), sqlc.arg(description)
+)
+ON CONFLICT (account_id, kind, external_id) WHERE external_id IS NOT NULL DO NOTHING
+RETURNING *;
