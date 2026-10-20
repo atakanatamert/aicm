@@ -277,17 +277,21 @@ func (s *Service) Evaluate(ctx context.Context, now time.Time) (int, error) {
 				}
 			}
 
-			if r, ok := rulesByKey.get(a.OrgID, a.ID, "quota_waste"); ok && ruleActive(r, now) {
+			// Waste is worth a nudge only for a window the user actually
+			// started (an untouched window is a choice, not waste), and at
+			// most once a day per account: the event key carries the day.
+			if r, ok := rulesByKey.get(a.OrgID, a.ID, "quota_waste"); ok && ruleActive(r, now) && !def.Supplemental {
 				p := paramsOf(r)
 				unused := floatOr(p.UnusedPercent, 50)
 				hours := floatOr(p.HoursBeforeReset, 12)
-				if score.ResetsAt != nil && score.HoursToReset != nil &&
+				started := score.Expiring < 1-1e-9
+				if score.ResetsAt != nil && score.HoursToReset != nil && started &&
 					score.Expiring >= unused/100 && *score.HoursToReset <= hours {
 					if err := emit(candidate{
 						orgID:     a.OrgID,
 						accountID: &a.ID,
 						kind:      "quota_waste",
-						eventKey:  fmt.Sprintf("waste:%s:%s:%s", a.ID, m.Key, score.ResetsAt.UTC().Format(time.RFC3339)),
+						eventKey:  fmt.Sprintf("waste:%s:%s", a.ID, dateOf(now)),
 						severity:  "info",
 						title:     fmt.Sprintf("%s %s: %d%% unused before reset", name, def.Label, int(math.Round(score.Expiring*100))),
 						body:      fmt.Sprintf("Resets %s with quota left. Use it or lose it.", untilReset(*score.ResetsAt, now)),

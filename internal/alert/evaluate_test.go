@@ -6,6 +6,7 @@ import (
 	"context"
 	"io"
 	"log/slog"
+	"strings"
 	"testing"
 	"time"
 
@@ -278,24 +279,47 @@ func TestQuotaWaste(t *testing.T) {
 	used70 := 70.0
 	insertReading(t, pool, orgID, fine, &used70, &resets, testNow)
 
+	// An untouched window is a choice, not waste: no alert for it.
+	untouchedAccount := plainAccount(t, pool, orgID, "ChatGPT")
+	untouched := insertMeter(t, pool, orgID, untouchedAccount, "untouched", &limit)
+	used0 := 0.0
+	insertReading(t, pool, orgID, untouched, &used0, &resets, testNow)
+
 	n, err := svc.Evaluate(ctx, testNow)
 	if err != nil {
 		t.Fatal(err)
 	}
 	if n != 1 {
-		t.Fatalf("got %d new alerts, want 1", n)
+		t.Fatalf("got %d new alerts, want 1 (only the started, 60%%-unused window)", n)
 	}
-	var severity, eventKey string
+	var severity, eventKey, title string
 	if err := pool.QueryRow(ctx,
-		`SELECT severity, event_key FROM alerts WHERE org_id = $1 AND kind = 'quota_waste'`, orgID).
-		Scan(&severity, &eventKey); err != nil {
+		`SELECT severity, event_key, title FROM alerts WHERE org_id = $1 AND kind = 'quota_waste'`, orgID).
+		Scan(&severity, &eventKey, &title); err != nil {
 		t.Fatal(err)
 	}
 	if severity != "info" {
 		t.Fatalf("severity: got %q, want info", severity)
 	}
-	if want := "waste:" + accountID + ":waste:"; len(eventKey) < len(want) || eventKey[:len(want)] != want {
-		t.Fatalf("event key %q does not identify the 60%%-unused meter", eventKey)
+	if want := "waste:" + accountID + ":" + testNow.UTC().Format(time.DateOnly); eventKey != want {
+		t.Fatalf("event key %q, want one per account per day %q", eventKey, want)
+	}
+	if !strings.Contains(title, "60%") {
+		t.Fatalf("title %q does not name the 60%%-unused window", title)
+	}
+
+	// Later the same day, another window qualifies: still one alert.
+	later := testNow.Add(time.Hour)
+	resetsLater := later.Add(5 * time.Hour)
+	other := insertMeter(t, pool, orgID, accountID, "other", &limit)
+	used10 := 10.0
+	insertReading(t, pool, orgID, other, &used10, &resetsLater, later)
+	n, err = svc.Evaluate(ctx, later)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if n != 0 {
+		t.Fatalf("same day: got %d new alerts, want 0", n)
 	}
 }
 

@@ -258,7 +258,7 @@ All three are in v1. Alerts go out by email first, through a `Notifier` interfac
 | Trial or promo ending | A plan marked as trial or discounted reaches its end date | 3 days before |
 | Low balance | A wallet drops below a threshold, or will run out within N days at the current burn rate | below 20%, or under 7 days left |
 | Meter nearly exhausted | A subscription window passes a threshold before it resets | 90% used |
-| Quota going to waste | A window resets soon with a large share unused (from the scoring rule) | over 50% unused, 12 h before reset |
+| Quota going to waste | A window you started resets soon with a large share unused (from the scoring rule); untouched windows never alert; at most once a day per account | over 50% unused, 12 h before reset |
 | Sync failing | An adapter or agent has failed for a while, so the numbers are stale | 24 h |
 | Agent offline | A machine has not reported for a while | 48 h |
 
