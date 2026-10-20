@@ -102,6 +102,7 @@ export function AddAccountDialog({ open, onOpenChange, providers }: AddAccountDi
     setAuthKind(p?.auth_kinds[0] ?? "none")
     setCurrency(p?.currency ?? "USD")
     setConfig({})
+    setAllowUnofficial(p?.unofficial ?? false)
   }
 
   const submit = (e: FormEvent) => {

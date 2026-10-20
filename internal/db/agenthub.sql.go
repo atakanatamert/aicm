@@ -257,7 +257,7 @@ func (q *Queries) UpsertAccountMachine(ctx context.Context, arg UpsertAccountMac
 
 const upsertDiscoveredAccount = `-- name: UpsertDiscoveredAccount :one
 
-INSERT INTO accounts (org_id, provider_id, name, status, external_id, auth_kind, currency, plan_name)
+INSERT INTO accounts (org_id, provider_id, name, status, external_id, auth_kind, currency, plan_name, allow_unofficial)
 VALUES (
     $1::uuid,
     $2,
@@ -266,7 +266,8 @@ VALUES (
     $4,
     $5,
     $6::char(3),
-    $7
+    $7,
+    $8
 )
 ON CONFLICT (org_id, provider_id, external_id) WHERE external_id IS NOT NULL
 DO UPDATE SET plan_name = CASE WHEN accounts.plan_name = '' THEN EXCLUDED.plan_name ELSE accounts.plan_name END
@@ -274,13 +275,14 @@ RETURNING id, org_id, provider_id, name, status, external_id, auth_kind, secret_
 `
 
 type UpsertDiscoveredAccountParams struct {
-	OrgID      string
-	ProviderID string
-	Name       string
-	ExternalID *string
-	AuthKind   string
-	Currency   string
-	PlanName   string
+	OrgID           string
+	ProviderID      string
+	Name            string
+	ExternalID      *string
+	AuthKind        string
+	Currency        string
+	PlanName        string
+	AllowUnofficial bool
 }
 
 type UpsertDiscoveredAccountRow struct {
@@ -327,6 +329,7 @@ func (q *Queries) UpsertDiscoveredAccount(ctx context.Context, arg UpsertDiscove
 		arg.AuthKind,
 		arg.Currency,
 		arg.PlanName,
+		arg.AllowUnofficial,
 	)
 	var i UpsertDiscoveredAccountRow
 	err := row.Scan(

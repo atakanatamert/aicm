@@ -14,7 +14,7 @@ type CommandKey = keyof EnrollTokenCreated["commands"]
  * import reads the same everywhere.
  */
 export const AGENT_READS_TEXT =
-  "It reads Claude Code, Codex and omp on this computer, read-only, and sends usage and limits here. Your logins stay on this computer."
+  "It reads Claude Code, Codex and omp on this computer and sends usage and limits here. It wraps Claude Code's status line to see your limits (undo: aicm-agent statusline uninstall). Your logins stay on this computer."
 
 // One tab per install route, in the order the card names them.
 const COMMAND_TABS: { key: CommandKey; label: string }[] = [

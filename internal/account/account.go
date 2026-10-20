@@ -162,7 +162,12 @@ func (s *Service) Create(ctx context.Context, p auth.Principal, in CreateInput) 
 	if err := validateConfig(info, config, true); err != nil {
 		return db.Account{}, err
 	}
-	allowUnofficial := in.AllowUnofficial != nil && *in.AllowUnofficial
+	// Default on for providers whose only data source is undocumented, so a
+	// new account syncs without an extra setting (Decision 9, revised).
+	allowUnofficial := info.Unofficial
+	if in.AllowUnofficial != nil {
+		allowUnofficial = *in.AllowUnofficial
+	}
 	notes := ""
 	if in.Notes != nil {
 		notes = *in.Notes

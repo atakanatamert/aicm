@@ -179,6 +179,9 @@ func (h *Hub) resolveAccount(ctx context.Context, q *db.Queries, orgID string, i
 		AuthKind:   kind,
 		Currency:   info.Currency,
 		PlanName:   strings.TrimSpace(item.Plan),
+		// Providers whose only data source is undocumented work out of the
+		// box; the account page can turn it off (Decision 9, revised).
+		AllowUnofficial: info.Unofficial,
 	})
 	if err != nil {
 		return db.UpsertDiscoveredAccountRow{}, fmt.Errorf("upserting account: %w", err)

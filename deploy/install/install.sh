@@ -12,7 +12,7 @@ BASE="${AICM_AGENT_DOWNLOAD_BASE:-https://github.com/$REPO/releases}"
 
 usage() {
 	cat <<EOF
-Usage: install.sh --hub URL --org ID --key KEY --token TOKEN [--version vX.Y.Z]
+Usage: install.sh --hub URL --org ID --key KEY --token TOKEN [--version vX.Y.Z] [--no-statusline]
        install.sh --uninstall
 
 The hub command already fills in the four enrollment values.
@@ -158,6 +158,9 @@ uninstall() {
 		fi
 		rm -f "$unit"
 	fi
+	if [ -x "$BIN_DIR/$BINARY" ]; then
+		"$BIN_DIR/$BINARY" statusline uninstall 2>/dev/null || true
+	fi
 	rm -f "$BIN_DIR/$BINARY"
 	echo "Uninstalled $BINARY. Data kept at $DATA_DIR"
 }
@@ -168,6 +171,7 @@ KEY=""
 TOKEN=""
 VERSION=""
 UNINSTALL=0
+NO_STATUSLINE=0
 
 while [ $# -gt 0 ]; do
 	case "$1" in
@@ -198,6 +202,10 @@ while [ $# -gt 0 ]; do
 		;;
 	--uninstall)
 		UNINSTALL=1
+		shift
+		;;
+	--no-statusline)
+		NO_STATUSLINE=1
 		shift
 		;;
 	-h | --help)
@@ -302,6 +310,16 @@ esac
 
 echo "Enrolling with $HUB"
 "$BIN_DIR/$BINARY" enroll --hub "$HUB" --org "$ORG" --key "$KEY" --token "$TOKEN"
+
+# Claude Code shows its 5-hour and weekly limits only to its statusline
+# command; the wrapper records them and then runs the previous statusline.
+if [ "$NO_STATUSLINE" -eq 0 ] && [ -d "${CLAUDE_CONFIG_DIR:-$HOME/.claude}" ]; then
+	if "$BIN_DIR/$BINARY" statusline install; then
+		echo "Claude Code limits: statusline wrapped (undo: $BINARY statusline uninstall)"
+	else
+		warn "could not wrap the Claude Code statusline; Claude limits stay empty until: $BINARY statusline install"
+	fi
+fi
 
 if [ "$OS" = "Darwin" ]; then
 	install_service_macos

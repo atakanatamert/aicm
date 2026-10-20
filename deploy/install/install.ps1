@@ -10,6 +10,7 @@ param(
     [string]$Key,
     [string]$Token,
     [string]$Version,
+    [switch]$NoStatusline,
     [switch]$Uninstall
 )
 
@@ -35,6 +36,7 @@ function Stop-AgentTask {
 if ($Uninstall) {
     Stop-AgentTask
     if (Test-Path -LiteralPath $Exe) {
+        & $Exe statusline uninstall 2>$null
         Remove-Item -LiteralPath $Exe -Force
     }
     Write-Host "Uninstalled $Binary. Data kept at $DataDir"
@@ -42,7 +44,7 @@ if ($Uninstall) {
 }
 
 if (-not $Hub -or -not $Org -or -not $Key -or -not $Token) {
-    throw "Usage: install.ps1 -Hub URL -Org ID -Key KEY -Token TOKEN [-Version vX.Y.Z] [-Uninstall]"
+    throw "Usage: install.ps1 -Hub URL -Org ID -Key KEY -Token TOKEN [-Version vX.Y.Z] [-NoStatusline] [-Uninstall]"
 }
 
 $arch = switch ($env:PROCESSOR_ARCHITECTURE) {
@@ -115,6 +117,19 @@ try {
     & $Exe enroll --hub $Hub --org $Org --key $Key --token $Token
     if ($LASTEXITCODE -ne 0) {
         throw "enroll failed with exit code $LASTEXITCODE"
+    }
+
+    # Claude Code shows its limits only to its statusline command; the wrapper
+    # records them and then runs the previous statusline.
+    $claudeDir = if ($env:CLAUDE_CONFIG_DIR) { $env:CLAUDE_CONFIG_DIR } else { Join-Path $HOME '.claude' }
+    if (-not $NoStatusline -and (Test-Path -LiteralPath $claudeDir)) {
+        & $Exe statusline install
+        if ($LASTEXITCODE -eq 0) {
+            Write-Host "Claude Code limits: statusline wrapped (undo: $Binary statusline uninstall)"
+        }
+        else {
+            Write-Warning "could not wrap the Claude Code statusline; Claude limits stay empty until: $Binary statusline install"
+        }
     }
 
     $action = New-ScheduledTaskAction -Execute $Exe -Argument 'run'
