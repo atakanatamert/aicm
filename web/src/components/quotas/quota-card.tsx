@@ -35,7 +35,9 @@ function expiringLine(quota: AccountQuota): string | undefined {
 
 /** One line of text saying why the card is urgent; never colour alone. */
 function urgentReason(quota: AccountQuota): string | undefined {
-  if (!quota.score.feasible) return "Runs out before it resets at current use"
+  if (!quota.score.feasible) {
+    return bindingMeter(quota)?.def.reset_kind === "never" ? "Balance is empty" : "Runs out before it resets at current use"
+  }
   if (quota.score.headroom < 0.3) {
     const hours = bindingMeter(quota)?.score.hours_to_empty
     return hours !== null && hours !== undefined

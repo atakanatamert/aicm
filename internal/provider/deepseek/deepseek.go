@@ -68,9 +68,9 @@ func (p *Provider) Info() provider.Info {
 		},
 		Meters: []meter.Def{
 			{Key: topUpCNYKey, Label: "Topped-up balance (CNY)", Unit: meter.UnitCurrency, UnitCurrency: "CNY", ResetKind: meter.ResetNever},
-			{Key: grantedCNYKey, Label: "Granted balance (CNY)", Unit: meter.UnitCurrency, UnitCurrency: "CNY", ResetKind: meter.ResetNever},
+			{Key: grantedCNYKey, Label: "Granted balance (CNY)", Unit: meter.UnitCurrency, UnitCurrency: "CNY", ResetKind: meter.ResetNever, Supplemental: true},
 			{Key: topUpUSDKey, Label: "Topped-up balance (USD)", Unit: meter.UnitCurrency, UnitCurrency: "USD", ResetKind: meter.ResetNever},
-			{Key: grantedUSDKey, Label: "Granted balance (USD)", Unit: meter.UnitCurrency, UnitCurrency: "USD", ResetKind: meter.ResetNever},
+			{Key: grantedUSDKey, Label: "Granted balance (USD)", Unit: meter.UnitCurrency, UnitCurrency: "USD", ResetKind: meter.ResetNever, Supplemental: true},
 		},
 		MinPollInterval: 15 * time.Minute,
 		ModelFamilies:   []string{"deepseek"},

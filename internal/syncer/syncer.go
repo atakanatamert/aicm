@@ -20,6 +20,7 @@ import (
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/riverqueue/river"
+	"github.com/riverqueue/river/rivertype"
 
 	"github.com/atakanatamert/aicm/internal/audit"
 	"github.com/atakanatamert/aicm/internal/auth"
@@ -283,7 +284,16 @@ func (SyncArgs) Kind() string { return "account_sync" }
 
 // InsertOpts keeps at most one queued sync per account.
 func (SyncArgs) InsertOpts() river.InsertOpts {
-	return river.InsertOpts{MaxAttempts: 5, UniqueOpts: river.UniqueOpts{ByArgs: true}}
+	// Unique only while a sync for the account is queued or running. River's
+	// default unique states include completed, which would block every later
+	// sync until the completed job is pruned (a day).
+	return river.InsertOpts{MaxAttempts: 5, UniqueOpts: river.UniqueOpts{
+		ByArgs: true,
+		ByState: []rivertype.JobState{
+			rivertype.JobStateAvailable, rivertype.JobStatePending, rivertype.JobStateRetryable,
+			rivertype.JobStateRunning, rivertype.JobStateScheduled,
+		},
+	}}
 }
 
 // SyncWorker runs SyncArgs.

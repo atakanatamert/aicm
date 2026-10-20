@@ -1,8 +1,10 @@
 import { Link } from "react-router"
 import { errorOf, query } from "@/api/client"
+import type { components } from "@/api/schema"
 import { EmptyState } from "@/components/empty-state"
 import { PageHeader } from "@/components/page-header"
 import { QuotaCard } from "@/components/quotas/quota-card"
+import { isSubscription } from "@/components/quotas/quota-kind"
 import { RenewalCard } from "@/components/quotas/renewal-card"
 import { AGENT_READS_TEXT } from "@/components/machines/enroll-commands"
 import { Button } from "@/components/ui/button"
@@ -40,6 +42,37 @@ function ErrorLine({ error }: { error: unknown }) {
     <p role="alert" className="text-sm text-destructive">
       {errorOf(error)?.error.message ?? "Could not load this section."}
     </p>
+  )
+}
+
+function QuotaSection({
+  id,
+  title,
+  description,
+  quotas,
+  canEdit,
+}: {
+  id: string
+  title: string
+  description: string
+  quotas: components["schemas"]["AccountQuota"][]
+  canEdit: boolean
+}) {
+  if (quotas.length === 0) return null
+  return (
+    <section aria-labelledby={`${id}-heading`} className="space-y-3">
+      <div>
+        <h2 id={`${id}-heading`} className="text-sm font-medium">
+          {title}
+        </h2>
+        <p className="text-sm text-muted-foreground">{description}</p>
+      </div>
+      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+        {quotas.map((quota) => (
+          <QuotaCard key={quota.account.id} quota={quota} canEdit={canEdit} />
+        ))}
+      </div>
+    </section>
   )
 }
 
@@ -85,22 +118,26 @@ export default function Quotas() {
           </div>
         ) : (
           <>
-            <section aria-labelledby="quotas-heading" className="space-y-3">
-              <h2 id="quotas-heading" className="text-sm font-medium text-muted-foreground">
-                Quotas
-              </h2>
-              {quotas.isError ? (
-                <ErrorLine error={quotas.error} />
-              ) : quotas.data.length === 0 ? (
-                <p className="text-sm text-muted-foreground">No accounts to show.</p>
-              ) : (
-                <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-                  {quotas.data.map((quota) => (
-                    <QuotaCard key={quota.account.id} quota={quota} canEdit={canEdit} />
-                  ))}
-                </div>
-              )}
-            </section>
+            {quotas.isError ? (
+              <ErrorLine error={quotas.error} />
+            ) : (
+              <>
+                <QuotaSection
+                  id="subscriptions"
+                  title="Subscriptions"
+                  description="Plans with limits that reset."
+                  quotas={quotas.data.filter(isSubscription)}
+                  canEdit={canEdit}
+                />
+                <QuotaSection
+                  id="credits"
+                  title="API credits"
+                  description="Balances you top up."
+                  quotas={quotas.data.filter((q) => !isSubscription(q))}
+                  canEdit={canEdit}
+                />
+              </>
+            )}
             <section aria-labelledby="renewals-heading" className="space-y-3">
               <h2 id="renewals-heading" className="text-sm font-medium text-muted-foreground">
                 Renewals · next 30 days
