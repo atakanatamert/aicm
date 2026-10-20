@@ -79,3 +79,19 @@ INSERT INTO charges (
 )
 ON CONFLICT (account_id, kind, external_id) WHERE external_id IS NOT NULL DO NOTHING
 RETURNING *;
+
+-- name: InsertEstimatedCharge :execrows
+-- A past subscription fee inferred from a detected plan's list price.
+INSERT INTO charges (
+    org_id, account_id, kind, status, source, amount_minor, currency,
+    occurred_on, period_start, period_end, description
+) VALUES (
+    sqlc.arg(org_id), sqlc.arg(account_id), 'subscription', 'confirmed', 'estimated',
+    sqlc.arg(amount_minor), sqlc.arg(currency), sqlc.arg(occurred_on)::date,
+    sqlc.arg(occurred_on)::date, sqlc.arg(period_end)::date, sqlc.arg(description)
+)
+ON CONFLICT (account_id, occurred_on) WHERE source = 'estimated' DO NOTHING;
+
+-- name: CountSubscriptionCharges :one
+SELECT count(*) FROM charges
+WHERE org_id = sqlc.arg(org_id) AND account_id = sqlc.arg(account_id) AND kind = 'subscription';

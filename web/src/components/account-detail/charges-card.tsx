@@ -51,7 +51,10 @@ export function ChargesCard({ accountId }: { accountId: string }) {
               <TableRow key={charge.id}>
                 <TableCell className="whitespace-nowrap">{formatDate(charge.occurred_on)}</TableCell>
                 <TableCell>
-                  <Badge variant="secondary">{KIND_LABEL[charge.kind] ?? charge.kind}</Badge>
+                  <span className="inline-flex gap-1.5">
+                    <Badge variant="secondary">{KIND_LABEL[charge.kind] ?? charge.kind}</Badge>
+                    {charge.source === "estimated" && <Badge variant="outline">estimated</Badge>}
+                  </span>
                 </TableCell>
                 <TableCell className="max-w-xs truncate text-muted-foreground" title={charge.description}>
                   {charge.description || "–"}

@@ -192,10 +192,11 @@ func (e ChargeKind) Valid() bool {
 
 // Defines values for ChargeSource.
 const (
-	ChargeSourceApi      ChargeSource = "api"
-	ChargeSourceDetected ChargeSource = "detected"
-	ChargeSourceManual   ChargeSource = "manual"
-	ChargeSourceRenewal  ChargeSource = "renewal"
+	ChargeSourceApi       ChargeSource = "api"
+	ChargeSourceDetected  ChargeSource = "detected"
+	ChargeSourceEstimated ChargeSource = "estimated"
+	ChargeSourceManual    ChargeSource = "manual"
+	ChargeSourceRenewal   ChargeSource = "renewal"
 )
 
 // Valid indicates whether the value is a known member of the ChargeSource enum.
@@ -204,6 +205,8 @@ func (e ChargeSource) Valid() bool {
 	case ChargeSourceApi:
 		return true
 	case ChargeSourceDetected:
+		return true
+	case ChargeSourceEstimated:
 		return true
 	case ChargeSourceManual:
 		return true

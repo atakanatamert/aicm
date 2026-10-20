@@ -115,3 +115,19 @@ ORDER BY renews_on, id;
 UPDATE accounts
 SET renews_on = sqlc.arg(renews_on)::date, updated_at = now()
 WHERE org_id = sqlc.arg(org_id)::uuid AND id = sqlc.arg(id)::uuid;
+
+-- name: FillDetectedPlan :one
+-- Sets a plan an agent detected, only on an active account whose price and
+-- renewal date are both still empty, so a user's own entry always wins.
+UPDATE accounts
+SET plan_name = sqlc.arg(plan_name),
+    price_minor = sqlc.arg(price_minor),
+    currency = sqlc.arg(currency)::char(3),
+    billing_cycle = 'monthly',
+    renews_on = sqlc.arg(renews_on)::date,
+    auto_renew = true,
+    renewal_anchor_day = sqlc.arg(renewal_anchor_day),
+    updated_at = now()
+WHERE org_id = sqlc.arg(org_id) AND id = sqlc.arg(id)
+  AND status = 'active' AND price_minor IS NULL AND renews_on IS NULL
+RETURNING *;

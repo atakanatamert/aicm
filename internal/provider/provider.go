@@ -77,6 +77,28 @@ type Info struct {
 	// recommend_account: "claude", "gpt", "gemini", "grok", "deepseek",
 	// "kimi", "glm". "*" means any (routers such as OpenRouter).
 	ModelFamilies []string
+	// Plans are the monthly list prices of the subscription tiers an agent
+	// can detect, used to fill in a plan the user has not entered.
+	Plans []PlanPrice
+}
+
+// PlanPrice is one subscription tier's public monthly list price before tax.
+type PlanPrice struct {
+	// Tier is the id agents report in agentlink.DetailPlanTier.
+	Tier       string
+	Name       string
+	PriceMinor int64
+	Currency   string
+}
+
+// Plan finds the tier's list price.
+func (i Info) Plan(tier string) (PlanPrice, bool) {
+	for _, p := range i.Plans {
+		if p.Tier == tier {
+			return p, true
+		}
+	}
+	return PlanPrice{}, false
 }
 
 // Validate checks the catalog entry. The registry test runs it for every

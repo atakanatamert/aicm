@@ -11,7 +11,9 @@
     "has_api_key": false,
     "details": {
       "organization_uuid": "8c7d6e5f-4a3b-2c1d-0e9f-8a7b6c5d4e3f",
-      "rate_limit_tier": "default_claude_max_20x"
+      "plan_tier": "max_20x",
+      "rate_limit_tier": "default_claude_max_20x",
+      "subscription_started": "2025-08-14T12:51:11.223774Z"
     }
   }
 ]

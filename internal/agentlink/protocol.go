@@ -145,7 +145,8 @@ type DiscoveredAccount struct {
 	AuthKind string `json:"auth_kind"`
 	// HasAPIKey means the agent can answer a SecretRequest for this account.
 	HasAPIKey bool `json:"has_api_key"`
-	// Details holds non-secret extras (rate limit tier, org name).
+	// Details holds non-secret extras (rate limit tier, org name); the
+	// Detail* keys below have fixed meanings.
 	Details map[string]string `json:"details,omitempty"`
 }
 
@@ -241,4 +242,14 @@ const (
 	CodeInternal         = "internal"
 	CodeTooLarge         = "too_large"
 	CodeHandshakeTimeout = "handshake_timeout"
+)
+
+// Keys in DiscoveredAccount.Details the hub uses to fill in a subscription
+// plan the user has not entered.
+const (
+	// DetailPlanTier is the provider catalog's tier id, for example "max_5x".
+	DetailPlanTier = "plan_tier"
+	// DetailSubscriptionStarted is when the paid subscription began (RFC 3339);
+	// its day of month is the billing day.
+	DetailSubscriptionStarted = "subscription_started"
 )

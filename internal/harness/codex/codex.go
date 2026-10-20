@@ -126,11 +126,18 @@ func (h *Harness) accountFromAuth() (*agentlink.DiscoveredAccount, bool, error) 
 	if claims.OpenAIAuth.ChatGPTAccountID == "" {
 		return nil, true, nil
 	}
-	return discoveredAccount(
+	acct := discoveredAccount(
 		claims.OpenAIAuth.ChatGPTAccountID,
 		claims.Email,
 		claims.OpenAIAuth.ChatGPTPlanType,
-	), true, nil
+	)
+	if started := claims.OpenAIAuth.SubscriptionActiveStart; started != "" && claims.OpenAIAuth.ChatGPTPlanType != "" {
+		acct.Details = map[string]string{
+			agentlink.DetailPlanTier:            strings.ToLower(claims.OpenAIAuth.ChatGPTPlanType),
+			agentlink.DetailSubscriptionStarted: started,
+		}
+	}
+	return acct, true, nil
 }
 
 // accountForScan re-reads auth.json so a changed login is picked up. The
@@ -204,6 +211,9 @@ type idTokenClaims struct {
 	OpenAIAuth struct {
 		ChatGPTAccountID string `json:"chatgpt_account_id"`
 		ChatGPTPlanType  string `json:"chatgpt_plan_type"`
+		// SubscriptionActiveStart is when the paid plan began; its day of
+		// month is the billing day.
+		SubscriptionActiveStart string `json:"chatgpt_subscription_active_start"`
 	} `json:"https://api.openai.com/auth"`
 }
 

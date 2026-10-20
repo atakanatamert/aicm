@@ -44,6 +44,12 @@ func All() []provider.Provider {
 				{Key: "seven_day_sonnet", Label: "Weekly limit (Sonnet)", Unit: meter.UnitPercent, ResetKind: meter.ResetFixed, WindowMinutes: 10080},
 			},
 			ModelFamilies: []string{"claude"},
+			// Monthly list prices, https://claude.com/pricing (2026-10).
+			Plans: []provider.PlanPrice{
+				{Tier: "pro", Name: "Pro", PriceMinor: 2000, Currency: "USD"},
+				{Tier: "max_5x", Name: "Max 5x", PriceMinor: 10000, Currency: "USD"},
+				{Tier: "max_20x", Name: "Max 20x", PriceMinor: 20000, Currency: "USD"},
+			},
 		},
 		{
 			ID:       "chatgpt",
@@ -65,6 +71,11 @@ func All() []provider.Provider {
 				{Key: "credits", Label: "Codex credits", Unit: meter.UnitCredits, ResetKind: meter.ResetNever, Supplemental: true},
 			},
 			ModelFamilies: []string{"gpt"},
+			// Monthly list prices, https://chatgpt.com/pricing (2026-10).
+			Plans: []provider.PlanPrice{
+				{Tier: "plus", Name: "Plus", PriceMinor: 2000, Currency: "USD"},
+				{Tier: "pro", Name: "Pro", PriceMinor: 20000, Currency: "USD"},
+			},
 		},
 		{
 			ID:       "google-ai-studio",

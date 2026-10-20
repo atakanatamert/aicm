@@ -1288,7 +1288,7 @@ export interface components {
         /** @enum {string} */
         ChargeStatus: "confirmed" | "suggested" | "dismissed";
         /** @enum {string} */
-        ChargeSource: "manual" | "renewal" | "detected" | "api";
+        ChargeSource: "manual" | "renewal" | "detected" | "api" | "estimated";
         Charge: {
             /** Format: uuid */
             id: string;

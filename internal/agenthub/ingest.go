@@ -9,7 +9,9 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
+	"time"
 
+	"github.com/atakanatamert/aicm/internal/account"
 	"github.com/atakanatamert/aicm/internal/agentlink"
 	"github.com/atakanatamert/aicm/internal/audit"
 	"github.com/atakanatamert/aicm/internal/auth"
@@ -64,6 +66,9 @@ func (h *Hub) ingestAccounts(ctx context.Context, s *session, e agentlink.Envelo
 			Details:   details,
 		}); err != nil {
 			return fmt.Errorf("recording account machine: %w", err).Error()
+		}
+		if err := h.fillDetectedPlan(ctx, q, actor, s.orgID, a, item); err != nil {
+			return err.Error()
 		}
 		if a.Inserted {
 			if err := audit.Write(ctx, q, actor, audit.Entry{
@@ -221,4 +226,33 @@ func (h *Hub) providerInfo(id string) (provider.Info, bool) {
 		}
 	}
 	return provider.Info{}, false
+}
+
+// fillDetectedPlan prices an active subscription the agent identified (plan
+// tier and start date) when the user has not entered a plan yet.
+func (h *Hub) fillDetectedPlan(ctx context.Context, q *db.Queries, actor audit.Actor, orgID string, a db.UpsertDiscoveredAccountRow, item agentlink.DiscoveredAccount) error {
+	if a.Status != "active" {
+		return nil
+	}
+	tier := item.Details[agentlink.DetailPlanTier]
+	startedRaw := item.Details[agentlink.DetailSubscriptionStarted]
+	if tier == "" || startedRaw == "" {
+		return nil
+	}
+	info, ok := h.providerInfo(item.Ref.ProviderID)
+	if !ok {
+		return nil
+	}
+	price, ok := info.Plan(tier)
+	if !ok {
+		return nil
+	}
+	started, err := time.Parse(time.RFC3339Nano, startedRaw)
+	if err != nil {
+		return nil // a malformed date from the harness: leave the plan for the user
+	}
+	if _, err := account.FillDetected(ctx, q, actor, orgID, a.ID, account.DetectedPlan{Price: price, Started: started}, time.Now()); err != nil {
+		return fmt.Errorf("filling detected plan for %s: %w", a.ID, err)
+	}
+	return nil
 }

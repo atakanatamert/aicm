@@ -1962,7 +1962,7 @@ components:
 
     ChargeSource:
       type: string
-      enum: [manual, renewal, detected, api]
+      enum: [manual, renewal, detected, api, estimated]
 
     Charge:
       type: object

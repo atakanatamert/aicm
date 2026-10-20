@@ -78,19 +78,22 @@ func New(home, dataDir string) *Harness {
 func (h *Harness) ID() string { return ID }
 
 type dirAccount struct {
-	dir   configDir
-	ref   agentlink.AccountRef
-	label string
-	plan  string
-	org   string
-	tier  string
+	dir     configDir
+	ref     agentlink.AccountRef
+	label   string
+	plan    string
+	org     string
+	tier    string
+	started string
 }
 
 type claudeJSON struct {
 	OAuthAccount *struct {
-		AccountUUID      string `json:"accountUuid"`
-		EmailAddress     string `json:"emailAddress"`
-		OrganizationUUID string `json:"organizationUuid"`
+		AccountUUID               string `json:"accountUuid"`
+		EmailAddress              string `json:"emailAddress"`
+		OrganizationUUID          string `json:"organizationUuid"`
+		OrganizationRateLimitTier string `json:"organizationRateLimitTier"`
+		SubscriptionCreatedAt     string `json:"subscriptionCreatedAt"`
 	} `json:"oauthAccount"`
 }
 
@@ -116,6 +119,12 @@ func (h *Harness) Discover(ctx context.Context) ([]agentlink.DiscoveredAccount, 
 		}
 		if a.org != "" {
 			details["organization_uuid"] = a.org
+		}
+		if tier := planTier(a.plan, a.tier); tier != "" {
+			details[agentlink.DetailPlanTier] = tier
+		}
+		if a.started != "" {
+			details[agentlink.DetailSubscriptionStarted] = a.started
 		}
 		if len(details) == 0 {
 			details = nil
@@ -147,13 +156,17 @@ func (h *Harness) accounts(ctx context.Context) []dirAccount {
 			continue
 		}
 		plan, tier := h.credentials(ctx, dir)
+		if tier == "" {
+			tier = cfg.OAuthAccount.OrganizationRateLimitTier
+		}
 		out = append(out, dirAccount{
-			dir:   dir,
-			ref:   agentlink.AccountRef{ProviderID: "claude", ExternalID: cfg.OAuthAccount.AccountUUID},
-			label: cfg.OAuthAccount.EmailAddress,
-			plan:  plan,
-			org:   cfg.OAuthAccount.OrganizationUUID,
-			tier:  tier,
+			dir:     dir,
+			ref:     agentlink.AccountRef{ProviderID: "claude", ExternalID: cfg.OAuthAccount.AccountUUID},
+			label:   cfg.OAuthAccount.EmailAddress,
+			plan:    plan,
+			org:     cfg.OAuthAccount.OrganizationUUID,
+			tier:    tier,
+			started: cfg.OAuthAccount.SubscriptionCreatedAt,
 		})
 	}
 	return out
@@ -208,4 +221,20 @@ func parseCredentials(data []byte) (plan, tier string, ok bool) {
 
 func (h *Harness) spoolPath() string {
 	return filepath.Join(h.dataDir, "claude-statusline.jsonl")
+}
+
+// planTier maps Claude's subscription type and rate limit tier to the hub
+// catalog's tier ids: "pro", "max_5x", "max_20x". Unknown plans give "".
+func planTier(subscriptionType, rateLimitTier string) string {
+	tier := strings.ToLower(rateLimitTier)
+	switch {
+	case strings.Contains(tier, "max_20x"):
+		return "max_20x"
+	case strings.Contains(tier, "max_5x"):
+		return "max_5x"
+	}
+	if strings.EqualFold(subscriptionType, "pro") {
+		return "pro"
+	}
+	return "" // Max without a tier: the price is unknown, so leave it unset
 }

@@ -10,6 +10,23 @@ import (
 	"time"
 )
 
+const countSubscriptionCharges = `-- name: CountSubscriptionCharges :one
+SELECT count(*) FROM charges
+WHERE org_id = $1 AND account_id = $2 AND kind = 'subscription'
+`
+
+type CountSubscriptionChargesParams struct {
+	OrgID     string
+	AccountID string
+}
+
+func (q *Queries) CountSubscriptionCharges(ctx context.Context, arg CountSubscriptionChargesParams) (int64, error) {
+	row := q.db.QueryRow(ctx, countSubscriptionCharges, arg.OrgID, arg.AccountID)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
+}
+
 const getVisibleCharge = `-- name: GetVisibleCharge :one
 SELECT c.id, c.org_id, c.account_id, c.kind, c.status, c.source, c.amount_minor, c.currency, c.occurred_on, c.period_start, c.period_end, c.external_id, c.description, c.created_by, c.created_at, c.updated_at
 FROM charges c
@@ -183,6 +200,45 @@ func (q *Queries) InsertCharge(ctx context.Context, arg InsertChargeParams) (Cha
 		&i.UpdatedAt,
 	)
 	return i, err
+}
+
+const insertEstimatedCharge = `-- name: InsertEstimatedCharge :execrows
+INSERT INTO charges (
+    org_id, account_id, kind, status, source, amount_minor, currency,
+    occurred_on, period_start, period_end, description
+) VALUES (
+    $1, $2, 'subscription', 'confirmed', 'estimated',
+    $3, $4, $5::date,
+    $5::date, $6::date, $7
+)
+ON CONFLICT (account_id, occurred_on) WHERE source = 'estimated' DO NOTHING
+`
+
+type InsertEstimatedChargeParams struct {
+	OrgID       string
+	AccountID   string
+	AmountMinor int64
+	Currency    string
+	OccurredOn  time.Time
+	PeriodEnd   time.Time
+	Description string
+}
+
+// A past subscription fee inferred from a detected plan's list price.
+func (q *Queries) InsertEstimatedCharge(ctx context.Context, arg InsertEstimatedChargeParams) (int64, error) {
+	result, err := q.db.Exec(ctx, insertEstimatedCharge,
+		arg.OrgID,
+		arg.AccountID,
+		arg.AmountMinor,
+		arg.Currency,
+		arg.OccurredOn,
+		arg.PeriodEnd,
+		arg.Description,
+	)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected(), nil
 }
 
 const insertRenewalCharge = `-- name: InsertRenewalCharge :one

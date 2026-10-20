@@ -66,6 +66,75 @@ func (q *Queries) ArchiveAccount(ctx context.Context, arg ArchiveAccountParams) 
 	return i, err
 }
 
+const fillDetectedPlan = `-- name: FillDetectedPlan :one
+UPDATE accounts
+SET plan_name = $1,
+    price_minor = $2,
+    currency = $3::char(3),
+    billing_cycle = 'monthly',
+    renews_on = $4::date,
+    auto_renew = true,
+    renewal_anchor_day = $5,
+    updated_at = now()
+WHERE org_id = $6 AND id = $7
+  AND status = 'active' AND price_minor IS NULL AND renews_on IS NULL
+RETURNING id, org_id, provider_id, name, status, external_id, auth_kind, secret_id, config, allow_unofficial, plan_name, price_minor, currency, billing_cycle, renews_on, auto_renew, promo_kind, promo_ends_on, notes, last_synced_at, last_sync_error, sync_failing_since, archived_at, created_at, updated_at, renewal_anchor_day
+`
+
+type FillDetectedPlanParams struct {
+	PlanName         string
+	PriceMinor       *int64
+	Currency         string
+	RenewsOn         time.Time
+	RenewalAnchorDay *int16
+	OrgID            string
+	ID               string
+}
+
+// Sets a plan an agent detected, only on an active account whose price and
+// renewal date are both still empty, so a user's own entry always wins.
+func (q *Queries) FillDetectedPlan(ctx context.Context, arg FillDetectedPlanParams) (Account, error) {
+	row := q.db.QueryRow(ctx, fillDetectedPlan,
+		arg.PlanName,
+		arg.PriceMinor,
+		arg.Currency,
+		arg.RenewsOn,
+		arg.RenewalAnchorDay,
+		arg.OrgID,
+		arg.ID,
+	)
+	var i Account
+	err := row.Scan(
+		&i.ID,
+		&i.OrgID,
+		&i.ProviderID,
+		&i.Name,
+		&i.Status,
+		&i.ExternalID,
+		&i.AuthKind,
+		&i.SecretID,
+		&i.Config,
+		&i.AllowUnofficial,
+		&i.PlanName,
+		&i.PriceMinor,
+		&i.Currency,
+		&i.BillingCycle,
+		&i.RenewsOn,
+		&i.AutoRenew,
+		&i.PromoKind,
+		&i.PromoEndsOn,
+		&i.Notes,
+		&i.LastSyncedAt,
+		&i.LastSyncError,
+		&i.SyncFailingSince,
+		&i.ArchivedAt,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+		&i.RenewalAnchorDay,
+	)
+	return i, err
+}
+
 const getAccount = `-- name: GetAccount :one
 SELECT a.id, a.org_id, a.provider_id, a.name, a.status, a.external_id, a.auth_kind, a.secret_id, a.config, a.allow_unofficial, a.plan_name, a.price_minor, a.currency, a.billing_cycle, a.renews_on, a.auto_renew, a.promo_kind, a.promo_ends_on, a.notes, a.last_synced_at, a.last_sync_error, a.sync_failing_since, a.archived_at, a.created_at, a.updated_at, a.renewal_anchor_day
 FROM accounts a

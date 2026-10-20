@@ -135,8 +135,9 @@ func writeAuth(t *testing.T, codexHome string) string {
 	payload, err := json.Marshal(map[string]any{
 		"email": "test@example.com",
 		"https://api.openai.com/auth": map[string]any{
-			"chatgpt_account_id": testAccountID,
-			"chatgpt_plan_type":  "plus",
+			"chatgpt_account_id":                testAccountID,
+			"chatgpt_plan_type":                 "plus",
+			"chatgpt_subscription_active_start": "2026-06-09T08:48:55+00:00",
 		},
 	})
 	if err != nil {
