@@ -158,6 +158,12 @@ func (p *Provider) FetchUsage(ctx context.Context, c provider.Credentials, from,
 		} `json:"data"`
 	}
 	if err := p.c.GetJSON(ctx, baseURL+"/activity", p.auth(c), &out); err != nil {
+		// Only management keys may read activity. With an inference key the
+		// balance still syncs; usage comes from agents reading local logs.
+		var he *provider.HTTPError
+		if errors.As(err, &he) && he.Status == http.StatusForbidden {
+			return nil, nil
+		}
 		return nil, fmt.Errorf("fetching openrouter activity: %w", err)
 	}
 

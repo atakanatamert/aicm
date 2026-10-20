@@ -1,0 +1,96 @@
+{
+  "_source": "Hand-built: an inference key (not a management key) is refused by /activity with 403.",
+  "recorded_at": "2026-10-18T12:00:00Z",
+  "interactions": [
+    {
+      "method": "GET",
+      "url": "https://openrouter.ai/api/v1/key",
+      "status": 200,
+      "header": {
+        "Content-Type": "application/json"
+      },
+      "body": {
+        "data": {
+          "label": "sk-or-v1-...redacted",
+          "limit": 60,
+          "limit_reset": "monthly",
+          "limit_remaining": 42.5,
+          "include_byok_in_limit": false,
+          "usage": 17.5,
+          "usage_daily": 0.5,
+          "usage_weekly": 2.5,
+          "usage_monthly": 17.5,
+          "byok_usage": 0,
+          "byok_usage_daily": 0,
+          "byok_usage_weekly": 0,
+          "byok_usage_monthly": 0,
+          "is_free_tier": false,
+          "free_model_daily_requests": {
+            "used": 0,
+            "limit": 1000,
+            "remaining": 1000
+          }
+        }
+      }
+    },
+    {
+      "method": "GET",
+      "url": "https://openrouter.ai/api/v1/credits",
+      "status": 200,
+      "header": {
+        "Content-Type": "application/json"
+      },
+      "body": {
+        "data": {
+          "total_credits": 100.5,
+          "total_usage": 25.75
+        }
+      }
+    },
+    {
+      "method": "GET",
+      "url": "https://openrouter.ai/api/v1/key",
+      "status": 200,
+      "header": {
+        "Content-Type": "application/json"
+      },
+      "body": {
+        "data": {
+          "label": "sk-or-v1-...redacted",
+          "limit": 60,
+          "limit_reset": "monthly",
+          "limit_remaining": 42.5,
+          "include_byok_in_limit": false,
+          "usage": 17.5,
+          "usage_daily": 0.5,
+          "usage_weekly": 2.5,
+          "usage_monthly": 17.5,
+          "byok_usage": 0,
+          "byok_usage_daily": 0,
+          "byok_usage_weekly": 0,
+          "byok_usage_monthly": 0,
+          "is_free_tier": false,
+          "free_model_daily_requests": {
+            "used": 0,
+            "limit": 1000,
+            "remaining": 1000
+          }
+        }
+      }
+    },
+    {
+      "method": "GET",
+      "url": "https://openrouter.ai/api/v1/activity",
+      "status": 403,
+      "header": {
+        "Content-Type": "application/json"
+      },
+      "body": {
+        "error": {
+          "message": "Only management keys can fetch activity for an account",
+          "code": 403
+        }
+      }
+    }
+  ]
+}
