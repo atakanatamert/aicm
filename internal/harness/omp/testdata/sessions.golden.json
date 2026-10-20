@@ -64,5 +64,22 @@
     "reasoning_tokens": 0,
     "cost_micro": 100,
     "cost_currency": "USD"
+  },
+  {
+    "account": {
+      "provider_id": "zai",
+      "external_id": "key:8fd2aa6cc58f32fa"
+    },
+    "source": "omp",
+    "message_id": "sess-synthetic-0001:mu-1",
+    "occurred_at": "2026-01-02T03:04:09.8Z",
+    "model": "glm-4.6",
+    "input_tokens": 40,
+    "output_tokens": 5,
+    "cache_read_tokens": 0,
+    "cache_write_tokens": 0,
+    "reasoning_tokens": 0,
+    "cost_micro": 20,
+    "cost_currency": "USD"
   }
 ]

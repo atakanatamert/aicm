@@ -1,0 +1,23 @@
+{
+  "_source": "Hand-built from the live GET /v1/models response shape (2026-10-20).",
+  "recorded_at": "2026-10-20T12:00:00Z",
+  "interactions": [
+    {
+      "method": "GET",
+      "url": "https://api.typesafe.ai/v1/models",
+      "status": 200,
+      "header": {
+        "Content-Type": "application/json"
+      },
+      "body": {
+        "models": [
+          {
+            "name": "jev-latest",
+            "description": "The latest iteration of TypeSafe's System One Model: Jev",
+            "release_date": "2026-09-10T18:38:01.391457+00:00"
+          }
+        ]
+      }
+    }
+  ]
+}

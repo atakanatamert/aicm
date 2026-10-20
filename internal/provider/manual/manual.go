@@ -78,26 +78,6 @@ func All() []provider.Provider {
 			},
 		},
 		{
-			ID:       "google-ai-studio",
-			Name:     "Google AI Studio (Gemini API)",
-			Currency: "USD",
-			AuthKinds: []provider.AuthKind{
-				provider.AuthNone,
-			},
-			Links: provider.Links{
-				TopUp:   "https://aistudio.google.com/billing",
-				Billing: "https://aistudio.google.com/billing",
-				Usage:   "https://aistudio.google.com/usage",
-				Keys:    "https://aistudio.google.com/apikey",
-				Docs:    "https://ai.google.dev/gemini-api/docs/billing",
-			},
-			Meters: []meter.Def{
-				{Key: "prepaid_credits", Label: "Prepaid credits", Unit: meter.UnitCurrency, UnitCurrency: "USD", ResetKind: meter.ResetNever},
-				{Key: "monthly_spend", Label: "Spend this month", Unit: meter.UnitCurrency, UnitCurrency: "USD", ResetKind: meter.ResetCalendarMonth},
-			},
-			ModelFamilies: []string{"gemini"},
-		},
-		{
 			ID:       "google-one",
 			Name:     "Google AI Pro / Ultra",
 			Currency: "USD",

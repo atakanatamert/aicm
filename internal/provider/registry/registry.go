@@ -9,10 +9,12 @@ import (
 	"github.com/atakanatamert/aicm/internal/provider/anthropic"
 	"github.com/atakanatamert/aicm/internal/provider/copilot"
 	"github.com/atakanatamert/aicm/internal/provider/deepseek"
+	"github.com/atakanatamert/aicm/internal/provider/googleaistudio"
 	"github.com/atakanatamert/aicm/internal/provider/manual"
 	"github.com/atakanatamert/aicm/internal/provider/moonshot"
 	"github.com/atakanatamert/aicm/internal/provider/openai"
 	"github.com/atakanatamert/aicm/internal/provider/openrouter"
+	"github.com/atakanatamert/aicm/internal/provider/typesafe"
 	"github.com/atakanatamert/aicm/internal/provider/xai"
 	"github.com/atakanatamert/aicm/internal/provider/zai"
 )
@@ -29,6 +31,8 @@ func All(c *provider.HTTPClient) []provider.Provider {
 		moonshot.New(c),
 		zai.New(c),
 		zai.NewAPI(c),
+		googleaistudio.New(c),
+		typesafe.New(c),
 		copilot.New(c),
 	}
 	return append(ps, manual.All()...)

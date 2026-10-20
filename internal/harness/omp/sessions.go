@@ -101,11 +101,16 @@ func keySetFingerprint(dirs []string, keysByDir []map[string]keyEntry) int64 {
 	return int64(sum.Sum64() >> 1) //nolint:gosec // top bit dropped to fit int64
 }
 
-// sessionLine is the subset of one JSONL line this importer reads.
+// sessionLine is the subset of one JSONL line this importer reads. Assistant
+// turns are "message" lines; side calls omp makes itself (judges, automatic
+// thinking, compaction) are "model_usage" lines with the fields at the top.
 type sessionLine struct {
-	Type      string `json:"type"`
-	ID        string `json:"id"`
-	Timestamp string `json:"timestamp"`
+	Type      string        `json:"type"`
+	ID        string        `json:"id"`
+	Timestamp string        `json:"timestamp"`
+	Provider  string        `json:"provider"`
+	Model     string        `json:"model"`
+	Usage     *sessionUsage `json:"usage"`
 	Message   struct {
 		Role      string        `json:"role"`
 		Provider  string        `json:"provider"`
@@ -190,11 +195,18 @@ func parseSessionLine(line []byte, sessionID string, keys map[string]keyEntry) (
 	if err := json.Unmarshal(line, &parsed); err != nil {
 		return agentlink.UsageEvent{}, false
 	}
-	if parsed.Type != "message" {
-		return agentlink.UsageEvent{}, false
-	}
 	message := parsed.Message
-	if message.Role != "assistant" || message.Usage == nil {
+	switch parsed.Type {
+	case "message":
+		if message.Role != "assistant" || message.Usage == nil {
+			return agentlink.UsageEvent{}, false
+		}
+	case "model_usage":
+		if parsed.Usage == nil {
+			return agentlink.UsageEvent{}, false
+		}
+		message.Provider, message.Model, message.Usage = parsed.Provider, parsed.Model, parsed.Usage
+	default:
 		return agentlink.UsageEvent{}, false
 	}
 	key, ok := keys[strings.ToLower(message.Provider)]

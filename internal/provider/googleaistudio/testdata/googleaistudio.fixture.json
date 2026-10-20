@@ -1,0 +1,23 @@
+{
+  "_source": "Hand-built from the documented GET v1beta/models response (ai.google.dev/api/models#method:-models.list).",
+  "recorded_at": "2026-10-20T12:00:00Z",
+  "interactions": [
+    {
+      "method": "GET",
+      "url": "https://generativelanguage.googleapis.com/v1beta/models?pageSize=1",
+      "status": 200,
+      "header": {
+        "Content-Type": "application/json"
+      },
+      "body": {
+        "models": [
+          {
+            "name": "models/gemini-2.5-flash",
+            "displayName": "Gemini 2.5 Flash"
+          }
+        ],
+        "nextPageToken": "synthetic"
+      }
+    }
+  ]
+}

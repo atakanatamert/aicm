@@ -41,6 +41,8 @@ var providerIDs = map[string]string{
 	"xai":        "xai",
 	"moonshot":   "moonshot",
 	"zai":        "zai",
+	"typesafe":   "typesafe",
+	"google":     "google-ai-studio",
 }
 
 // alsoProviderIDs lists extra catalog accounts one key stands for. A Z.ai
