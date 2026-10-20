@@ -78,6 +78,7 @@ install_service_macos() {
 
 	bin_xml=$(xml_escape "$BIN_DIR/$BINARY")
 	log_xml=$(xml_escape "$log_file")
+	path_xml=$(xml_escape "$SERVICE_PATH")
 	cat >"$plist" <<EOF
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
@@ -98,6 +99,11 @@ install_service_macos() {
 	<string>$log_xml</string>
 	<key>StandardErrorPath</key>
 	<string>$log_xml</string>
+	<key>EnvironmentVariables</key>
+	<dict>
+		<key>PATH</key>
+		<string>$path_xml</string>
+	</dict>
 </dict>
 </plist>
 EOF
@@ -119,6 +125,7 @@ After=network-online.target
 
 [Service]
 ExecStart="$BIN_DIR/$BINARY" run
+Environment="PATH=$(printf '%s' "$SERVICE_PATH" | sed -e 's/%/%%/g' -e 's/"/\\"/g')"
 Restart=always
 RestartSec=10
 
@@ -214,6 +221,9 @@ Linux) OS="Linux" ;;
 esac
 
 BIN_DIR="$HOME/.local/bin"
+# The service sees the installing shell's PATH, so the agent finds harness
+# binaries (codex for its app-server) installed in user directories.
+SERVICE_PATH="$BIN_DIR:${PATH:-/usr/local/bin:/usr/bin:/bin}"
 if [ "$OS" = "Darwin" ]; then
 	DATA_DIR="${AICM_AGENT_DATA:-$HOME/Library/Application Support/$BINARY}"
 	plist="$HOME/Library/LaunchAgents/dev.aicm.agent.plist"
