@@ -58,6 +58,11 @@ func toAccount(a db.Account, info provider.Info, secret secrets.Info, hasSecret 
 	}
 }
 
+// errUnofficialNotAllowed: the key can only be checked through an endpoint the
+// provider does not document, and the account has not opted in.
+var errUnofficialNotAllowed = &APIError{Status: http.StatusConflict, Code: "unofficial_not_allowed",
+	Message: `this provider's usage endpoint is unofficial; turn on "Allow unofficial quota endpoints" in the account's plan settings first`}
+
 func accountError(err error) error {
 	switch {
 	case errors.Is(err, account.ErrNotFound):
@@ -68,6 +73,8 @@ func accountError(err error) error {
 		return BadRequest(err.Error())
 	case errors.Is(err, provider.ErrInvalidCredentials):
 		return &APIError{Status: http.StatusUnprocessableEntity, Code: "invalid_credentials", Message: "the provider rejected this key"}
+	case errors.Is(err, provider.ErrUnofficialNotAllowed):
+		return errUnofficialNotAllowed
 	}
 	return err
 }

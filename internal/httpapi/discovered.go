@@ -94,6 +94,8 @@ func discoveredError(err error) error {
 		return &APIError{Status: http.StatusConflict, Code: "agent_offline", Message: "no connected machine can provide this key"}
 	case errors.Is(err, provider.ErrInvalidCredentials):
 		return &APIError{Status: http.StatusUnprocessableEntity, Code: "invalid_credentials", Message: "the provider rejected this key"}
+	case errors.Is(err, provider.ErrUnofficialNotAllowed):
+		return errUnofficialNotAllowed
 	case errors.Is(err, account.ErrInvalid):
 		return BadRequest(err.Error())
 	}
