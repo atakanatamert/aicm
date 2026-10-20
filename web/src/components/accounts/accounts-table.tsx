@@ -20,7 +20,7 @@ const collator = new Intl.Collator(undefined, { sensitivity: "base", numeric: tr
 /** What to show for the credential: last 4, or where the key lives. */
 function keyText(a: Account): string {
   if (a.auth_kind === "api_key" || a.auth_kind === "admin_key") {
-    return a.secret.last4 ? `•••• ${a.secret.last4}` : "manual"
+    return a.secret.last4 ? `•••• ${a.secret.last4}` : "not stored"
   }
   // agent_capture: the key never left the machine. none: nothing to store.
   return a.auth_kind === "agent_capture" ? "agent" : "manual"

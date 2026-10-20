@@ -49,10 +49,44 @@ export function KeyCard({ account, canEdit }: { account: Account; canEdit: boole
   }
 
   const hubStored = account.auth_kind === "api_key" || account.auth_kind === "admin_key"
+  // An agent found this key on a machine (external id "key:<hash>"); the hub
+  // can ask that machine for it instead of the user pasting it.
+  const agentKey = account.auth_kind === "api_key" && !account.secret.set && account.external_id?.startsWith("key:")
+  const importKey = query.useMutation("post", "/api/accounts/{accountId}/import-key", {
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ["get", "/api/accounts/{accountId}"] })
+      void queryClient.invalidateQueries({ queryKey: ["get", "/api/accounts"] })
+    },
+  })
+  const importError = errorOf(importKey.error)?.error
 
   return (
     <div className="space-y-3">
       <p className="text-sm">{keyLine(account)}</p>
+      {agentKey && canEdit && (
+        <div className="grid gap-2">
+          <p className="text-sm text-muted-foreground">
+            An agent found this key on one of your machines. Import it so the hub can read balances and usage from the
+            provider.
+          </p>
+          <div>
+            <Button
+              size="sm"
+              disabled={importKey.isPending}
+              onClick={() => importKey.mutate({ params: { path: { accountId: account.id } } })}
+            >
+              {importKey.isPending ? "Asking the machine…" : "Import key from machine"}
+            </Button>
+          </div>
+          {importError && (
+            <p role="alert" className="text-sm text-destructive">
+              {importError.code === "agent_offline"
+                ? "The machine that found this key is offline. Start it and try again."
+                : importError.message}
+            </p>
+          )}
+        </div>
+      )}
       {hubStored && canEdit && (
         <form onSubmit={submit} className="grid gap-3" noValidate>
           <div className="grid gap-2">

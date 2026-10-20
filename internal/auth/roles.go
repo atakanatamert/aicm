@@ -31,6 +31,7 @@ var OperationRoles = map[string]Role{
 	"updateAccount":            RoleEditor,
 	"archiveAccount":           RoleAdmin,
 	"confirmDiscoveredAccount": RoleEditor,
+	"importAccountKey":         RoleEditor,
 	"dismissDiscoveredAccount": RoleEditor,
 	"setAccountSecret":         RoleEditor,
 	"syncAccount":              RoleEditor,

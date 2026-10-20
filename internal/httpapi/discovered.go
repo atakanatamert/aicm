@@ -41,6 +41,27 @@ func (s *Server) ConfirmDiscoveredAccount(ctx context.Context, req ConfirmDiscov
 	return ConfirmDiscoveredAccount200JSONResponse(resp), nil
 }
 
+// ImportAccountKey copies an agent-reported API key into the hub after the
+// account was confirmed without importing it.
+func (s *Server) ImportAccountKey(ctx context.Context, req ImportAccountKeyRequestObject) (ImportAccountKeyResponseObject, error) {
+	p, err := requirePrincipal(ctx)
+	if err != nil {
+		return nil, err
+	}
+	if s.AgentHub == nil {
+		return nil, ErrNotImplemented
+	}
+	a, err := s.AgentHub.ImportKey(ctx, p, req.AccountId)
+	if err != nil {
+		return nil, discoveredError(err)
+	}
+	resp, err := s.accountResponse(ctx, p, a)
+	if err != nil {
+		return nil, accountError(err)
+	}
+	return ImportAccountKey200JSONResponse(resp), nil
+}
+
 // DismissDiscoveredAccount rejects a pending account; agents stop sending
 // its data.
 func (s *Server) DismissDiscoveredAccount(ctx context.Context, req DismissDiscoveredAccountRequestObject) (DismissDiscoveredAccountResponseObject, error) {

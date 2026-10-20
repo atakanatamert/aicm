@@ -31,7 +31,7 @@ function PendingAccount({
   canEdit: boolean
 }) {
   const [name, setName] = useState(account.name)
-  const [importKey, setImportKey] = useState(false)
+  const [importKey, setImportKey] = useState(true)
   const confirm = query.useMutation("post", "/api/accounts/{accountId}/confirm")
   const dismiss = query.useMutation("post", "/api/accounts/{accountId}/dismiss")
   const provider = providers.find((p) => p.id === account.provider_id)

@@ -1919,6 +1919,16 @@ type ClientInterface interface {
 	// Corresponds with PUT /api/accounts/{accountId}/grants (the `SetAccountGrants` operationId).
 	SetAccountGrants(ctx context.Context, accountId AccountId, body SetAccountGrantsJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
+	// ImportAccountKey Copy the account's API key from the machine that found it
+	//
+	// For an account an agent reported with a plain API key (never an OAuth
+	// token), asks a connected machine that has the key for it, validates
+	// it with the provider and stores it encrypted. Works after the account
+	// was confirmed without importing.
+	//
+	// Corresponds with POST /api/accounts/{accountId}/import-key (the `ImportAccountKey` operationId).
+	ImportAccountKey(ctx context.Context, accountId AccountId, reqEditors ...RequestEditorFn) (*http.Response, error)
+
 	// ListAccountMachines Machines and harnesses that report this account
 	//
 	// Corresponds with GET /api/accounts/{accountId}/machines (the `ListAccountMachines` operationId).
@@ -2587,6 +2597,26 @@ func (c *Client) SetAccountGrantsWithBody(ctx context.Context, accountId Account
 // Corresponds with PUT /api/accounts/{accountId}/grants (the `SetAccountGrants` operationId).
 func (c *Client) SetAccountGrants(ctx context.Context, accountId AccountId, body SetAccountGrantsJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewSetAccountGrantsRequest(c.Server, accountId, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// ImportAccountKey Copy the account's API key from the machine that found it
+//
+// For an account an agent reported with a plain API key (never an OAuth
+// token), asks a connected machine that has the key for it, validates
+// it with the provider and stores it encrypted. Works after the account
+// was confirmed without importing.
+//
+// Corresponds with POST /api/accounts/{accountId}/import-key (the `ImportAccountKey` operationId).
+func (c *Client) ImportAccountKey(ctx context.Context, accountId AccountId, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewImportAccountKeyRequest(c.Server, accountId)
 	if err != nil {
 		return nil, err
 	}
@@ -4140,6 +4170,40 @@ func NewSetAccountGrantsRequestWithBody(server string, accountId AccountId, cont
 	}
 
 	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
+// NewImportAccountKeyRequest constructs an http.Request for the ImportAccountKey method
+func NewImportAccountKeyRequest(server string, accountId AccountId) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "accountId", accountId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/api/accounts/%s/import-key", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodPost, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
 
 	return req, nil
 }
@@ -6820,6 +6884,18 @@ type ClientWithResponsesInterface interface {
 	// Corresponds with PUT /api/accounts/{accountId}/grants (the `SetAccountGrants` operationId).
 	SetAccountGrantsWithResponse(ctx context.Context, accountId AccountId, body SetAccountGrantsJSONRequestBody, reqEditors ...RequestEditorFn) (*SetAccountGrantsResponse, error)
 
+	// ImportAccountKeyWithResponse Copy the account's API key from the machine that found it
+	//
+	// For an account an agent reported with a plain API key (never an OAuth
+	// token), asks a connected machine that has the key for it, validates
+	// it with the provider and stores it encrypted. Works after the account
+	// was confirmed without importing.
+	//
+	// Returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with POST /api/accounts/{accountId}/import-key (the `ImportAccountKey` operationId).
+	ImportAccountKeyWithResponse(ctx context.Context, accountId AccountId, reqEditors ...RequestEditorFn) (*ImportAccountKeyResponse, error)
+
 	// ListAccountMachinesWithResponse Machines and harnesses that report this account
 	//
 	// Returns a wrapper object for the known response body format(s).
@@ -7750,6 +7826,68 @@ func (r SetAccountGrantsResponse) StatusCode() int {
 
 // ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
 func (r SetAccountGrantsResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+type ImportAccountKeyResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON200 the response for an HTTP 200 `application/json` response
+	JSON200 *Account
+	// JSON404 the response for an HTTP 404 `application/json` response
+	JSON404 *Error
+	// JSON409 the response for an HTTP 409 `application/json` response
+	JSON409 *Error
+	// JSON422 the response for an HTTP 422 `application/json` response
+	JSON422 *Error
+}
+
+// GetJSON200 returns the response for an HTTP 200 `application/json` response
+func (r ImportAccountKeyResponse) GetJSON200() *Account {
+	return r.JSON200
+}
+
+// GetJSON404 returns the response for an HTTP 404 `application/json` response
+func (r ImportAccountKeyResponse) GetJSON404() *Error {
+	return r.JSON404
+}
+
+// GetJSON409 returns the response for an HTTP 409 `application/json` response
+func (r ImportAccountKeyResponse) GetJSON409() *Error {
+	return r.JSON409
+}
+
+// GetJSON422 returns the response for an HTTP 422 `application/json` response
+func (r ImportAccountKeyResponse) GetJSON422() *Error {
+	return r.JSON422
+}
+
+// GetBody returns the raw response body bytes
+func (r ImportAccountKeyResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r ImportAccountKeyResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r ImportAccountKeyResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r ImportAccountKeyResponse) ContentType() string {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.Header.Get("Content-Type")
 	}
@@ -10248,6 +10386,24 @@ func (c *ClientWithResponses) SetAccountGrantsWithResponse(ctx context.Context, 
 	return ParseSetAccountGrantsResponse(rsp)
 }
 
+// ImportAccountKeyWithResponse Copy the account's API key from the machine that found it
+//
+// For an account an agent reported with a plain API key (never an OAuth
+// token), asks a connected machine that has the key for it, validates
+// it with the provider and stores it encrypted. Works after the account
+// was confirmed without importing.
+//
+// Returns a wrapper object for the known response body format(s).
+//
+// Corresponds with POST /api/accounts/{accountId}/import-key (the `ImportAccountKey` operationId).
+func (c *ClientWithResponses) ImportAccountKeyWithResponse(ctx context.Context, accountId AccountId, reqEditors ...RequestEditorFn) (*ImportAccountKeyResponse, error) {
+	rsp, err := c.ImportAccountKey(ctx, accountId, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseImportAccountKeyResponse(rsp)
+}
+
 // ListAccountMachinesWithResponse Machines and harnesses that report this account
 //
 // Returns a wrapper object for the known response body format(s).
@@ -11462,6 +11618,53 @@ func ParseSetAccountGrantsResponse(rsp *http.Response) (*SetAccountGrantsRespons
 			return nil, err
 		}
 		response.JSON400 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseImportAccountKeyResponse parses an HTTP response from a ImportAccountKeyWithResponse call
+func ParseImportAccountKeyResponse(rsp *http.Response) (*ImportAccountKeyResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &ImportAccountKeyResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest Account
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest Error
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 409:
+		var dest Error
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON409 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 422:
+		var dest Error
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON422 = &dest
 
 	}
 

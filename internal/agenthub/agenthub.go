@@ -467,6 +467,30 @@ func (h *Hub) Confirm(ctx context.Context, p auth.Principal, accountID string, n
 	return updated, nil
 }
 
+// ImportKey asks a connected machine that reported the account's plain API
+// key for it and stores it, for accounts confirmed without importing.
+func (h *Hub) ImportKey(ctx context.Context, p auth.Principal, accountID string) (db.Account, error) {
+	a, err := h.accounts.Get(ctx, p, accountID)
+	switch {
+	case errors.Is(err, account.ErrNotFound):
+		return db.Account{}, ErrNotFound
+	case err != nil:
+		return db.Account{}, err
+	}
+	if a.ExternalID == nil || a.AuthKind != "api_key" {
+		return db.Account{}, ErrAgentOffline
+	}
+	ref := agentlink.AccountRef{ProviderID: a.ProviderID, ExternalID: *a.ExternalID}
+	value, err := h.requestKey(ctx, p.OrgID, accountID, ref)
+	if err != nil {
+		return db.Account{}, err
+	}
+	if _, err := h.accounts.SetSecret(ctx, p, accountID, value, true); err != nil {
+		return db.Account{}, err
+	}
+	return h.accounts.Get(ctx, p, accountID)
+}
+
 // Dismiss marks a pending account dismissed and tells agents to stop sending
 // its data.
 func (h *Hub) Dismiss(ctx context.Context, p auth.Principal, accountID string) (db.Account, error) {

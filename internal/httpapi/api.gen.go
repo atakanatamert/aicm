@@ -1777,6 +1777,9 @@ type ServerInterface interface {
 	// SetAccountGrants Replace the account's grants
 	// (PUT /api/accounts/{accountId}/grants)
 	SetAccountGrants(w http.ResponseWriter, r *http.Request, accountId AccountId)
+	// ImportAccountKey Copy the account's API key from the machine that found it
+	// (POST /api/accounts/{accountId}/import-key)
+	ImportAccountKey(w http.ResponseWriter, r *http.Request, accountId AccountId)
 	// ListAccountMachines Machines and harnesses that report this account
 	// (GET /api/accounts/{accountId}/machines)
 	ListAccountMachines(w http.ResponseWriter, r *http.Request, accountId AccountId)
@@ -2187,6 +2190,32 @@ func (siw *ServerInterfaceWrapper) SetAccountGrants(w http.ResponseWriter, r *ht
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.SetAccountGrants(w, r, accountId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// ImportAccountKey operation middleware
+func (siw *ServerInterfaceWrapper) ImportAccountKey(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "accountId" -------------
+	var accountId AccountId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "accountId", r.PathValue("accountId"), &accountId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "accountId", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ImportAccountKey(w, r, accountId)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -3959,6 +3988,7 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 	m.HandleFunc(http.MethodPatch+" "+options.BaseURL+"/api/accounts/{accountId}", wrapper.UpdateAccount)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/api/accounts/{accountId}/archive", wrapper.ArchiveAccount)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/api/accounts/{accountId}/confirm", wrapper.ConfirmDiscoveredAccount)
+	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/api/accounts/{accountId}/import-key", wrapper.ImportAccountKey)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/api/accounts/{accountId}/dismiss", wrapper.DismissDiscoveredAccount)
 	m.HandleFunc(http.MethodPut+" "+options.BaseURL+"/api/accounts/{accountId}/secret", wrapper.SetAccountSecret)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/api/accounts/{accountId}/sync", wrapper.SyncAccount)
@@ -4324,6 +4354,70 @@ func (response SetAccountGrants400JSONResponse) VisitSetAccountGrantsResponse(w 
 	}
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(400)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ImportAccountKeyRequestObject struct {
+	AccountId AccountId `json:"accountId"`
+}
+
+type ImportAccountKeyResponseObject interface {
+	VisitImportAccountKeyResponse(w http.ResponseWriter) error
+}
+
+type ImportAccountKey200JSONResponse Account
+
+func (response ImportAccountKey200JSONResponse) VisitImportAccountKeyResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ImportAccountKey404JSONResponse struct{ ErrorJSONResponse }
+
+func (response ImportAccountKey404JSONResponse) VisitImportAccountKeyResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ImportAccountKey409JSONResponse Error
+
+func (response ImportAccountKey409JSONResponse) VisitImportAccountKeyResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(409)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ImportAccountKey422JSONResponse Error
+
+func (response ImportAccountKey422JSONResponse) VisitImportAccountKeyResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(422)
 	_, err := buf.WriteTo(w)
 	return err
 }
@@ -5999,6 +6093,9 @@ type StrictServerInterface interface {
 	// SetAccountGrants Replace the account's grants
 	// (PUT /api/accounts/{accountId}/grants)
 	SetAccountGrants(ctx context.Context, request SetAccountGrantsRequestObject) (SetAccountGrantsResponseObject, error)
+	// ImportAccountKey Copy the account's API key from the machine that found it
+	// (POST /api/accounts/{accountId}/import-key)
+	ImportAccountKey(ctx context.Context, request ImportAccountKeyRequestObject) (ImportAccountKeyResponseObject, error)
 	// ListAccountMachines Machines and harnesses that report this account
 	// (GET /api/accounts/{accountId}/machines)
 	ListAccountMachines(ctx context.Context, request ListAccountMachinesRequestObject) (ListAccountMachinesResponseObject, error)
@@ -6456,6 +6553,32 @@ func (sh *strictHandler) SetAccountGrants(w http.ResponseWriter, r *http.Request
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(SetAccountGrantsResponseObject); ok {
 		if err := validResponse.VisitSetAccountGrantsResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// ImportAccountKey operation middleware
+func (sh *strictHandler) ImportAccountKey(w http.ResponseWriter, r *http.Request, accountId AccountId) {
+	var request ImportAccountKeyRequestObject
+
+	request.AccountId = accountId
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.ImportAccountKey(ctx, request.(ImportAccountKeyRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "ImportAccountKey")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(ImportAccountKeyResponseObject); ok {
+		if err := validResponse.VisitImportAccountKeyResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {
