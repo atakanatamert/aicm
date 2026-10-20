@@ -4,6 +4,7 @@ import type { components } from "@/api/schema"
 import { formatDate, formatMoney, formatRelative } from "@/lib/format"
 import { cn } from "@/lib/utils"
 import { renewalUrgency } from "@/components/quotas/renewal-urgency"
+import { StatusDot } from "@/components/status-dot"
 import { Input } from "@/components/ui/input"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 
@@ -193,16 +194,17 @@ export function AccountsTable({ accounts, providers }: { accounts: Account[]; pr
                     </TableCell>
                     <TableCell className="whitespace-nowrap">{keyText(a)}</TableCell>
                     <TableCell className="whitespace-nowrap">
-                      <span
-                        className="inline-flex items-center gap-1.5"
-                        title={a.sync.last_error ?? undefined}
-                      >
-                        <span
-                          aria-hidden
-                          className={cn("size-1.5 shrink-0 rounded-full", failing ? "bg-urgent" : "bg-muted-foreground/40")}
-                        />
-                        {a.sync.last_synced_at ? `Synced ${formatRelative(a.sync.last_synced_at)}` : a.auth_kind === "api_key" || a.auth_kind === "admin_key" ? "Not synced yet" : "–"}
-                      </span>
+                      {failing ? (
+                        <StatusDot tone="bad" title={a.sync.last_error ?? undefined}>
+                          Sync failing
+                        </StatusDot>
+                      ) : a.sync.last_synced_at ? (
+                        <StatusDot tone="ok">Synced {formatRelative(a.sync.last_synced_at)}</StatusDot>
+                      ) : a.auth_kind === "api_key" || a.auth_kind === "admin_key" ? (
+                        <StatusDot tone="idle">Not synced yet</StatusDot>
+                      ) : (
+                        <StatusDot tone="ok">Via agent</StatusDot>
+                      )}
                     </TableCell>
                   </TableRow>
                 )

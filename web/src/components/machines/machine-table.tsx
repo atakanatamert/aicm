@@ -10,7 +10,7 @@ import { Input } from "@/components/ui/input"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { formatRelative } from "@/lib/format"
 import { HARNESS_NAMES } from "@/lib/harness-names"
-import { cn } from "@/lib/utils"
+import { StatusDot } from "@/components/status-dot"
 
 type Machine = components["schemas"]["Machine"]
 
@@ -19,12 +19,8 @@ function OnlineCell({ machine }: { machine: Machine }) {
     return <Badge variant="outline">Revoked</Badge>
   }
   return (
-    <span className={cn("inline-flex items-center gap-1.5 text-xs", machine.online ? "text-foreground" : "text-muted-foreground")}>
-      <span
-        aria-hidden
-        className={cn("size-2 rounded-full", machine.online ? "bg-foreground" : "bg-muted-foreground/30")}
-      />
-      {machine.online ? "Online" : "Offline"}
+    <span className="text-xs">
+      <StatusDot tone={machine.online ? "ok" : "bad"}>{machine.online ? "Online" : "Offline"}</StatusDot>
     </span>
   )
 }

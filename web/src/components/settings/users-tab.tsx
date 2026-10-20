@@ -5,7 +5,7 @@ import { query, queryClient } from "@/api/client"
 import type { components } from "@/api/schema"
 import { ConfirmDialog } from "@/components/machines/confirm-dialog"
 import { EmptyState } from "@/components/empty-state"
-import { Badge } from "@/components/ui/badge"
+import { StatusDot } from "@/components/status-dot"
 import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
@@ -160,7 +160,9 @@ function UserRow({ user, onReset }: { user: User; onReset: () => void }) {
                 }
               }}
             />
-            {user.disabled && <Badge variant="outline">Disabled</Badge>}
+            <span className="text-xs">
+              {user.disabled ? <StatusDot tone="bad">Disabled</StatusDot> : <StatusDot tone="ok">Active</StatusDot>}
+            </span>
           </div>
         </TableCell>
         <TableCell className="text-sm text-muted-foreground">

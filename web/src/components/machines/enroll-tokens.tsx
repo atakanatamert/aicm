@@ -4,7 +4,7 @@ import { toast } from "sonner"
 import { errorOf, query, queryClient } from "@/api/client"
 import type { components } from "@/api/schema"
 import { ConfirmDialog } from "@/components/machines/confirm-dialog"
-import { Badge } from "@/components/ui/badge"
+import { StatusDot } from "@/components/status-dot"
 import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
@@ -18,9 +18,9 @@ function isExpired(token: EnrollToken): boolean {
 }
 
 function ExpiresCell({ token }: { token: EnrollToken }) {
-  if (token.revoked_at) return <Badge variant="outline">Revoked</Badge>
-  if (isExpired(token)) return <Badge variant="outline">Expired</Badge>
-  if (!token.expires_at) return <span className="text-sm">Permanent</span>
+  if (token.revoked_at) return <StatusDot tone="idle">Revoked</StatusDot>
+  if (isExpired(token)) return <StatusDot tone="bad">Expired</StatusDot>
+  if (!token.expires_at) return <StatusDot tone="ok">Permanent</StatusDot>
   return (
     <span className="text-sm text-muted-foreground">
       {formatDate(token.expires_at)}{" "}
