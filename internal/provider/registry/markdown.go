@@ -25,7 +25,7 @@ func Markdown(ps []provider.Provider) string {
 
 		name := info.Name
 		if info.Unofficial {
-			name += " (unofficial, opt-in)"
+			name += " (unofficial endpoint)"
 		}
 
 		usageCell := dash

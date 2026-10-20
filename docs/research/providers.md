@@ -13,6 +13,7 @@ Researched 2026-10-17. Verify each endpoint against the live docs when writing i
 | DeepSeek | `GET https://api.deepseek.com/user/balance` returns `balance_infos[]` (total, granted and topped-up balance, plus currency) | Normal key, Bearer | CNY or USD | Top-up https://platform.deepseek.com/top_up · [docs](https://api-docs.deepseek.com/api/get-user-balance) |
 | Moonshot / Kimi | `GET https://api.moonshot.ai/v1/users/me/balance` returns available, voucher and cash balance (`.cn` host for China) | Normal key, Bearer | USD or CNY | https://platform.moonshot.ai/console/pay · [docs](https://platform.kimi.ai/docs/api/balance) |
 | Z.ai coding plan | See `quota-capture.md` | Normal key | USD | https://z.ai/manage-apikey/billing · https://z.ai/subscribe |
+| Z.ai API (pay-as-you-go) | `GET https://api.z.ai/api/biz/account/query-customer-account-report` (undocumented console endpoint; `open.bigmodel.cn` in China) returns `availableBalance`, `rechargeAmount`, `giveAmount`, `totalSpendAmount`. Verified live 2026-10-20 with a coding-plan key: the same key reads the account balance. | Normal key, Bearer | USD (CNY in China) | https://z.ai/manage-apikey/billing |
 | GitHub Copilot | See `quota-capture.md` | Fine-grained PAT with Plan: read | USD | https://github.com/settings/billing · https://github.com/settings/copilot |
 
 ## Manual with deep links

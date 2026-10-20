@@ -165,6 +165,10 @@ func (h *Hub) resolveAccount(ctx context.Context, q *db.Queries, orgID string, i
 	if name == "" {
 		name = info.Name
 	}
+	// Agents label keys "<provider id> key …1234"; show the catalog name.
+	if rest, ok := strings.CutPrefix(name, item.Ref.ProviderID+" key "); ok {
+		name = info.Name + " " + rest
+	}
 	kind := item.AuthKind
 	if kind == "" {
 		kind = string(provider.AuthAgentCapture)

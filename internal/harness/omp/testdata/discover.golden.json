@@ -28,5 +28,15 @@
     "label": "zai key …0003",
     "auth_kind": "api_key",
     "has_api_key": true
+  },
+  {
+    "ref": {
+      "provider_id": "zai-api",
+      "external_id": "key:8fd2aa6cc58f32fa"
+    },
+    "harness": "omp",
+    "label": "zai-api key …0003",
+    "auth_kind": "api_key",
+    "has_api_key": true
   }
 ]

@@ -28,6 +28,7 @@ func All(c *provider.HTTPClient) []provider.Provider {
 		deepseek.New(c),
 		moonshot.New(c),
 		zai.New(c),
+		zai.NewAPI(c),
 		copilot.New(c),
 	}
 	return append(ps, manual.All()...)

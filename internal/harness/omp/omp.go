@@ -43,6 +43,13 @@ var providerIDs = map[string]string{
 	"zai":        "zai",
 }
 
+// alsoProviderIDs lists extra catalog accounts one key stands for. A Z.ai
+// key reads both the GLM Coding Plan quota and the separately billed
+// pay-as-you-go API balance.
+var alsoProviderIDs = map[string][]string{
+	"zai": {"zai-api"},
+}
+
 // Harness reads omp's agent directory. The active directory is selected by
 // PI_CODING_AGENT_DIR, defaulting to <home>/.omp/agent; named profiles under
 // <home>/.omp/profiles/<p>/agent are read as well.
@@ -162,7 +169,7 @@ func (h *Harness) keyEntries() ([]keyEntry, error) {
 		}
 		all = append(all, entries...)
 	}
-	sort.Slice(all, func(i, j int) bool {
+	sort.SliceStable(all, func(i, j int) bool {
 		if all[i].Name != all[j].Name {
 			return all[i].Name < all[j].Name
 		}
@@ -203,34 +210,39 @@ func readAPIKeys(agentDir string) ([]keyEntry, error) {
 	sort.Strings(names)
 
 	for _, name := range names {
-		if entry, ok := newKeyEntry(name, stored[name]); ok {
-			entries = append(entries, entry)
-		}
+		entries = append(entries, newKeyEntries(name, stored[name])...)
 	}
 	return entries, nil
 }
 
-// newKeyEntry builds an entry from omp's provider name and stored credential,
-// or reports false for OAuth, command-backed keys and providers without a hub
-// catalog id.
-func newKeyEntry(name string, raw json.RawMessage) (keyEntry, bool) {
+// newKeyEntries builds the entries for omp's provider name and stored
+// credential: the primary catalog account first, then any extra accounts the
+// key stands for. OAuth, command-backed keys and providers without a hub
+// catalog id give none.
+func newKeyEntries(name string, raw json.RawMessage) []keyEntry {
 	key, ok := plainAPIKey(raw)
 	if !ok {
-		return keyEntry{}, false
+		return nil
 	}
-	providerID, ok := providerIDs[strings.ToLower(name)]
+	name = strings.ToLower(name)
+	primary, ok := providerIDs[name]
 	if !ok {
-		return keyEntry{}, false
+		return nil
 	}
-	return keyEntry{
-		Name:       strings.ToLower(name),
-		ProviderID: providerID,
-		Key:        key,
-		Ref: agentlink.AccountRef{
+	ids := append([]string{primary}, alsoProviderIDs[name]...)
+	entries := make([]keyEntry, 0, len(ids))
+	for _, providerID := range ids {
+		entries = append(entries, keyEntry{
+			Name:       name,
 			ProviderID: providerID,
-			ExternalID: keyRef(key),
-		},
-	}, true
+			Key:        key,
+			Ref: agentlink.AccountRef{
+				ProviderID: providerID,
+				ExternalID: keyRef(key),
+			},
+		})
+	}
+	return entries
 }
 
 // plainAPIKey extracts a stored plain API key. A string value is a key; an

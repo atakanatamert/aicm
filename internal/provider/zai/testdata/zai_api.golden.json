@@ -1,0 +1,10 @@
+{
+  "quota": [
+    {
+      "key": "balance_usd",
+      "remaining": 1235,
+      "captured_at": "2026-10-20T12:00:00Z",
+      "source": "api"
+    }
+  ]
+}

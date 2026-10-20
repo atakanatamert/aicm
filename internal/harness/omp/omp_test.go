@@ -53,10 +53,11 @@ func TestDiscoverGolden(t *testing.T) {
 		t.Fatalf("Discover: %v", err)
 	}
 	// auth.json holds the anthropic and deepseek keys; agent.db holds the zai
-	// key plus a disabled key, an OAuth row and a provider without a catalog
-	// id, none of which may be reported.
-	if len(accounts) != 3 {
-		t.Fatalf("Discover returned %d accounts, want 3", len(accounts))
+	// key (one coding-plan and one pay-as-you-go API account) plus a disabled
+	// key, an OAuth row and a provider without a catalog id, none of which
+	// may be reported.
+	if len(accounts) != 4 {
+		t.Fatalf("Discover returned %d accounts, want 4", len(accounts))
 	}
 	got := marshalGolden(t, accounts)
 	want := readGolden(t, "discover.golden.json")

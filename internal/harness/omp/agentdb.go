@@ -66,9 +66,7 @@ func readDBKeys(agentDir string) ([]keyEntry, error) {
 		if err := rows.Scan(&name, &data); err != nil {
 			return nil, fmt.Errorf("reading credentials from %s: %w", path, err)
 		}
-		if entry, ok := newKeyEntry(name, []byte(data)); ok {
-			entries = append(entries, entry)
-		}
+		entries = append(entries, newKeyEntries(name, []byte(data))...)
 	}
 	if err := rows.Err(); err != nil {
 		return nil, fmt.Errorf("reading credentials from %s: %w", path, err)

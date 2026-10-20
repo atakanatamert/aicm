@@ -39,6 +39,10 @@ func (h *Harness) Scan(ctx context.Context, cursors harness.Cursors) (harness.Ba
 		}
 		byProvider := make(map[string]keyEntry, len(entries))
 		for _, entry := range entries {
+			// Usage belongs to the key's primary account, never an extra one.
+			if entry.ProviderID != providerIDs[entry.Name] {
+				continue
+			}
 			if _, ok := byProvider[entry.Name]; !ok {
 				byProvider[entry.Name] = entry
 			}
