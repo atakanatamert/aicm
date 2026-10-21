@@ -40,36 +40,19 @@ func (e AccountStatus) Valid() bool {
 	}
 }
 
-// Defines values for AlertSeverity.
-const (
-	Critical AlertSeverity = "critical"
-	Info     AlertSeverity = "info"
-	Warning  AlertSeverity = "warning"
-)
-
-// Valid indicates whether the value is a known member of the AlertSeverity enum.
-func (e AlertSeverity) Valid() bool {
-	switch e {
-	case Critical:
-		return true
-	case Info:
-		return true
-	case Warning:
-		return true
-	default:
-		return false
-	}
-}
-
 // Defines values for AlertKind.
 const (
 	AlertKindAgentOffline   AlertKind = "agent_offline"
+	AlertKindBudget         AlertKind = "budget"
 	AlertKindLowBalance     AlertKind = "low_balance"
 	AlertKindMeterExhausted AlertKind = "meter_exhausted"
+	AlertKindMeterReset     AlertKind = "meter_reset"
 	AlertKindPromoEnding    AlertKind = "promo_ending"
 	AlertKindQuotaWaste     AlertKind = "quota_waste"
 	AlertKindRenewal        AlertKind = "renewal"
+	AlertKindSpendAnomaly   AlertKind = "spend_anomaly"
 	AlertKindSyncFailing    AlertKind = "sync_failing"
+	AlertKindWrongWallet    AlertKind = "wrong_wallet"
 )
 
 // Valid indicates whether the value is a known member of the AlertKind enum.
@@ -77,9 +60,13 @@ func (e AlertKind) Valid() bool {
 	switch e {
 	case AlertKindAgentOffline:
 		return true
+	case AlertKindBudget:
+		return true
 	case AlertKindLowBalance:
 		return true
 	case AlertKindMeterExhausted:
+		return true
+	case AlertKindMeterReset:
 		return true
 	case AlertKindPromoEnding:
 		return true
@@ -87,7 +74,11 @@ func (e AlertKind) Valid() bool {
 		return true
 	case AlertKindRenewal:
 		return true
+	case AlertKindSpendAnomaly:
+		return true
 	case AlertKindSyncFailing:
+		return true
+	case AlertKindWrongWallet:
 		return true
 	default:
 		return false
@@ -160,6 +151,33 @@ func (e BillingCycle) Valid() bool {
 	case BillingCycleWeekly:
 		return true
 	case BillingCycleYearly:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for ChannelKind.
+const (
+	Discord  ChannelKind = "discord"
+	Ntfy     ChannelKind = "ntfy"
+	Slack    ChannelKind = "slack"
+	Telegram ChannelKind = "telegram"
+	Webhook  ChannelKind = "webhook"
+)
+
+// Valid indicates whether the value is a known member of the ChannelKind enum.
+func (e ChannelKind) Valid() bool {
+	switch e {
+	case Discord:
+		return true
+	case Ntfy:
+		return true
+	case Slack:
+		return true
+	case Telegram:
+		return true
+	case Webhook:
 		return true
 	default:
 		return false
@@ -271,6 +289,21 @@ func (e JobSize) Valid() bool {
 	case Medium:
 		return true
 	case Small:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for LoginTotpRequiredTotpRequired.
+const (
+	LoginTotpRequiredTotpRequiredTrue LoginTotpRequiredTotpRequired = true
+)
+
+// Valid indicates whether the value is a known member of the LoginTotpRequiredTotpRequired enum.
+func (e LoginTotpRequiredTotpRequired) Valid() bool {
+	switch e {
+	case LoginTotpRequiredTotpRequiredTrue:
 		return true
 	default:
 		return false
@@ -457,6 +490,27 @@ func (e SettingsUpdateSmtpTls) Valid() bool {
 	}
 }
 
+// Defines values for Severity.
+const (
+	Critical Severity = "critical"
+	Info     Severity = "info"
+	Warning  Severity = "warning"
+)
+
+// Valid indicates whether the value is a known member of the Severity enum.
+func (e Severity) Valid() bool {
+	switch e {
+	case Critical:
+		return true
+	case Info:
+		return true
+	case Warning:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for SmtpSettingsTls.
 const (
 	SmtpSettingsTlsNone     SmtpSettingsTls = "none"
@@ -549,6 +603,7 @@ const (
 	GetUsageParamsGroupByAccount  GetUsageParamsGroupBy = "account"
 	GetUsageParamsGroupByDay      GetUsageParamsGroupBy = "day"
 	GetUsageParamsGroupByModel    GetUsageParamsGroupBy = "model"
+	GetUsageParamsGroupByProject  GetUsageParamsGroupBy = "project"
 	GetUsageParamsGroupByProvider GetUsageParamsGroupBy = "provider"
 )
 
@@ -560,6 +615,8 @@ func (e GetUsageParamsGroupBy) Valid() bool {
 	case GetUsageParamsGroupByDay:
 		return true
 	case GetUsageParamsGroupByModel:
+		return true
+	case GetUsageParamsGroupByProject:
 		return true
 	case GetUsageParamsGroupByProvider:
 		return true
@@ -707,17 +764,14 @@ type Alert struct {
 	Kind      AlertKind  `json:"kind"`
 
 	// Links Provider pages. Any may be absent.
-	Links        *Links        `json:"links,omitempty"`
-	MachineId    *string       `json:"machine_id,omitempty"`
-	Read         bool          `json:"read"`
-	ResolvedAt   *time.Time    `json:"resolved_at,omitempty"`
-	Severity     AlertSeverity `json:"severity"`
-	SnoozedUntil *time.Time    `json:"snoozed_until,omitempty"`
-	Title        string        `json:"title"`
+	Links        *Links     `json:"links,omitempty"`
+	MachineId    *string    `json:"machine_id,omitempty"`
+	Read         bool       `json:"read"`
+	ResolvedAt   *time.Time `json:"resolved_at,omitempty"`
+	Severity     Severity   `json:"severity"`
+	SnoozedUntil *time.Time `json:"snoozed_until,omitempty"`
+	Title        string     `json:"title"`
 }
-
-// AlertSeverity defines model for Alert.Severity.
-type AlertSeverity string
 
 // AlertKind defines model for AlertKind.
 type AlertKind string
@@ -735,14 +789,26 @@ type AlertPage struct {
 // meter_exhausted: used_percent.
 // quota_waste: unused_percent, hours_before_reset.
 // sync_failing, agent_offline: after_hours.
+// meter_reset: used_percent (how full the window was before it reset).
+// budget: thresholds (percent of the budget).
+// spend_anomaly: usage_multiple, min_daily_cost, topups_per_day.
+// wrong_wallet: none.
 type AlertParams struct {
 	AfterHours       *float64 `json:"after_hours,omitempty"`
 	BelowPercent     *float64 `json:"below_percent,omitempty"`
 	DaysBefore       *[]int   `json:"days_before,omitempty"`
 	DaysLeft         *float64 `json:"days_left,omitempty"`
 	HoursBeforeReset *float64 `json:"hours_before_reset,omitempty"`
-	UnusedPercent    *float64 `json:"unused_percent,omitempty"`
-	UsedPercent      *float64 `json:"used_percent,omitempty"`
+
+	// MinDailyCost Ignore days below this estimated cost, in USD
+	MinDailyCost  *float64 `json:"min_daily_cost,omitempty"`
+	Thresholds    *[]int   `json:"thresholds,omitempty"`
+	TopupsPerDay  *int     `json:"topups_per_day,omitempty"`
+	UnusedPercent *float64 `json:"unused_percent,omitempty"`
+
+	// UsageMultiple Today's estimated usage cost against the median day of the last 14
+	UsageMultiple *float64 `json:"usage_multiple,omitempty"`
+	UsedPercent   *float64 `json:"used_percent,omitempty"`
 }
 
 // AlertRule defines model for AlertRule.
@@ -759,6 +825,10 @@ type AlertRule struct {
 	// meter_exhausted: used_percent.
 	// quota_waste: unused_percent, hours_before_reset.
 	// sync_failing, agent_offline: after_hours.
+	// meter_reset: used_percent (how full the window was before it reset).
+	// budget: thresholds (percent of the budget).
+	// spend_anomaly: usage_multiple, min_daily_cost, topups_per_day.
+	// wrong_wallet: none.
 	Params       AlertParams `json:"params"`
 	SnoozedUntil *time.Time  `json:"snoozed_until,omitempty"`
 }
@@ -775,6 +845,10 @@ type AlertRuleWrite struct {
 	// meter_exhausted: used_percent.
 	// quota_waste: unused_percent, hours_before_reset.
 	// sync_failing, agent_offline: after_hours.
+	// meter_reset: used_percent (how full the window was before it reset).
+	// budget: thresholds (percent of the budget).
+	// spend_anomaly: usage_multiple, min_daily_cost, topups_per_day.
+	// wrong_wallet: none.
 	Params       AlertParams `json:"params"`
 	SnoozedUntil *time.Time  `json:"snoozed_until,omitempty"`
 }
@@ -836,6 +910,40 @@ type AuthKind string
 // BillingCycle defines model for BillingCycle.
 type BillingCycle string
 
+// Budget defines model for Budget.
+type Budget struct {
+	// AccountId Absent or null for the org-wide budget
+	AccountId   *string `json:"account_id,omitempty"`
+	AccountName *string `json:"account_name,omitempty"`
+
+	// Amount An amount in integer minor units (cents for USD, fen for CNY, yen for JPY)
+	Amount Money  `json:"amount"`
+	Id     string `json:"id"`
+
+	// MonthToDate An amount in integer minor units (cents for USD, fen for CNY, yen for JPY)
+	MonthToDate Money   `json:"month_to_date"`
+	PercentUsed float64 `json:"percent_used"`
+
+	// Period Current month, YYYY-MM (UTC)
+	Period string `json:"period"`
+
+	// Projected An amount in integer minor units (cents for USD, fen for CNY, yen for JPY)
+	Projected  Money `json:"projected"`
+	Thresholds []int `json:"thresholds"`
+
+	// UnconvertedCount Charges this month without an exchange rate, left out of month_to_date
+	UnconvertedCount int `json:"unconverted_count"`
+}
+
+// BudgetInput defines model for BudgetInput.
+type BudgetInput struct {
+	AccountId *string `json:"account_id,omitempty"`
+
+	// Amount An amount in integer minor units (cents for USD, fen for CNY, yen for JPY)
+	Amount     Money  `json:"amount"`
+	Thresholds *[]int `json:"thresholds,omitempty"`
+}
+
 // CapacityForecast defines model for CapacityForecast.
 type CapacityForecast struct {
 	AccountId string `json:"account_id"`
@@ -845,6 +953,12 @@ type CapacityForecast struct {
 		Headroom float64   `json:"headroom"`
 	} `json:"points"`
 }
+
+// ChannelKind webhook: secret is the URL; the hub POSTs the alert as JSON.
+// ntfy: config.topic (required) and config.server (default https://ntfy.sh); secret is an optional access token.
+// telegram: config.chat_id; secret is the bot token.
+// discord, slack: secret is the incoming webhook URL.
+type ChannelKind string
 
 // Charge defines model for Charge.
 type Charge struct {
@@ -1023,6 +1137,16 @@ type LoginRequest struct {
 	Password string `json:"password"`
 }
 
+// LoginTotpRequired defines model for LoginTotpRequired.
+type LoginTotpRequired struct {
+	// Challenge Send back to POST /api/auth/login/totp with the code
+	Challenge    string                        `json:"challenge"`
+	TotpRequired LoginTotpRequiredTotpRequired `json:"totp_required"`
+}
+
+// LoginTotpRequiredTotpRequired defines model for LoginTotpRequired.TotpRequired.
+type LoginTotpRequiredTotpRequired bool
+
 // Machine defines model for Machine.
 type Machine struct {
 	AgentVersion string     `json:"agent_version"`
@@ -1158,6 +1282,58 @@ type Money struct {
 	//
 	// Example: USD
 	Currency CurrencyCode `json:"currency"`
+}
+
+// NotificationChannel defines model for NotificationChannel.
+type NotificationChannel struct {
+	Config    map[string]string `json:"config"`
+	CreatedAt time.Time         `json:"created_at"`
+	Enabled   bool              `json:"enabled"`
+	Id        string            `json:"id"`
+
+	// Kind webhook: secret is the URL; the hub POSTs the alert as JSON.
+	// ntfy: config.topic (required) and config.server (default https://ntfy.sh); secret is an optional access token.
+	// telegram: config.chat_id; secret is the bot token.
+	// discord, slack: secret is the incoming webhook URL.
+	Kind ChannelKind `json:"kind"`
+
+	// Kinds Alert kinds sent; empty means every kind
+	Kinds       []AlertKind `json:"kinds"`
+	LastError   *string     `json:"last_error,omitempty"`
+	LastSentAt  *time.Time  `json:"last_sent_at,omitempty"`
+	MinSeverity Severity    `json:"min_severity"`
+	Name        string      `json:"name"`
+	Secret      SecretInfo  `json:"secret"`
+}
+
+// NotificationChannelCreate defines model for NotificationChannelCreate.
+type NotificationChannelCreate struct {
+	Config  *map[string]string `json:"config,omitempty"`
+	Enabled *bool              `json:"enabled,omitempty"`
+
+	// Kind webhook: secret is the URL; the hub POSTs the alert as JSON.
+	// ntfy: config.topic (required) and config.server (default https://ntfy.sh); secret is an optional access token.
+	// telegram: config.chat_id; secret is the bot token.
+	// discord, slack: secret is the incoming webhook URL.
+	Kind        ChannelKind  `json:"kind"`
+	Kinds       *[]AlertKind `json:"kinds,omitempty"`
+	MinSeverity *Severity    `json:"min_severity,omitempty"`
+	Name        string       `json:"name"`
+
+	// Secret Webhook URL or token; write-only
+	Secret *string `json:"secret,omitempty"`
+}
+
+// NotificationChannelUpdate defines model for NotificationChannelUpdate.
+type NotificationChannelUpdate struct {
+	Config      *map[string]string `json:"config,omitempty"`
+	Enabled     *bool              `json:"enabled,omitempty"`
+	Kinds       *[]AlertKind       `json:"kinds,omitempty"`
+	MinSeverity *Severity          `json:"min_severity,omitempty"`
+	Name        *string            `json:"name,omitempty"`
+
+	// Secret Replaces the stored secret; write-only
+	Secret *string `json:"secret,omitempty"`
 }
 
 // Plan Subscription details. `price` is absent and `renews_on` null for pure API or wallet accounts.
@@ -1319,6 +1495,9 @@ type SetupRequest struct {
 	Password string  `json:"password"`
 }
 
+// Severity defines model for Severity.
+type Severity string
+
 // SmtpSettings defines model for SmtpSettings.
 type SmtpSettings struct {
 	From     string          `json:"from"`
@@ -1379,6 +1558,13 @@ type SyncState struct {
 	LastSyncedAt *time.Time `json:"last_synced_at,omitempty"`
 }
 
+// TotpStatus defines model for TotpStatus.
+type TotpStatus struct {
+	Enabled           bool       `json:"enabled"`
+	EnabledAt         *time.Time `json:"enabled_at,omitempty"`
+	RecoveryCodesLeft int        `json:"recovery_codes_left"`
+}
+
 // UsageRow Grouping keys present depend on group_by
 type UsageRow struct {
 	AccountId        *string `json:"account_id,omitempty"`
@@ -1390,14 +1576,17 @@ type UsageRow struct {
 	Cost []MicroMoney `json:"cost"`
 
 	// CostReported True when every row's cost came from the provider rather than the price table
-	CostReported    bool                `json:"cost_reported"`
-	Day             *openapi_types.Date `json:"day,omitempty"`
-	InputTokens     int64               `json:"input_tokens"`
-	Model           *string             `json:"model,omitempty"`
-	OutputTokens    int64               `json:"output_tokens"`
-	ProviderId      *string             `json:"provider_id,omitempty"`
-	ReasoningTokens int64               `json:"reasoning_tokens"`
-	Requests        int64               `json:"requests"`
+	CostReported bool                `json:"cost_reported"`
+	Day          *openapi_types.Date `json:"day,omitempty"`
+	InputTokens  int64               `json:"input_tokens"`
+	Model        *string             `json:"model,omitempty"`
+	OutputTokens int64               `json:"output_tokens"`
+
+	// Project Repository or working directory name the agent saw; empty when unknown
+	Project         *string `json:"project,omitempty"`
+	ProviderId      *string `json:"provider_id,omitempty"`
+	ReasoningTokens int64   `json:"reasoning_tokens"`
+	Requests        int64   `json:"requests"`
 }
 
 // User defines model for User.
@@ -1409,6 +1598,12 @@ type User struct {
 	LastLoginAt *time.Time `json:"last_login_at,omitempty"`
 	Name        string     `json:"name"`
 	Role        Role       `json:"role"`
+
+	// SsoLinked Signed in with single sign-on at least once
+	SsoLinked *bool `json:"sso_linked,omitempty"`
+
+	// TotpEnabled Two-factor sign-in is on
+	TotpEnabled *bool `json:"totp_enabled,omitempty"`
 }
 
 // UserCreate defines model for UserCreate.
@@ -1432,6 +1627,12 @@ type AccountId = string
 
 // AlertId defines model for AlertId.
 type AlertId = string
+
+// BudgetId defines model for BudgetId.
+type BudgetId = string
+
+// ChannelId defines model for ChannelId.
+type ChannelId = string
 
 // ChargeId defines model for ChargeId.
 type ChargeId = string
@@ -1533,6 +1734,12 @@ type ListAuditLogParams struct {
 	Limit  *Limit  `form:"limit,omitempty" json:"limit,omitempty"`
 }
 
+// LoginTotpJSONBody defines parameters for LoginTotp.
+type LoginTotpJSONBody struct {
+	Challenge string `json:"challenge"`
+	Code      string `json:"code"`
+}
+
 // ListChargesParams defines parameters for ListCharges.
 type ListChargesParams struct {
 	// From Inclusive start day
@@ -1615,6 +1822,17 @@ type ChangePasswordJSONBody struct {
 type CreateApiTokenJSONBody struct {
 	ExpiresAt *time.Time `json:"expires_at,omitempty"`
 	Name      string     `json:"name"`
+}
+
+// DisableMyTotpJSONBody defines parameters for DisableMyTotp.
+type DisableMyTotpJSONBody struct {
+	Code     string `json:"code"`
+	Password string `json:"password"`
+}
+
+// EnableMyTotpJSONBody defines parameters for EnableMyTotp.
+type EnableMyTotpJSONBody struct {
+	Code string `json:"code"`
 }
 
 // ListQuotasParams defines parameters for ListQuotas.
@@ -1712,6 +1930,12 @@ type UpdateAlertJSONRequestBody UpdateAlertJSONBody
 // LoginJSONRequestBody defines body for Login for application/json ContentType.
 type LoginJSONRequestBody = LoginRequest
 
+// LoginTotpJSONRequestBody defines body for LoginTotp for application/json ContentType.
+type LoginTotpJSONRequestBody LoginTotpJSONBody
+
+// PutBudgetJSONRequestBody defines body for PutBudget for application/json ContentType.
+type PutBudgetJSONRequestBody = BudgetInput
+
 // CreateChargeJSONRequestBody defines body for CreateCharge for application/json ContentType.
 type CreateChargeJSONRequestBody = ChargeCreate
 
@@ -1735,6 +1959,18 @@ type ChangePasswordJSONRequestBody ChangePasswordJSONBody
 
 // CreateApiTokenJSONRequestBody defines body for CreateApiToken for application/json ContentType.
 type CreateApiTokenJSONRequestBody CreateApiTokenJSONBody
+
+// DisableMyTotpJSONRequestBody defines body for DisableMyTotp for application/json ContentType.
+type DisableMyTotpJSONRequestBody DisableMyTotpJSONBody
+
+// EnableMyTotpJSONRequestBody defines body for EnableMyTotp for application/json ContentType.
+type EnableMyTotpJSONRequestBody EnableMyTotpJSONBody
+
+// CreateNotificationChannelJSONRequestBody defines body for CreateNotificationChannel for application/json ContentType.
+type CreateNotificationChannelJSONRequestBody = NotificationChannelCreate
+
+// UpdateNotificationChannelJSONRequestBody defines body for UpdateNotificationChannel for application/json ContentType.
+type UpdateNotificationChannelJSONRequestBody = NotificationChannelUpdate
 
 // UpdateSettingsJSONRequestBody defines body for UpdateSettings for application/json ContentType.
 type UpdateSettingsJSONRequestBody = SettingsUpdate
@@ -1822,9 +2058,24 @@ type ServerInterface interface {
 	// Login Login
 	// (POST /api/auth/login)
 	Login(w http.ResponseWriter, r *http.Request)
+	// LoginTotp Finish a login that needs a second factor
+	// (POST /api/auth/login/totp)
+	LoginTotp(w http.ResponseWriter, r *http.Request)
 	// Logout Logout
 	// (POST /api/auth/logout)
 	Logout(w http.ResponseWriter, r *http.Request)
+	// GetOidcConfig Whether single sign-on is configured, for the login page
+	// (GET /api/auth/oidc)
+	GetOidcConfig(w http.ResponseWriter, r *http.Request)
+	// ListBudgets Monthly budgets with this month's spend and projection
+	// (GET /api/budgets)
+	ListBudgets(w http.ResponseWriter, r *http.Request)
+	// PutBudget Create or replace the budget for the org (account_id absent) or one account
+	// (PUT /api/budgets)
+	PutBudget(w http.ResponseWriter, r *http.Request)
+	// DeleteBudget Remove a budget
+	// (DELETE /api/budgets/{budgetId})
+	DeleteBudget(w http.ResponseWriter, r *http.Request, budgetId BudgetId)
 	// ListCharges List charges
 	// (GET /api/charges)
 	ListCharges(w http.ResponseWriter, r *http.Request, params ListChargesParams)
@@ -1888,6 +2139,33 @@ type ServerInterface interface {
 	// RevokeApiToken Revoke API token
 	// (DELETE /api/me/tokens/{tokenId})
 	RevokeApiToken(w http.ResponseWriter, r *http.Request, tokenId string)
+	// DisableMyTotp Turn two-factor off
+	// (DELETE /api/me/totp)
+	DisableMyTotp(w http.ResponseWriter, r *http.Request)
+	// GetMyTotp Two-factor status
+	// (GET /api/me/totp)
+	GetMyTotp(w http.ResponseWriter, r *http.Request)
+	// EnableMyTotp Confirm a code from the app; turns two-factor on and returns recovery codes once
+	// (POST /api/me/totp/enable)
+	EnableMyTotp(w http.ResponseWriter, r *http.Request)
+	// SetupMyTotp Start two-factor setup; returns a new secret until confirmed
+	// (POST /api/me/totp/setup)
+	SetupMyTotp(w http.ResponseWriter, r *http.Request)
+	// ListNotificationChannels List alert channels besides email
+	// (GET /api/notification-channels)
+	ListNotificationChannels(w http.ResponseWriter, r *http.Request)
+	// CreateNotificationChannel Add an alert channel
+	// (POST /api/notification-channels)
+	CreateNotificationChannel(w http.ResponseWriter, r *http.Request)
+	// DeleteNotificationChannel Remove an alert channel
+	// (DELETE /api/notification-channels/{channelId})
+	DeleteNotificationChannel(w http.ResponseWriter, r *http.Request, channelId ChannelId)
+	// UpdateNotificationChannel Change an alert channel; secret replaces the stored one when present
+	// (PATCH /api/notification-channels/{channelId})
+	UpdateNotificationChannel(w http.ResponseWriter, r *http.Request, channelId ChannelId)
+	// TestNotificationChannel Send a test message now
+	// (POST /api/notification-channels/{channelId}/test)
+	TestNotificationChannel(w http.ResponseWriter, r *http.Request, channelId ChannelId)
 	// ListProviders The provider catalog compiled into the hub
 	// (GET /api/providers)
 	ListProviders(w http.ResponseWriter, r *http.Request)
@@ -1930,6 +2208,9 @@ type ServerInterface interface {
 	// UpdateUser Change name, role, disabled state or reset the password. An admin cannot demote or disable the last admin.
 	// (PATCH /api/users/{userId})
 	UpdateUser(w http.ResponseWriter, r *http.Request, userId UserId)
+	// ResetUserTotp Turn off another user's two-factor (lost phone)
+	// (DELETE /api/users/{userId}/totp)
+	ResetUserTotp(w http.ResponseWriter, r *http.Request, userId UserId)
 	// GetHealth Liveness check
 	// (GET /healthz)
 	GetHealth(w http.ResponseWriter, r *http.Request)
@@ -2689,11 +2970,93 @@ func (siw *ServerInterfaceWrapper) Login(w http.ResponseWriter, r *http.Request)
 	handler.ServeHTTP(w, r)
 }
 
+// LoginTotp operation middleware
+func (siw *ServerInterfaceWrapper) LoginTotp(w http.ResponseWriter, r *http.Request) {
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.LoginTotp(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
 // Logout operation middleware
 func (siw *ServerInterfaceWrapper) Logout(w http.ResponseWriter, r *http.Request) {
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.Logout(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// GetOidcConfig operation middleware
+func (siw *ServerInterfaceWrapper) GetOidcConfig(w http.ResponseWriter, r *http.Request) {
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetOidcConfig(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// ListBudgets operation middleware
+func (siw *ServerInterfaceWrapper) ListBudgets(w http.ResponseWriter, r *http.Request) {
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ListBudgets(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// PutBudget operation middleware
+func (siw *ServerInterfaceWrapper) PutBudget(w http.ResponseWriter, r *http.Request) {
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.PutBudget(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// DeleteBudget operation middleware
+func (siw *ServerInterfaceWrapper) DeleteBudget(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "budgetId" -------------
+	var budgetId BudgetId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "budgetId", r.PathValue("budgetId"), &budgetId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "budgetId", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.DeleteBudget(w, r, budgetId)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -3372,6 +3735,168 @@ func (siw *ServerInterfaceWrapper) RevokeApiToken(w http.ResponseWriter, r *http
 	handler.ServeHTTP(w, r)
 }
 
+// DisableMyTotp operation middleware
+func (siw *ServerInterfaceWrapper) DisableMyTotp(w http.ResponseWriter, r *http.Request) {
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.DisableMyTotp(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// GetMyTotp operation middleware
+func (siw *ServerInterfaceWrapper) GetMyTotp(w http.ResponseWriter, r *http.Request) {
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetMyTotp(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// EnableMyTotp operation middleware
+func (siw *ServerInterfaceWrapper) EnableMyTotp(w http.ResponseWriter, r *http.Request) {
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.EnableMyTotp(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// SetupMyTotp operation middleware
+func (siw *ServerInterfaceWrapper) SetupMyTotp(w http.ResponseWriter, r *http.Request) {
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.SetupMyTotp(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// ListNotificationChannels operation middleware
+func (siw *ServerInterfaceWrapper) ListNotificationChannels(w http.ResponseWriter, r *http.Request) {
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ListNotificationChannels(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// CreateNotificationChannel operation middleware
+func (siw *ServerInterfaceWrapper) CreateNotificationChannel(w http.ResponseWriter, r *http.Request) {
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.CreateNotificationChannel(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// DeleteNotificationChannel operation middleware
+func (siw *ServerInterfaceWrapper) DeleteNotificationChannel(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "channelId" -------------
+	var channelId ChannelId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "channelId", r.PathValue("channelId"), &channelId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "channelId", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.DeleteNotificationChannel(w, r, channelId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// UpdateNotificationChannel operation middleware
+func (siw *ServerInterfaceWrapper) UpdateNotificationChannel(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "channelId" -------------
+	var channelId ChannelId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "channelId", r.PathValue("channelId"), &channelId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "channelId", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.UpdateNotificationChannel(w, r, channelId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// TestNotificationChannel operation middleware
+func (siw *ServerInterfaceWrapper) TestNotificationChannel(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "channelId" -------------
+	var channelId ChannelId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "channelId", r.PathValue("channelId"), &channelId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "channelId", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.TestNotificationChannel(w, r, channelId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
 // ListProviders operation middleware
 func (siw *ServerInterfaceWrapper) ListProviders(w http.ResponseWriter, r *http.Request) {
 
@@ -3818,6 +4343,32 @@ func (siw *ServerInterfaceWrapper) UpdateUser(w http.ResponseWriter, r *http.Req
 	handler.ServeHTTP(w, r)
 }
 
+// ResetUserTotp operation middleware
+func (siw *ServerInterfaceWrapper) ResetUserTotp(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "userId" -------------
+	var userId UserId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "userId", r.PathValue("userId"), &userId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "userId", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ResetUserTotp(w, r, userId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
 // GetHealth operation middleware
 func (siw *ServerInterfaceWrapper) GetHealth(w http.ResponseWriter, r *http.Request) {
 
@@ -4027,6 +4578,21 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/api/export/charges.csv", wrapper.ExportCharges)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/api/export/usage.csv", wrapper.ExportUsage)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/api/export/readings.csv", wrapper.ExportReadings)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/api/notification-channels", wrapper.ListNotificationChannels)
+	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/api/notification-channels", wrapper.CreateNotificationChannel)
+	m.HandleFunc(http.MethodDelete+" "+options.BaseURL+"/api/notification-channels/{channelId}", wrapper.DeleteNotificationChannel)
+	m.HandleFunc(http.MethodPatch+" "+options.BaseURL+"/api/notification-channels/{channelId}", wrapper.UpdateNotificationChannel)
+	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/api/notification-channels/{channelId}/test", wrapper.TestNotificationChannel)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/api/budgets", wrapper.ListBudgets)
+	m.HandleFunc(http.MethodPut+" "+options.BaseURL+"/api/budgets", wrapper.PutBudget)
+	m.HandleFunc(http.MethodDelete+" "+options.BaseURL+"/api/budgets/{budgetId}", wrapper.DeleteBudget)
+	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/api/auth/login/totp", wrapper.LoginTotp)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/api/auth/oidc", wrapper.GetOidcConfig)
+	m.HandleFunc(http.MethodDelete+" "+options.BaseURL+"/api/me/totp", wrapper.DisableMyTotp)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/api/me/totp", wrapper.GetMyTotp)
+	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/api/me/totp/setup", wrapper.SetupMyTotp)
+	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/api/me/totp/enable", wrapper.EnableMyTotp)
+	m.HandleFunc(http.MethodDelete+" "+options.BaseURL+"/api/users/{userId}/totp", wrapper.ResetUserTotp)
 
 	return m
 }
@@ -4905,6 +5471,20 @@ func (response Login200JSONResponse) VisitLoginResponse(w http.ResponseWriter) e
 	return err
 }
 
+type Login202JSONResponse LoginTotpRequired
+
+func (response Login202JSONResponse) VisitLoginResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(202)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
 type Login401JSONResponse struct{ ErrorJSONResponse }
 
 func (response Login401JSONResponse) VisitLoginResponse(w http.ResponseWriter) error {
@@ -4933,6 +5513,56 @@ func (response Login429JSONResponse) VisitLoginResponse(w http.ResponseWriter) e
 	return err
 }
 
+type LoginTotpRequestObject struct {
+	Body *LoginTotpJSONRequestBody
+}
+
+type LoginTotpResponseObject interface {
+	VisitLoginTotpResponse(w http.ResponseWriter) error
+}
+
+type LoginTotp200JSONResponse Me
+
+func (response LoginTotp200JSONResponse) VisitLoginTotpResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type LoginTotp401JSONResponse struct{ ErrorJSONResponse }
+
+func (response LoginTotp401JSONResponse) VisitLoginTotpResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type LoginTotp429JSONResponse Error
+
+func (response LoginTotp429JSONResponse) VisitLoginTotpResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(429)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
 type LogoutRequestObject struct {
 }
 
@@ -4946,6 +5576,136 @@ type Logout204Response struct {
 func (response Logout204Response) VisitLogoutResponse(w http.ResponseWriter) error {
 	w.WriteHeader(204)
 	return nil
+}
+
+type GetOidcConfigRequestObject struct {
+}
+
+type GetOidcConfigResponseObject interface {
+	VisitGetOidcConfigResponse(w http.ResponseWriter) error
+}
+
+type GetOidcConfig200JSONResponse struct {
+	Enabled bool `json:"enabled"`
+
+	// Name Button label, for example "Authentik"
+	Name *string `json:"name,omitempty"`
+
+	// StartUrl Where the button sends the browser (/auth/oidc/start)
+	StartUrl *string `json:"start_url,omitempty"`
+}
+
+func (response GetOidcConfig200JSONResponse) VisitGetOidcConfigResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListBudgetsRequestObject struct {
+}
+
+type ListBudgetsResponseObject interface {
+	VisitListBudgetsResponse(w http.ResponseWriter) error
+}
+
+type ListBudgets200JSONResponse []Budget
+
+func (response ListBudgets200JSONResponse) VisitListBudgetsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type PutBudgetRequestObject struct {
+	Body *PutBudgetJSONRequestBody
+}
+
+type PutBudgetResponseObject interface {
+	VisitPutBudgetResponse(w http.ResponseWriter) error
+}
+
+type PutBudget200JSONResponse Budget
+
+func (response PutBudget200JSONResponse) VisitPutBudgetResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type PutBudget400JSONResponse struct{ ErrorJSONResponse }
+
+func (response PutBudget400JSONResponse) VisitPutBudgetResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(400)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type PutBudget404JSONResponse Error
+
+func (response PutBudget404JSONResponse) VisitPutBudgetResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DeleteBudgetRequestObject struct {
+	BudgetId BudgetId `json:"budgetId"`
+}
+
+type DeleteBudgetResponseObject interface {
+	VisitDeleteBudgetResponse(w http.ResponseWriter) error
+}
+
+type DeleteBudget204Response struct {
+}
+
+func (response DeleteBudget204Response) VisitDeleteBudgetResponse(w http.ResponseWriter) error {
+	w.WriteHeader(204)
+	return nil
+}
+
+type DeleteBudget404JSONResponse struct{ ErrorJSONResponse }
+
+func (response DeleteBudget404JSONResponse) VisitDeleteBudgetResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
 }
 
 type ListChargesRequestObject struct {
@@ -5584,6 +6344,333 @@ func (response RevokeApiToken404JSONResponse) VisitRevokeApiTokenResponse(w http
 	return err
 }
 
+type DisableMyTotpRequestObject struct {
+	Body *DisableMyTotpJSONRequestBody
+}
+
+type DisableMyTotpResponseObject interface {
+	VisitDisableMyTotpResponse(w http.ResponseWriter) error
+}
+
+type DisableMyTotp204Response struct {
+}
+
+func (response DisableMyTotp204Response) VisitDisableMyTotpResponse(w http.ResponseWriter) error {
+	w.WriteHeader(204)
+	return nil
+}
+
+type DisableMyTotp401JSONResponse struct{ ErrorJSONResponse }
+
+func (response DisableMyTotp401JSONResponse) VisitDisableMyTotpResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetMyTotpRequestObject struct {
+}
+
+type GetMyTotpResponseObject interface {
+	VisitGetMyTotpResponse(w http.ResponseWriter) error
+}
+
+type GetMyTotp200JSONResponse TotpStatus
+
+func (response GetMyTotp200JSONResponse) VisitGetMyTotpResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type EnableMyTotpRequestObject struct {
+	Body *EnableMyTotpJSONRequestBody
+}
+
+type EnableMyTotpResponseObject interface {
+	VisitEnableMyTotpResponse(w http.ResponseWriter) error
+}
+
+type EnableMyTotp200JSONResponse struct {
+	// RecoveryCodes Ten single-use codes, shown once
+	RecoveryCodes []string `json:"recovery_codes"`
+}
+
+func (response EnableMyTotp200JSONResponse) VisitEnableMyTotpResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type EnableMyTotp401JSONResponse struct{ ErrorJSONResponse }
+
+func (response EnableMyTotp401JSONResponse) VisitEnableMyTotpResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type EnableMyTotp409JSONResponse Error
+
+func (response EnableMyTotp409JSONResponse) VisitEnableMyTotpResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(409)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type SetupMyTotpRequestObject struct {
+}
+
+type SetupMyTotpResponseObject interface {
+	VisitSetupMyTotpResponse(w http.ResponseWriter) error
+}
+
+type SetupMyTotp200JSONResponse struct {
+	// OtpauthUrl otpauth://totp/... for a QR code
+	OtpauthUrl string `json:"otpauth_url"`
+
+	// Secret Base32, for typing into the app
+	Secret string `json:"secret"`
+}
+
+func (response SetupMyTotp200JSONResponse) VisitSetupMyTotpResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type SetupMyTotp409JSONResponse struct{ ErrorJSONResponse }
+
+func (response SetupMyTotp409JSONResponse) VisitSetupMyTotpResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(409)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListNotificationChannelsRequestObject struct {
+}
+
+type ListNotificationChannelsResponseObject interface {
+	VisitListNotificationChannelsResponse(w http.ResponseWriter) error
+}
+
+type ListNotificationChannels200JSONResponse []NotificationChannel
+
+func (response ListNotificationChannels200JSONResponse) VisitListNotificationChannelsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CreateNotificationChannelRequestObject struct {
+	Body *CreateNotificationChannelJSONRequestBody
+}
+
+type CreateNotificationChannelResponseObject interface {
+	VisitCreateNotificationChannelResponse(w http.ResponseWriter) error
+}
+
+type CreateNotificationChannel201JSONResponse NotificationChannel
+
+func (response CreateNotificationChannel201JSONResponse) VisitCreateNotificationChannelResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(201)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CreateNotificationChannel400JSONResponse struct{ ErrorJSONResponse }
+
+func (response CreateNotificationChannel400JSONResponse) VisitCreateNotificationChannelResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(400)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DeleteNotificationChannelRequestObject struct {
+	ChannelId ChannelId `json:"channelId"`
+}
+
+type DeleteNotificationChannelResponseObject interface {
+	VisitDeleteNotificationChannelResponse(w http.ResponseWriter) error
+}
+
+type DeleteNotificationChannel204Response struct {
+}
+
+func (response DeleteNotificationChannel204Response) VisitDeleteNotificationChannelResponse(w http.ResponseWriter) error {
+	w.WriteHeader(204)
+	return nil
+}
+
+type DeleteNotificationChannel404JSONResponse struct{ ErrorJSONResponse }
+
+func (response DeleteNotificationChannel404JSONResponse) VisitDeleteNotificationChannelResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UpdateNotificationChannelRequestObject struct {
+	ChannelId ChannelId `json:"channelId"`
+	Body      *UpdateNotificationChannelJSONRequestBody
+}
+
+type UpdateNotificationChannelResponseObject interface {
+	VisitUpdateNotificationChannelResponse(w http.ResponseWriter) error
+}
+
+type UpdateNotificationChannel200JSONResponse NotificationChannel
+
+func (response UpdateNotificationChannel200JSONResponse) VisitUpdateNotificationChannelResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UpdateNotificationChannel400JSONResponse struct{ ErrorJSONResponse }
+
+func (response UpdateNotificationChannel400JSONResponse) VisitUpdateNotificationChannelResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(400)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UpdateNotificationChannel404JSONResponse Error
+
+func (response UpdateNotificationChannel404JSONResponse) VisitUpdateNotificationChannelResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type TestNotificationChannelRequestObject struct {
+	ChannelId ChannelId `json:"channelId"`
+}
+
+type TestNotificationChannelResponseObject interface {
+	VisitTestNotificationChannelResponse(w http.ResponseWriter) error
+}
+
+type TestNotificationChannel204Response struct {
+}
+
+func (response TestNotificationChannel204Response) VisitTestNotificationChannelResponse(w http.ResponseWriter) error {
+	w.WriteHeader(204)
+	return nil
+}
+
+type TestNotificationChannel404JSONResponse struct{ ErrorJSONResponse }
+
+func (response TestNotificationChannel404JSONResponse) VisitTestNotificationChannelResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type TestNotificationChannel422JSONResponse Error
+
+func (response TestNotificationChannel422JSONResponse) VisitTestNotificationChannelResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(422)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
 type ListProvidersRequestObject struct {
 }
 
@@ -6011,6 +7098,36 @@ func (response UpdateUser409JSONResponse) VisitUpdateUserResponse(w http.Respons
 	return err
 }
 
+type ResetUserTotpRequestObject struct {
+	UserId UserId `json:"userId"`
+}
+
+type ResetUserTotpResponseObject interface {
+	VisitResetUserTotpResponse(w http.ResponseWriter) error
+}
+
+type ResetUserTotp204Response struct {
+}
+
+func (response ResetUserTotp204Response) VisitResetUserTotpResponse(w http.ResponseWriter) error {
+	w.WriteHeader(204)
+	return nil
+}
+
+type ResetUserTotp404JSONResponse struct{ ErrorJSONResponse }
+
+func (response ResetUserTotp404JSONResponse) VisitResetUserTotpResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
 type GetHealthRequestObject struct {
 }
 
@@ -6138,9 +7255,24 @@ type StrictServerInterface interface {
 	// Login Login
 	// (POST /api/auth/login)
 	Login(ctx context.Context, request LoginRequestObject) (LoginResponseObject, error)
+	// LoginTotp Finish a login that needs a second factor
+	// (POST /api/auth/login/totp)
+	LoginTotp(ctx context.Context, request LoginTotpRequestObject) (LoginTotpResponseObject, error)
 	// Logout Logout
 	// (POST /api/auth/logout)
 	Logout(ctx context.Context, request LogoutRequestObject) (LogoutResponseObject, error)
+	// GetOidcConfig Whether single sign-on is configured, for the login page
+	// (GET /api/auth/oidc)
+	GetOidcConfig(ctx context.Context, request GetOidcConfigRequestObject) (GetOidcConfigResponseObject, error)
+	// ListBudgets Monthly budgets with this month's spend and projection
+	// (GET /api/budgets)
+	ListBudgets(ctx context.Context, request ListBudgetsRequestObject) (ListBudgetsResponseObject, error)
+	// PutBudget Create or replace the budget for the org (account_id absent) or one account
+	// (PUT /api/budgets)
+	PutBudget(ctx context.Context, request PutBudgetRequestObject) (PutBudgetResponseObject, error)
+	// DeleteBudget Remove a budget
+	// (DELETE /api/budgets/{budgetId})
+	DeleteBudget(ctx context.Context, request DeleteBudgetRequestObject) (DeleteBudgetResponseObject, error)
 	// ListCharges List charges
 	// (GET /api/charges)
 	ListCharges(ctx context.Context, request ListChargesRequestObject) (ListChargesResponseObject, error)
@@ -6204,6 +7336,33 @@ type StrictServerInterface interface {
 	// RevokeApiToken Revoke API token
 	// (DELETE /api/me/tokens/{tokenId})
 	RevokeApiToken(ctx context.Context, request RevokeApiTokenRequestObject) (RevokeApiTokenResponseObject, error)
+	// DisableMyTotp Turn two-factor off
+	// (DELETE /api/me/totp)
+	DisableMyTotp(ctx context.Context, request DisableMyTotpRequestObject) (DisableMyTotpResponseObject, error)
+	// GetMyTotp Two-factor status
+	// (GET /api/me/totp)
+	GetMyTotp(ctx context.Context, request GetMyTotpRequestObject) (GetMyTotpResponseObject, error)
+	// EnableMyTotp Confirm a code from the app; turns two-factor on and returns recovery codes once
+	// (POST /api/me/totp/enable)
+	EnableMyTotp(ctx context.Context, request EnableMyTotpRequestObject) (EnableMyTotpResponseObject, error)
+	// SetupMyTotp Start two-factor setup; returns a new secret until confirmed
+	// (POST /api/me/totp/setup)
+	SetupMyTotp(ctx context.Context, request SetupMyTotpRequestObject) (SetupMyTotpResponseObject, error)
+	// ListNotificationChannels List alert channels besides email
+	// (GET /api/notification-channels)
+	ListNotificationChannels(ctx context.Context, request ListNotificationChannelsRequestObject) (ListNotificationChannelsResponseObject, error)
+	// CreateNotificationChannel Add an alert channel
+	// (POST /api/notification-channels)
+	CreateNotificationChannel(ctx context.Context, request CreateNotificationChannelRequestObject) (CreateNotificationChannelResponseObject, error)
+	// DeleteNotificationChannel Remove an alert channel
+	// (DELETE /api/notification-channels/{channelId})
+	DeleteNotificationChannel(ctx context.Context, request DeleteNotificationChannelRequestObject) (DeleteNotificationChannelResponseObject, error)
+	// UpdateNotificationChannel Change an alert channel; secret replaces the stored one when present
+	// (PATCH /api/notification-channels/{channelId})
+	UpdateNotificationChannel(ctx context.Context, request UpdateNotificationChannelRequestObject) (UpdateNotificationChannelResponseObject, error)
+	// TestNotificationChannel Send a test message now
+	// (POST /api/notification-channels/{channelId}/test)
+	TestNotificationChannel(ctx context.Context, request TestNotificationChannelRequestObject) (TestNotificationChannelResponseObject, error)
 	// ListProviders The provider catalog compiled into the hub
 	// (GET /api/providers)
 	ListProviders(ctx context.Context, request ListProvidersRequestObject) (ListProvidersResponseObject, error)
@@ -6246,6 +7405,9 @@ type StrictServerInterface interface {
 	// UpdateUser Change name, role, disabled state or reset the password. An admin cannot demote or disable the last admin.
 	// (PATCH /api/users/{userId})
 	UpdateUser(ctx context.Context, request UpdateUserRequestObject) (UpdateUserResponseObject, error)
+	// ResetUserTotp Turn off another user's two-factor (lost phone)
+	// (DELETE /api/users/{userId}/totp)
+	ResetUserTotp(ctx context.Context, request ResetUserTotpRequestObject) (ResetUserTotpResponseObject, error)
 	// GetHealth Liveness check
 	// (GET /healthz)
 	GetHealth(ctx context.Context, request GetHealthRequestObject) (GetHealthResponseObject, error)
@@ -6966,6 +8128,37 @@ func (sh *strictHandler) Login(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+// LoginTotp operation middleware
+func (sh *strictHandler) LoginTotp(w http.ResponseWriter, r *http.Request) {
+	var request LoginTotpRequestObject
+
+	var body LoginTotpJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.LoginTotp(ctx, request.(LoginTotpRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "LoginTotp")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(LoginTotpResponseObject); ok {
+		if err := validResponse.VisitLoginTotpResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
 // Logout operation middleware
 func (sh *strictHandler) Logout(w http.ResponseWriter, r *http.Request) {
 	var request LogoutRequestObject
@@ -6983,6 +8176,111 @@ func (sh *strictHandler) Logout(w http.ResponseWriter, r *http.Request) {
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(LogoutResponseObject); ok {
 		if err := validResponse.VisitLogoutResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// GetOidcConfig operation middleware
+func (sh *strictHandler) GetOidcConfig(w http.ResponseWriter, r *http.Request) {
+	var request GetOidcConfigRequestObject
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.GetOidcConfig(ctx, request.(GetOidcConfigRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetOidcConfig")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(GetOidcConfigResponseObject); ok {
+		if err := validResponse.VisitGetOidcConfigResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// ListBudgets operation middleware
+func (sh *strictHandler) ListBudgets(w http.ResponseWriter, r *http.Request) {
+	var request ListBudgetsRequestObject
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.ListBudgets(ctx, request.(ListBudgetsRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "ListBudgets")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(ListBudgetsResponseObject); ok {
+		if err := validResponse.VisitListBudgetsResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// PutBudget operation middleware
+func (sh *strictHandler) PutBudget(w http.ResponseWriter, r *http.Request) {
+	var request PutBudgetRequestObject
+
+	var body PutBudgetJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.PutBudget(ctx, request.(PutBudgetRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "PutBudget")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(PutBudgetResponseObject); ok {
+		if err := validResponse.VisitPutBudgetResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// DeleteBudget operation middleware
+func (sh *strictHandler) DeleteBudget(w http.ResponseWriter, r *http.Request, budgetId BudgetId) {
+	var request DeleteBudgetRequestObject
+
+	request.BudgetId = budgetId
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.DeleteBudget(ctx, request.(DeleteBudgetRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "DeleteBudget")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(DeleteBudgetResponseObject); ok {
+		if err := validResponse.VisitDeleteBudgetResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {
@@ -7572,6 +8870,256 @@ func (sh *strictHandler) RevokeApiToken(w http.ResponseWriter, r *http.Request, 
 	}
 }
 
+// DisableMyTotp operation middleware
+func (sh *strictHandler) DisableMyTotp(w http.ResponseWriter, r *http.Request) {
+	var request DisableMyTotpRequestObject
+
+	var body DisableMyTotpJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.DisableMyTotp(ctx, request.(DisableMyTotpRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "DisableMyTotp")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(DisableMyTotpResponseObject); ok {
+		if err := validResponse.VisitDisableMyTotpResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// GetMyTotp operation middleware
+func (sh *strictHandler) GetMyTotp(w http.ResponseWriter, r *http.Request) {
+	var request GetMyTotpRequestObject
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.GetMyTotp(ctx, request.(GetMyTotpRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetMyTotp")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(GetMyTotpResponseObject); ok {
+		if err := validResponse.VisitGetMyTotpResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// EnableMyTotp operation middleware
+func (sh *strictHandler) EnableMyTotp(w http.ResponseWriter, r *http.Request) {
+	var request EnableMyTotpRequestObject
+
+	var body EnableMyTotpJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.EnableMyTotp(ctx, request.(EnableMyTotpRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "EnableMyTotp")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(EnableMyTotpResponseObject); ok {
+		if err := validResponse.VisitEnableMyTotpResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// SetupMyTotp operation middleware
+func (sh *strictHandler) SetupMyTotp(w http.ResponseWriter, r *http.Request) {
+	var request SetupMyTotpRequestObject
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.SetupMyTotp(ctx, request.(SetupMyTotpRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "SetupMyTotp")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(SetupMyTotpResponseObject); ok {
+		if err := validResponse.VisitSetupMyTotpResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// ListNotificationChannels operation middleware
+func (sh *strictHandler) ListNotificationChannels(w http.ResponseWriter, r *http.Request) {
+	var request ListNotificationChannelsRequestObject
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.ListNotificationChannels(ctx, request.(ListNotificationChannelsRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "ListNotificationChannels")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(ListNotificationChannelsResponseObject); ok {
+		if err := validResponse.VisitListNotificationChannelsResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// CreateNotificationChannel operation middleware
+func (sh *strictHandler) CreateNotificationChannel(w http.ResponseWriter, r *http.Request) {
+	var request CreateNotificationChannelRequestObject
+
+	var body CreateNotificationChannelJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.CreateNotificationChannel(ctx, request.(CreateNotificationChannelRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "CreateNotificationChannel")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(CreateNotificationChannelResponseObject); ok {
+		if err := validResponse.VisitCreateNotificationChannelResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// DeleteNotificationChannel operation middleware
+func (sh *strictHandler) DeleteNotificationChannel(w http.ResponseWriter, r *http.Request, channelId ChannelId) {
+	var request DeleteNotificationChannelRequestObject
+
+	request.ChannelId = channelId
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.DeleteNotificationChannel(ctx, request.(DeleteNotificationChannelRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "DeleteNotificationChannel")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(DeleteNotificationChannelResponseObject); ok {
+		if err := validResponse.VisitDeleteNotificationChannelResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// UpdateNotificationChannel operation middleware
+func (sh *strictHandler) UpdateNotificationChannel(w http.ResponseWriter, r *http.Request, channelId ChannelId) {
+	var request UpdateNotificationChannelRequestObject
+
+	request.ChannelId = channelId
+
+	var body UpdateNotificationChannelJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.UpdateNotificationChannel(ctx, request.(UpdateNotificationChannelRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "UpdateNotificationChannel")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(UpdateNotificationChannelResponseObject); ok {
+		if err := validResponse.VisitUpdateNotificationChannelResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// TestNotificationChannel operation middleware
+func (sh *strictHandler) TestNotificationChannel(w http.ResponseWriter, r *http.Request, channelId ChannelId) {
+	var request TestNotificationChannelRequestObject
+
+	request.ChannelId = channelId
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.TestNotificationChannel(ctx, request.(TestNotificationChannelRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "TestNotificationChannel")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(TestNotificationChannelResponseObject); ok {
+		if err := validResponse.VisitTestNotificationChannelResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
 // ListProviders operation middleware
 func (sh *strictHandler) ListProviders(w http.ResponseWriter, r *http.Request) {
 	var request ListProvidersRequestObject
@@ -7948,6 +9496,32 @@ func (sh *strictHandler) UpdateUser(w http.ResponseWriter, r *http.Request, user
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(UpdateUserResponseObject); ok {
 		if err := validResponse.VisitUpdateUserResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// ResetUserTotp operation middleware
+func (sh *strictHandler) ResetUserTotp(w http.ResponseWriter, r *http.Request, userId UserId) {
+	var request ResetUserTotpRequestObject
+
+	request.UserId = userId
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.ResetUserTotp(ctx, request.(ResetUserTotpRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "ResetUserTotp")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(ResetUserTotpResponseObject); ok {
+		if err := validResponse.VisitResetUserTotpResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {

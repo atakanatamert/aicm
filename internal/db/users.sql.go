@@ -408,7 +408,7 @@ func (q *Queries) ListGroups(ctx context.Context, orgID string) ([]Group, error)
 }
 
 const listUsers = `-- name: ListUsers :many
-SELECT id, org_id, email, name, password_hash, role, disabled_at, last_login_at, created_at, updated_at FROM users
+SELECT id, org_id, email, name, password_hash, role, disabled_at, last_login_at, created_at, updated_at, totp_secret_id, totp_pending_secret_id, totp_enabled_at, oidc_issuer, oidc_subject FROM users
 WHERE org_id = $1
 ORDER BY lower(email)
 `
@@ -433,6 +433,11 @@ func (q *Queries) ListUsers(ctx context.Context, orgID string) ([]User, error) {
 			&i.LastLoginAt,
 			&i.CreatedAt,
 			&i.UpdatedAt,
+			&i.TotpSecretID,
+			&i.TotpPendingSecretID,
+			&i.TotpEnabledAt,
+			&i.OidcIssuer,
+			&i.OidcSubject,
 		); err != nil {
 			return nil, err
 		}
@@ -508,7 +513,7 @@ SET name = $1,
     password_hash = $4,
     updated_at = now()
 WHERE org_id = $5 AND id = $6
-RETURNING id, org_id, email, name, password_hash, role, disabled_at, last_login_at, created_at, updated_at
+RETURNING id, org_id, email, name, password_hash, role, disabled_at, last_login_at, created_at, updated_at, totp_secret_id, totp_pending_secret_id, totp_enabled_at, oidc_issuer, oidc_subject
 `
 
 type UpdateUserParams struct {
@@ -541,6 +546,11 @@ func (q *Queries) UpdateUser(ctx context.Context, arg UpdateUserParams) (User, e
 		&i.LastLoginAt,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.TotpSecretID,
+		&i.TotpPendingSecretID,
+		&i.TotpEnabledAt,
+		&i.OidcIssuer,
+		&i.OidcSubject,
 	)
 	return i, err
 }

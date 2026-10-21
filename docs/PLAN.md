@@ -46,10 +46,10 @@ A hosted version on top of an AGPL core works, and it is the Grafana and Plausib
 | Open source (AGPL, self-host free forever) | Cloud (paid) |
 | --- | --- |
 | Every tracking feature: providers, agents, meters, money out, alerts, MCP, scoring, roles, audit log, CSV | Hosting, upgrades, backups and uptime handled for you |
-| Email alerts through your own SMTP | Managed delivery plus push, Slack and Telegram channels without setup |
+| Email, webhook, ntfy, Telegram, Discord and Slack alerts you configure | Managed delivery and mobile push without setup |
 | One organization per install | Several organizations and teams, per-seat billing |
 | History kept as long as your database keeps it | Long retention, usage analytics across teams, spend reports |
-| Community support | SSO/SCIM and priority support for companies (later, in a commercial `ee/` folder or a separate service) |
+| Two-factor and OIDC sign-in; community support | SCIM and priority support for companies (later, in a commercial `ee/` folder or a separate service) |
 
 The rule that protects trust: nothing a single person or small team needs is held back from self-host. Cloud sells convenience and team-scale features, the way Supabase sells not having to run Postgres.
 
@@ -290,15 +290,12 @@ The MVP is done when you can enroll every laptop with one command, see every sub
 
 | Left out | Why | When |
 | --- | --- | --- |
-| Slack, Telegram, ntfy alerts | Email first, through the `Notifier` interface | Next |
 | Browser automation to cancel or top up | You chose reminders plus one-click links first | Later, if ever |
-| SSO / OIDC | Not needed for a self-hosted tool | Not planned |
 | Infisical or OpenBao backends | Built-in store is enough | On request |
 | Gemini quota | Google bans third-party OAuth use; local estimates only | Only if Google offers an official route |
 | Cursor individual usage | Needs a pasted session cookie | Opt-in, after MVP |
 | Long-tail providers (Mistral, Together, Groq, and more) | Catalog links and manual entry cover them | When the community asks |
 | Desktop app | Web covers it | Optional |
-| Budgets and forecasts of spend | Needs months of history first | After MVP |
 
 ## Stack and UI
 

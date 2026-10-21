@@ -40,7 +40,15 @@ Tasks 1–5 are the contracts Opus writes before any delegation. Large tasks wer
 | 27a | UI | Accounts, add account, discovered review, Usage | GLM | 9, 12, 24 | merged |
 | 27b | UI | Account detail | GLM | 27a | merged |
 | 34 | UI | Fixes from the Impeccable critique | GLM | 25–28b | merged |
-| 35 | UI | First-run import, one primary provider link, sort and filter, harness names | GLM | 34 | in progress |
+| 35 | UI | First-run import, one primary provider link, sort and filter, harness names | GLM | 34 | merged |
+| 36 | Contracts | Migration 00007, spec, agent protocol fields, decisions 30–32 | Opus | 35 | merged |
+| 37 | Hub | Alert channels: webhook, ntfy, Telegram, Discord, Slack | DeepSeek | 36 | in progress |
+| 38 | Hub | Budgets and alerts: budget, limits back, runaway spend, wrong wallet | DeepSeek | 36 | in progress |
+| 40 | Agent | Project per usage event; billing mode and extra usage details | DeepSeek | 36 | in progress |
+| 41 | Hub | Usage by project | DeepSeek | 36 | in progress |
+| 42 | Hub | Two-factor (TOTP) and OIDC sign-in | DeepSeek | 36 | in progress |
+| 43a | UI | Channels, budgets, new alert kinds, wallet runway | GLM | 37, 38 | to do |
+| 43b | UI | Two-factor, SSO button, usage by project | GLM | 41, 42 | to do |
 | 28a | UI | Alerts inbox and rules, Machines | GLM | 14a, 18a, 24 | merged |
 | 28b | UI | Settings | GLM | 7b, 8, 14b, 24 | merged |
 | 29 | MCP | `aicm-agent mcp` and hub `/mcp` | DeepSeek | 3, 13 | merged |

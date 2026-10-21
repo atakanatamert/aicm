@@ -174,6 +174,10 @@ type UsageEvent struct {
 	// CostMicro is the harness-reported cost in micro units, if any.
 	CostMicro    *int64 `json:"cost_micro,omitempty"`
 	CostCurrency string `json:"cost_currency,omitempty"`
+	// Project is the base name of the git repository root containing the
+	// session's working directory, or of the working directory itself when
+	// it is not in a repository. Never a full path. Empty when unknown.
+	Project string `json:"project,omitempty"`
 }
 
 // Meters is a batch of meter readings.
@@ -252,4 +256,12 @@ const (
 	// DetailSubscriptionStarted is when the paid subscription began (RFC 3339);
 	// its day of month is the billing day.
 	DetailSubscriptionStarted = "subscription_started"
+	// DetailBillingMode is "api_key" when the harness on this machine is set
+	// up to bill an API key instead of the subscription (for example an
+	// ANTHROPIC_API_KEY in Claude Code's settings), otherwise "subscription".
+	DetailBillingMode = "billing_mode"
+	// DetailExtraUsage is "on" when the subscription bills paid usage past
+	// its limits (Claude extra usage, Codex credits auto-reload), "off"
+	// when it does not; absent when unknown.
+	DetailExtraUsage = "extra_usage"
 )

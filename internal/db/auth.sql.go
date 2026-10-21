@@ -199,7 +199,7 @@ func (q *Queries) GetSessionByHash(ctx context.Context, tokenHash []byte) (GetSe
 }
 
 const getUserByEmail = `-- name: GetUserByEmail :one
-SELECT id, org_id, email, name, password_hash, role, disabled_at, last_login_at, created_at, updated_at
+SELECT id, org_id, email, name, password_hash, role, disabled_at, last_login_at, created_at, updated_at, totp_secret_id, totp_pending_secret_id, totp_enabled_at, oidc_issuer, oidc_subject
 FROM users
 WHERE lower(email) = lower($1)
 `
@@ -220,12 +220,17 @@ func (q *Queries) GetUserByEmail(ctx context.Context, lower string) (User, error
 		&i.LastLoginAt,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.TotpSecretID,
+		&i.TotpPendingSecretID,
+		&i.TotpEnabledAt,
+		&i.OidcIssuer,
+		&i.OidcSubject,
 	)
 	return i, err
 }
 
 const getUserByID = `-- name: GetUserByID :one
-SELECT id, org_id, email, name, password_hash, role, disabled_at, last_login_at, created_at, updated_at
+SELECT id, org_id, email, name, password_hash, role, disabled_at, last_login_at, created_at, updated_at, totp_secret_id, totp_pending_secret_id, totp_enabled_at, oidc_issuer, oidc_subject
 FROM users
 WHERE org_id = $1 AND id = $2
 `
@@ -249,6 +254,11 @@ func (q *Queries) GetUserByID(ctx context.Context, arg GetUserByIDParams) (User,
 		&i.LastLoginAt,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.TotpSecretID,
+		&i.TotpPendingSecretID,
+		&i.TotpEnabledAt,
+		&i.OidcIssuer,
+		&i.OidcSubject,
 	)
 	return i, err
 }
@@ -295,7 +305,7 @@ func (q *Queries) InsertSession(ctx context.Context, arg InsertSessionParams) (S
 const insertUser = `-- name: InsertUser :one
 INSERT INTO users (org_id, email, name, password_hash, role)
 VALUES ($1, $2, $3, $4, $5)
-RETURNING id, org_id, email, name, password_hash, role, disabled_at, last_login_at, created_at, updated_at
+RETURNING id, org_id, email, name, password_hash, role, disabled_at, last_login_at, created_at, updated_at, totp_secret_id, totp_pending_secret_id, totp_enabled_at, oidc_issuer, oidc_subject
 `
 
 type InsertUserParams struct {
@@ -326,6 +336,11 @@ func (q *Queries) InsertUser(ctx context.Context, arg InsertUserParams) (User, e
 		&i.LastLoginAt,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.TotpSecretID,
+		&i.TotpPendingSecretID,
+		&i.TotpEnabledAt,
+		&i.OidcIssuer,
+		&i.OidcSubject,
 	)
 	return i, err
 }

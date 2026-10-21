@@ -76,6 +76,13 @@ type Alert struct {
 	ResolvedAt   *time.Time
 }
 
+type AlertDelivery struct {
+	OrgID       string
+	AlertID     string
+	ChannelID   string
+	DeliveredAt time.Time
+}
+
 type AlertRule struct {
 	ID           string
 	OrgID        string
@@ -115,6 +122,17 @@ type AuditLog struct {
 	After      json.RawMessage
 	Ip         *netip.Addr
 	RequestID  string
+}
+
+type Budget struct {
+	ID          string
+	OrgID       string
+	AccountID   *string
+	AmountMinor int64
+	Currency    string
+	Thresholds  []int32
+	CreatedAt   time.Time
+	UpdatedAt   time.Time
 }
 
 type Charge struct {
@@ -177,6 +195,16 @@ type HubKey struct {
 	CreatedAt time.Time
 }
 
+type LoginChallenge struct {
+	ID        string
+	OrgID     string
+	UserID    string
+	TokenHash []byte
+	Attempts  int32
+	ExpiresAt time.Time
+	CreatedAt time.Time
+}
+
 type Machine struct {
 	ID            string
 	OrgID         string
@@ -204,6 +232,22 @@ type ModelPrice struct {
 	CacheWriteMicroPerMtok int64
 	Source                 string
 	UpdatedAt              time.Time
+}
+
+type NotificationChannel struct {
+	ID          string
+	OrgID       string
+	Kind        string
+	Name        string
+	Config      json.RawMessage
+	SecretID    *string
+	MinSeverity string
+	Kinds       []string
+	Enabled     bool
+	LastSentAt  *time.Time
+	LastError   *string
+	CreatedAt   time.Time
+	UpdatedAt   time.Time
 }
 
 type Org struct {
@@ -306,6 +350,7 @@ type UsageDaily struct {
 	CostCurrency     string
 	CostReported     bool
 	UpdatedAt        time.Time
+	Project          string
 }
 
 type UsageEvent struct {
@@ -325,17 +370,31 @@ type UsageEvent struct {
 	CostMicro        *int64
 	CostCurrency     *string
 	ReceivedAt       time.Time
+	Project          string
 }
 
 type User struct {
-	ID           string
-	OrgID        string
-	Email        string
-	Name         string
-	PasswordHash string
-	Role         string
-	DisabledAt   *time.Time
-	LastLoginAt  *time.Time
-	CreatedAt    time.Time
-	UpdatedAt    time.Time
+	ID                  string
+	OrgID               string
+	Email               string
+	Name                string
+	PasswordHash        string
+	Role                string
+	DisabledAt          *time.Time
+	LastLoginAt         *time.Time
+	CreatedAt           time.Time
+	UpdatedAt           time.Time
+	TotpSecretID        *string
+	TotpPendingSecretID *string
+	TotpEnabledAt       *time.Time
+	OidcIssuer          *string
+	OidcSubject         *string
+}
+
+type UserRecoveryCode struct {
+	ID       string
+	OrgID    string
+	UserID   string
+	CodeHash []byte
+	UsedAt   *time.Time
 }

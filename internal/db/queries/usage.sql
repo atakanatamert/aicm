@@ -69,7 +69,7 @@ INSERT INTO usage_daily (
     sqlc.arg(cost_reported),
     now()
 )
-ON CONFLICT (account_id, day, model, source) DO UPDATE SET
+ON CONFLICT (account_id, day, model, source, project) DO UPDATE SET
     requests = excluded.requests,
     input_tokens = excluded.input_tokens,
     output_tokens = excluded.output_tokens,

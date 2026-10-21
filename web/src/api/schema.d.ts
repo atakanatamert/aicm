@@ -860,6 +860,205 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/notification-channels": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List alert channels besides email */
+        get: operations["listNotificationChannels"];
+        put?: never;
+        /** Add an alert channel */
+        post: operations["createNotificationChannel"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/notification-channels/{channelId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Remove an alert channel */
+        delete: operations["deleteNotificationChannel"];
+        options?: never;
+        head?: never;
+        /** Change an alert channel; secret replaces the stored one when present */
+        patch: operations["updateNotificationChannel"];
+        trace?: never;
+    };
+    "/api/notification-channels/{channelId}/test": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Send a test message now */
+        post: operations["testNotificationChannel"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/budgets": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Monthly budgets with this month's spend and projection
+         * @description Viewers see the org budget and budgets of accounts they can see.
+         */
+        get: operations["listBudgets"];
+        /** Create or replace the budget for the org (account_id absent) or one account */
+        put: operations["putBudget"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/budgets/{budgetId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Remove a budget */
+        delete: operations["deleteBudget"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/auth/login/totp": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Finish a login that needs a second factor
+         * @description `code` is the 6-digit code from the authenticator app or one unused
+         *     recovery code. A challenge allows five attempts and expires after
+         *     five minutes.
+         */
+        post: operations["loginTotp"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/auth/oidc": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Whether single sign-on is configured, for the login page */
+        get: operations["getOidcConfig"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/me/totp": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Two-factor status */
+        get: operations["getMyTotp"];
+        put?: never;
+        post?: never;
+        /** Turn two-factor off */
+        delete: operations["disableMyTotp"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/me/totp/setup": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Start two-factor setup; returns a new secret until confirmed */
+        post: operations["setupMyTotp"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/me/totp/enable": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Confirm a code from the app; turns two-factor on and returns recovery codes once */
+        post: operations["enableMyTotp"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/users/{userId}/totp": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Turn off another user's two-factor (lost phone) */
+        delete: operations["resetUserTotp"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -949,6 +1148,10 @@ export interface components {
             name: string;
             role: components["schemas"]["Role"];
             disabled: boolean;
+            /** @description Two-factor sign-in is on */
+            totp_enabled?: boolean;
+            /** @description Signed in with single sign-on at least once */
+            sso_linked?: boolean;
             /** Format: date-time */
             last_login_at?: string | null;
             /** Format: date-time */
@@ -1370,6 +1573,8 @@ export interface components {
             account_id?: string;
             account_name?: string;
             provider_id?: string;
+            /** @description Repository or working directory name the agent saw; empty when unknown */
+            project?: string;
             /** Format: int64 */
             requests: number;
             /** Format: int64 */
@@ -1387,14 +1592,104 @@ export interface components {
             /** @description True when every row's cost came from the provider rather than the price table */
             cost_reported: boolean;
         };
+        /**
+         * @description webhook: secret is the URL; the hub POSTs the alert as JSON.
+         *     ntfy: config.topic (required) and config.server (default https://ntfy.sh); secret is an optional access token.
+         *     telegram: config.chat_id; secret is the bot token.
+         *     discord, slack: secret is the incoming webhook URL.
+         * @enum {string}
+         */
+        ChannelKind: "webhook" | "ntfy" | "telegram" | "discord" | "slack";
         /** @enum {string} */
-        AlertKind: "renewal" | "promo_ending" | "low_balance" | "meter_exhausted" | "quota_waste" | "sync_failing" | "agent_offline";
+        Severity: "info" | "warning" | "critical";
+        NotificationChannel: {
+            /** Format: uuid */
+            id: string;
+            kind: components["schemas"]["ChannelKind"];
+            name: string;
+            config: {
+                [key: string]: string;
+            };
+            secret: components["schemas"]["SecretInfo"];
+            min_severity: components["schemas"]["Severity"];
+            /** @description Alert kinds sent; empty means every kind */
+            kinds: components["schemas"]["AlertKind"][];
+            enabled: boolean;
+            /** Format: date-time */
+            last_sent_at?: string | null;
+            last_error?: string | null;
+            /** Format: date-time */
+            created_at: string;
+        };
+        NotificationChannelCreate: {
+            kind: components["schemas"]["ChannelKind"];
+            name: string;
+            config?: {
+                [key: string]: string;
+            };
+            /** @description Webhook URL or token; write-only */
+            secret?: string;
+            min_severity?: components["schemas"]["Severity"];
+            kinds?: components["schemas"]["AlertKind"][];
+            enabled?: boolean;
+        };
+        NotificationChannelUpdate: {
+            name?: string;
+            config?: {
+                [key: string]: string;
+            };
+            /** @description Replaces the stored secret; write-only */
+            secret?: string;
+            min_severity?: components["schemas"]["Severity"];
+            kinds?: components["schemas"]["AlertKind"][];
+            enabled?: boolean;
+        };
+        Budget: {
+            /** Format: uuid */
+            id: string;
+            /**
+             * Format: uuid
+             * @description Absent or null for the org-wide budget
+             */
+            account_id?: string | null;
+            account_name?: string;
+            amount: components["schemas"]["Money"];
+            thresholds: number[];
+            /** @description Current month, YYYY-MM (UTC) */
+            period: string;
+            /** @description Confirmed charges this month, converted to the budget currency at each charge's date */
+            month_to_date: components["schemas"]["Money"];
+            /** @description month_to_date plus renewals still due this month at their plan price */
+            projected: components["schemas"]["Money"];
+            percent_used: number;
+            /** @description Charges this month without an exchange rate, left out of month_to_date */
+            unconverted_count: number;
+        };
+        BudgetInput: {
+            /** Format: uuid */
+            account_id?: string | null;
+            amount: components["schemas"]["Money"];
+            thresholds?: number[];
+        };
+        TotpStatus: {
+            enabled: boolean;
+            /** Format: date-time */
+            enabled_at?: string | null;
+            recovery_codes_left: number;
+        };
+        LoginTotpRequired: {
+            /** @enum {boolean} */
+            totp_required: true;
+            /** @description Send back to POST /api/auth/login/totp with the code */
+            challenge: string;
+        };
+        /** @enum {string} */
+        AlertKind: "renewal" | "promo_ending" | "low_balance" | "meter_exhausted" | "quota_waste" | "sync_failing" | "agent_offline" | "meter_reset" | "budget" | "spend_anomaly" | "wrong_wallet";
         Alert: {
             /** Format: uuid */
             id: string;
             kind: components["schemas"]["AlertKind"];
-            /** @enum {string} */
-            severity: "info" | "warning" | "critical";
+            severity: components["schemas"]["Severity"];
             title: string;
             body: string;
             /** Format: uuid */
@@ -1447,6 +1742,10 @@ export interface components {
          *     meter_exhausted: used_percent.
          *     quota_waste: unused_percent, hours_before_reset.
          *     sync_failing, agent_offline: after_hours.
+         *     meter_reset: used_percent (how full the window was before it reset).
+         *     budget: thresholds (percent of the budget).
+         *     spend_anomaly: usage_multiple, min_daily_cost, topups_per_day.
+         *     wrong_wallet: none.
          */
         AlertParams: {
             days_before?: number[];
@@ -1456,6 +1755,12 @@ export interface components {
             unused_percent?: number;
             hours_before_reset?: number;
             after_hours?: number;
+            thresholds?: number[];
+            /** @description Today's estimated usage cost against the median day of the last 14 */
+            usage_multiple?: number;
+            /** @description Ignore days below this estimated cost, in USD */
+            min_daily_cost?: number;
+            topups_per_day?: number;
         };
         Machine: {
             /** Format: uuid */
@@ -1588,6 +1893,8 @@ export interface components {
         };
     };
     parameters: {
+        ChannelId: string;
+        BudgetId: string;
         AccountId: string;
         UserId: string;
         GroupId: string;
@@ -1722,6 +2029,15 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["Me"];
+                };
+            };
+            /** @description Password accepted; a second factor is needed (POST /api/auth/login/totp) */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LoginTotpRequired"];
                 };
             };
             401: components["responses"]["Error"];
@@ -2734,7 +3050,7 @@ export interface operations {
                 from?: components["parameters"]["FromDate"];
                 /** @description Inclusive end day */
                 to?: components["parameters"]["ToDate"];
-                group_by: "day" | "model" | "account" | "provider";
+                group_by: "day" | "model" | "account" | "provider" | "project";
                 account_id?: string;
                 provider_id?: string;
             };
@@ -3196,6 +3512,377 @@ export interface operations {
                     "text/csv": string;
                 };
             };
+        };
+    };
+    listNotificationChannels: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Channels */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NotificationChannel"][];
+                };
+            };
+        };
+    };
+    createNotificationChannel: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["NotificationChannelCreate"];
+            };
+        };
+        responses: {
+            /** @description Created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NotificationChannel"];
+                };
+            };
+            400: components["responses"]["Error"];
+        };
+    };
+    deleteNotificationChannel: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                channelId: components["parameters"]["ChannelId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Deleted */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            404: components["responses"]["Error"];
+        };
+    };
+    updateNotificationChannel: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                channelId: components["parameters"]["ChannelId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["NotificationChannelUpdate"];
+            };
+        };
+        responses: {
+            /** @description Updated */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NotificationChannel"];
+                };
+            };
+            400: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+        };
+    };
+    testNotificationChannel: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                channelId: components["parameters"]["ChannelId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Sent */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            404: components["responses"]["Error"];
+            /** @description The channel refused the message; error.message says why */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    listBudgets: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Budgets */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Budget"][];
+                };
+            };
+        };
+    };
+    putBudget: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BudgetInput"];
+            };
+        };
+        responses: {
+            /** @description Saved */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Budget"];
+                };
+            };
+            400: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+        };
+    };
+    deleteBudget: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                budgetId: components["parameters"]["BudgetId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Deleted */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            404: components["responses"]["Error"];
+        };
+    };
+    loginTotp: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    challenge: string;
+                    code: string;
+                };
+            };
+        };
+        responses: {
+            /** @description Logged in; sets the session cookie */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Me"];
+                };
+            };
+            401: components["responses"]["Error"];
+            429: components["responses"]["Error"];
+        };
+    };
+    getOidcConfig: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Sign-on settings */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        enabled: boolean;
+                        /** @description Button label, for example "Authentik" */
+                        name?: string;
+                        /** @description Where the button sends the browser (/auth/oidc/start) */
+                        start_url?: string;
+                    };
+                };
+            };
+        };
+    };
+    getMyTotp: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Status */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TotpStatus"];
+                };
+            };
+        };
+    };
+    disableMyTotp: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    /** Format: password */
+                    password: string;
+                    code: string;
+                };
+            };
+        };
+        responses: {
+            /** @description Turned off */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            401: components["responses"]["Error"];
+        };
+    };
+    setupMyTotp: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Secret to add to an authenticator app */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /** @description Base32, for typing into the app */
+                        secret: string;
+                        /** @description otpauth://totp/... for a QR code */
+                        otpauth_url: string;
+                    };
+                };
+            };
+            409: components["responses"]["Error"];
+        };
+    };
+    enableMyTotp: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    code: string;
+                };
+            };
+        };
+        responses: {
+            /** @description Turned on */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /** @description Ten single-use codes, shown once */
+                        recovery_codes: string[];
+                    };
+                };
+            };
+            401: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+        };
+    };
+    resetUserTotp: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                userId: components["parameters"]["UserId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Turned off */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            404: components["responses"]["Error"];
         };
     };
 }

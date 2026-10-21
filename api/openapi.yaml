@@ -139,6 +139,11 @@ paths:
           content:
             application/json:
               schema: { $ref: "#/components/schemas/Me" }
+        "202":
+          description: Password accepted; a second factor is needed (POST /api/auth/login/totp)
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/LoginTotpRequired" }
         "401": { $ref: "#/components/responses/Error" }
         "429": { $ref: "#/components/responses/Error" }
 
@@ -948,7 +953,7 @@ paths:
         - name: group_by
           in: query
           required: true
-          schema: { type: string, enum: [day, model, account, provider] }
+          schema: { type: string, enum: [day, model, account, provider, project] }
         - name: account_id
           in: query
           schema: { type: string, format: uuid }
@@ -1293,6 +1298,290 @@ paths:
             text/csv:
               schema: { type: string }
 
+  # ------------------------------------------------------------ notification channels
+
+  /api/notification-channels:
+    get:
+      tags: [alerts]
+      operationId: listNotificationChannels
+      summary: List alert channels besides email
+      x-aicm-role: admin
+      responses:
+        "200":
+          description: Channels
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/NotificationChannel" }
+    post:
+      tags: [alerts]
+      operationId: createNotificationChannel
+      summary: Add an alert channel
+      x-aicm-role: admin
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/NotificationChannelCreate" }
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/NotificationChannel" }
+        "400": { $ref: "#/components/responses/Error" }
+
+  /api/notification-channels/{channelId}:
+    patch:
+      tags: [alerts]
+      operationId: updateNotificationChannel
+      summary: Change an alert channel; secret replaces the stored one when present
+      x-aicm-role: admin
+      parameters:
+        - { $ref: "#/components/parameters/ChannelId" }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/NotificationChannelUpdate" }
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/NotificationChannel" }
+        "400": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
+    delete:
+      tags: [alerts]
+      operationId: deleteNotificationChannel
+      summary: Remove an alert channel
+      x-aicm-role: admin
+      parameters:
+        - { $ref: "#/components/parameters/ChannelId" }
+      responses:
+        "204": { description: Deleted }
+        "404": { $ref: "#/components/responses/Error" }
+
+  /api/notification-channels/{channelId}/test:
+    post:
+      tags: [alerts]
+      operationId: testNotificationChannel
+      summary: Send a test message now
+      x-aicm-role: admin
+      parameters:
+        - { $ref: "#/components/parameters/ChannelId" }
+      responses:
+        "204": { description: Sent }
+        "404": { $ref: "#/components/responses/Error" }
+        "422":
+          description: The channel refused the message; error.message says why
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+
+  # ------------------------------------------------------------ budgets
+
+  /api/budgets:
+    get:
+      tags: [spend]
+      operationId: listBudgets
+      summary: Monthly budgets with this month's spend and projection
+      description: Viewers see the org budget and budgets of accounts they can see.
+      x-aicm-role: viewer
+      responses:
+        "200":
+          description: Budgets
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/Budget" }
+    put:
+      tags: [spend]
+      operationId: putBudget
+      summary: Create or replace the budget for the org (account_id absent) or one account
+      x-aicm-role: editor
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/BudgetInput" }
+      responses:
+        "200":
+          description: Saved
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Budget" }
+        "400": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
+
+  /api/budgets/{budgetId}:
+    delete:
+      tags: [spend]
+      operationId: deleteBudget
+      summary: Remove a budget
+      x-aicm-role: editor
+      parameters:
+        - { $ref: "#/components/parameters/BudgetId" }
+      responses:
+        "204": { description: Deleted }
+        "404": { $ref: "#/components/responses/Error" }
+
+  # ------------------------------------------------------------ two-factor and OIDC sign-in
+
+  /api/auth/login/totp:
+    post:
+      tags: [auth]
+      operationId: loginTotp
+      summary: Finish a login that needs a second factor
+      description: |
+        `code` is the 6-digit code from the authenticator app or one unused
+        recovery code. A challenge allows five attempts and expires after
+        five minutes.
+      security: []
+      x-aicm-role: public
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [challenge, code]
+              properties:
+                challenge: { type: string }
+                code: { type: string }
+      responses:
+        "200":
+          description: Logged in; sets the session cookie
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Me" }
+        "401": { $ref: "#/components/responses/Error" }
+        "429": { $ref: "#/components/responses/Error" }
+
+  /api/auth/oidc:
+    get:
+      tags: [auth]
+      operationId: getOidcConfig
+      summary: Whether single sign-on is configured, for the login page
+      security: []
+      x-aicm-role: public
+      responses:
+        "200":
+          description: Sign-on settings
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [enabled]
+                properties:
+                  enabled: { type: boolean }
+                  name:
+                    type: string
+                    description: Button label, for example "Authentik"
+                  start_url:
+                    type: string
+                    description: Where the button sends the browser (/auth/oidc/start)
+
+  /api/me/totp:
+    get:
+      tags: [auth]
+      operationId: getMyTotp
+      summary: Two-factor status
+      x-aicm-role: viewer
+      responses:
+        "200":
+          description: Status
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/TotpStatus" }
+    delete:
+      tags: [auth]
+      operationId: disableMyTotp
+      summary: Turn two-factor off
+      x-aicm-role: viewer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [password, code]
+              properties:
+                password: { type: string, format: password }
+                code: { type: string }
+      responses:
+        "204": { description: Turned off }
+        "401": { $ref: "#/components/responses/Error" }
+
+  /api/me/totp/setup:
+    post:
+      tags: [auth]
+      operationId: setupMyTotp
+      summary: Start two-factor setup; returns a new secret until confirmed
+      x-aicm-role: viewer
+      responses:
+        "200":
+          description: Secret to add to an authenticator app
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [secret, otpauth_url]
+                properties:
+                  secret:
+                    type: string
+                    description: Base32, for typing into the app
+                  otpauth_url:
+                    type: string
+                    description: otpauth://totp/... for a QR code
+        "409": { $ref: "#/components/responses/Error" }
+
+  /api/me/totp/enable:
+    post:
+      tags: [auth]
+      operationId: enableMyTotp
+      summary: Confirm a code from the app; turns two-factor on and returns recovery codes once
+      x-aicm-role: viewer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [code]
+              properties:
+                code: { type: string }
+      responses:
+        "200":
+          description: Turned on
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [recovery_codes]
+                properties:
+                  recovery_codes:
+                    type: array
+                    description: Ten single-use codes, shown once
+                    items: { type: string }
+        "401": { $ref: "#/components/responses/Error" }
+        "409": { $ref: "#/components/responses/Error" }
+
+  /api/users/{userId}/totp:
+    delete:
+      tags: [users]
+      operationId: resetUserTotp
+      summary: Turn off another user's two-factor (lost phone)
+      x-aicm-role: admin
+      parameters:
+        - { $ref: "#/components/parameters/UserId" }
+      responses:
+        "204": { description: Turned off }
+        "404": { $ref: "#/components/responses/Error" }
+
 components:
   securitySchemes:
     session:
@@ -1305,6 +1594,16 @@ components:
       description: Personal API token (`aicm_pat_…`)
 
   parameters:
+    ChannelId:
+      name: channelId
+      in: path
+      required: true
+      schema: { type: string, format: uuid }
+    BudgetId:
+      name: budgetId
+      in: path
+      required: true
+      schema: { type: string, format: uuid }
     AccountId:
       name: accountId
       in: path
@@ -1486,6 +1785,12 @@ components:
         name: { type: string }
         role: { $ref: "#/components/schemas/Role" }
         disabled: { type: boolean }
+        totp_enabled:
+          type: boolean
+          description: Two-factor sign-in is on
+        sso_linked:
+          type: boolean
+          description: Signed in with single sign-on at least once
         last_login_at: { type: string, format: date-time, nullable: true }
         created_at: { type: string, format: date-time }
 
@@ -2073,6 +2378,9 @@ components:
         account_id: { type: string, format: uuid }
         account_name: { type: string }
         provider_id: { type: string }
+        project:
+          type: string
+          description: Repository or working directory name the agent saw; empty when unknown
         requests: { type: integer, format: int64 }
         input_tokens: { type: integer, format: int64 }
         output_tokens: { type: integer, format: int64 }
@@ -2087,11 +2395,141 @@ components:
           type: boolean
           description: True when every row's cost came from the provider rather than the price table
 
+    # ------------------------------------------------------------ notification channels
+
+    ChannelKind:
+      type: string
+      description: |
+        webhook: secret is the URL; the hub POSTs the alert as JSON.
+        ntfy: config.topic (required) and config.server (default https://ntfy.sh); secret is an optional access token.
+        telegram: config.chat_id; secret is the bot token.
+        discord, slack: secret is the incoming webhook URL.
+      enum: [webhook, ntfy, telegram, discord, slack]
+
+    Severity:
+      type: string
+      enum: [info, warning, critical]
+
+    NotificationChannel:
+      type: object
+      required: [id, kind, name, config, secret, min_severity, kinds, enabled, created_at]
+      properties:
+        id: { type: string, format: uuid }
+        kind: { $ref: "#/components/schemas/ChannelKind" }
+        name: { type: string }
+        config:
+          type: object
+          additionalProperties: { type: string }
+        secret: { $ref: "#/components/schemas/SecretInfo" }
+        min_severity: { $ref: "#/components/schemas/Severity" }
+        kinds:
+          type: array
+          description: Alert kinds sent; empty means every kind
+          items: { $ref: "#/components/schemas/AlertKind" }
+        enabled: { type: boolean }
+        last_sent_at: { type: string, format: date-time, nullable: true }
+        last_error: { type: string, nullable: true }
+        created_at: { type: string, format: date-time }
+
+    NotificationChannelCreate:
+      type: object
+      required: [kind, name]
+      properties:
+        kind: { $ref: "#/components/schemas/ChannelKind" }
+        name: { type: string, minLength: 1 }
+        config:
+          type: object
+          additionalProperties: { type: string }
+        secret:
+          type: string
+          description: Webhook URL or token; write-only
+        min_severity: { $ref: "#/components/schemas/Severity" }
+        kinds:
+          type: array
+          items: { $ref: "#/components/schemas/AlertKind" }
+        enabled: { type: boolean }
+
+    NotificationChannelUpdate:
+      type: object
+      properties:
+        name: { type: string, minLength: 1 }
+        config:
+          type: object
+          additionalProperties: { type: string }
+        secret:
+          type: string
+          description: Replaces the stored secret; write-only
+        min_severity: { $ref: "#/components/schemas/Severity" }
+        kinds:
+          type: array
+          items: { $ref: "#/components/schemas/AlertKind" }
+        enabled: { type: boolean }
+
+    # ------------------------------------------------------------ budgets
+
+    Budget:
+      type: object
+      required: [id, amount, thresholds, period, month_to_date, projected, percent_used, unconverted_count]
+      properties:
+        id: { type: string, format: uuid }
+        account_id:
+          type: string
+          format: uuid
+          nullable: true
+          description: Absent or null for the org-wide budget
+        account_name: { type: string }
+        amount: { $ref: "#/components/schemas/Money" }
+        thresholds:
+          type: array
+          items: { type: integer }
+        period:
+          type: string
+          description: Current month, YYYY-MM (UTC)
+        month_to_date:
+          $ref: "#/components/schemas/Money"
+          description: Confirmed charges this month, converted to the budget currency at each charge's date
+        projected:
+          $ref: "#/components/schemas/Money"
+          description: month_to_date plus renewals still due this month at their plan price
+        percent_used: { type: number }
+        unconverted_count:
+          type: integer
+          description: Charges this month without an exchange rate, left out of month_to_date
+
+    BudgetInput:
+      type: object
+      required: [amount]
+      properties:
+        account_id: { type: string, format: uuid, nullable: true }
+        amount: { $ref: "#/components/schemas/Money" }
+        thresholds:
+          type: array
+          items: { type: integer, minimum: 1, maximum: 1000 }
+
+    # ------------------------------------------------------------ two-factor
+
+    TotpStatus:
+      type: object
+      required: [enabled, recovery_codes_left]
+      properties:
+        enabled: { type: boolean }
+        enabled_at: { type: string, format: date-time, nullable: true }
+        recovery_codes_left: { type: integer }
+
+    LoginTotpRequired:
+      type: object
+      required: [totp_required, challenge]
+      properties:
+        totp_required: { type: boolean, enum: [true] }
+        challenge:
+          type: string
+          description: Send back to POST /api/auth/login/totp with the code
+
     # ------------------------------------------------------------ alerts
 
     AlertKind:
       type: string
-      enum: [renewal, promo_ending, low_balance, meter_exhausted, quota_waste, sync_failing, agent_offline]
+      enum: [renewal, promo_ending, low_balance, meter_exhausted, quota_waste, sync_failing, agent_offline, meter_reset, budget, spend_anomaly, wrong_wallet]
 
     Alert:
       type: object
@@ -2099,7 +2537,7 @@ components:
       properties:
         id: { type: string, format: uuid }
         kind: { $ref: "#/components/schemas/AlertKind" }
-        severity: { type: string, enum: [info, warning, critical] }
+        severity: { $ref: "#/components/schemas/Severity" }
         title: { type: string }
         body: { type: string }
         account_id: { type: string, format: uuid, nullable: true }
@@ -2155,6 +2593,10 @@ components:
         meter_exhausted: used_percent.
         quota_waste: unused_percent, hours_before_reset.
         sync_failing, agent_offline: after_hours.
+        meter_reset: used_percent (how full the window was before it reset).
+        budget: thresholds (percent of the budget).
+        spend_anomaly: usage_multiple, min_daily_cost, topups_per_day.
+        wrong_wallet: none.
       properties:
         days_before:
           type: array
@@ -2165,6 +2607,18 @@ components:
         unused_percent: { type: number, minimum: 0, maximum: 100 }
         hours_before_reset: { type: number, minimum: 0 }
         after_hours: { type: number, minimum: 0 }
+        thresholds:
+          type: array
+          items: { type: integer, minimum: 1, maximum: 1000 }
+        usage_multiple:
+          type: number
+          minimum: 1
+          description: Today's estimated usage cost against the median day of the last 14
+        min_daily_cost:
+          type: number
+          minimum: 0
+          description: Ignore days below this estimated cost, in USD
+        topups_per_day: { type: integer, minimum: 1 }
 
     # ------------------------------------------------------------ machines
 

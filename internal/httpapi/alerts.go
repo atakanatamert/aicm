@@ -32,7 +32,7 @@ func toAlert(a db.Alert) (Alert, error) {
 	out := Alert{
 		Id:           a.ID,
 		Kind:         AlertKind(a.Kind),
-		Severity:     AlertSeverity(a.Severity),
+		Severity:     Severity(a.Severity),
 		Title:        a.Title,
 		Body:         a.Body,
 		AccountId:    a.AccountID,

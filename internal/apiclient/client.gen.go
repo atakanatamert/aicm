@@ -39,36 +39,19 @@ func (e AccountStatus) Valid() bool {
 	}
 }
 
-// Defines values for AlertSeverity.
-const (
-	Critical AlertSeverity = "critical"
-	Info     AlertSeverity = "info"
-	Warning  AlertSeverity = "warning"
-)
-
-// Valid indicates whether the value is a known member of the AlertSeverity enum.
-func (e AlertSeverity) Valid() bool {
-	switch e {
-	case Critical:
-		return true
-	case Info:
-		return true
-	case Warning:
-		return true
-	default:
-		return false
-	}
-}
-
 // Defines values for AlertKind.
 const (
 	AlertKindAgentOffline   AlertKind = "agent_offline"
+	AlertKindBudget         AlertKind = "budget"
 	AlertKindLowBalance     AlertKind = "low_balance"
 	AlertKindMeterExhausted AlertKind = "meter_exhausted"
+	AlertKindMeterReset     AlertKind = "meter_reset"
 	AlertKindPromoEnding    AlertKind = "promo_ending"
 	AlertKindQuotaWaste     AlertKind = "quota_waste"
 	AlertKindRenewal        AlertKind = "renewal"
+	AlertKindSpendAnomaly   AlertKind = "spend_anomaly"
 	AlertKindSyncFailing    AlertKind = "sync_failing"
+	AlertKindWrongWallet    AlertKind = "wrong_wallet"
 )
 
 // Valid indicates whether the value is a known member of the AlertKind enum.
@@ -76,9 +59,13 @@ func (e AlertKind) Valid() bool {
 	switch e {
 	case AlertKindAgentOffline:
 		return true
+	case AlertKindBudget:
+		return true
 	case AlertKindLowBalance:
 		return true
 	case AlertKindMeterExhausted:
+		return true
+	case AlertKindMeterReset:
 		return true
 	case AlertKindPromoEnding:
 		return true
@@ -86,7 +73,11 @@ func (e AlertKind) Valid() bool {
 		return true
 	case AlertKindRenewal:
 		return true
+	case AlertKindSpendAnomaly:
+		return true
 	case AlertKindSyncFailing:
+		return true
+	case AlertKindWrongWallet:
 		return true
 	default:
 		return false
@@ -159,6 +150,33 @@ func (e BillingCycle) Valid() bool {
 	case BillingCycleWeekly:
 		return true
 	case BillingCycleYearly:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for ChannelKind.
+const (
+	Discord  ChannelKind = "discord"
+	Ntfy     ChannelKind = "ntfy"
+	Slack    ChannelKind = "slack"
+	Telegram ChannelKind = "telegram"
+	Webhook  ChannelKind = "webhook"
+)
+
+// Valid indicates whether the value is a known member of the ChannelKind enum.
+func (e ChannelKind) Valid() bool {
+	switch e {
+	case Discord:
+		return true
+	case Ntfy:
+		return true
+	case Slack:
+		return true
+	case Telegram:
+		return true
+	case Webhook:
 		return true
 	default:
 		return false
@@ -270,6 +288,21 @@ func (e JobSize) Valid() bool {
 	case Medium:
 		return true
 	case Small:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for LoginTotpRequiredTotpRequired.
+const (
+	LoginTotpRequiredTotpRequiredTrue LoginTotpRequiredTotpRequired = true
+)
+
+// Valid indicates whether the value is a known member of the LoginTotpRequiredTotpRequired enum.
+func (e LoginTotpRequiredTotpRequired) Valid() bool {
+	switch e {
+	case LoginTotpRequiredTotpRequiredTrue:
 		return true
 	default:
 		return false
@@ -456,6 +489,27 @@ func (e SettingsUpdateSmtpTls) Valid() bool {
 	}
 }
 
+// Defines values for Severity.
+const (
+	Critical Severity = "critical"
+	Info     Severity = "info"
+	Warning  Severity = "warning"
+)
+
+// Valid indicates whether the value is a known member of the Severity enum.
+func (e Severity) Valid() bool {
+	switch e {
+	case Critical:
+		return true
+	case Info:
+		return true
+	case Warning:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for SmtpSettingsTls.
 const (
 	SmtpSettingsTlsNone     SmtpSettingsTls = "none"
@@ -548,6 +602,7 @@ const (
 	GetUsageParamsGroupByAccount  GetUsageParamsGroupBy = "account"
 	GetUsageParamsGroupByDay      GetUsageParamsGroupBy = "day"
 	GetUsageParamsGroupByModel    GetUsageParamsGroupBy = "model"
+	GetUsageParamsGroupByProject  GetUsageParamsGroupBy = "project"
 	GetUsageParamsGroupByProvider GetUsageParamsGroupBy = "provider"
 )
 
@@ -559,6 +614,8 @@ func (e GetUsageParamsGroupBy) Valid() bool {
 	case GetUsageParamsGroupByDay:
 		return true
 	case GetUsageParamsGroupByModel:
+		return true
+	case GetUsageParamsGroupByProject:
 		return true
 	case GetUsageParamsGroupByProvider:
 		return true
@@ -706,17 +763,14 @@ type Alert struct {
 	Kind      AlertKind  `json:"kind"`
 
 	// Links Provider pages. Any may be absent.
-	Links        *Links        `json:"links,omitempty"`
-	MachineId    *string       `json:"machine_id,omitempty"`
-	Read         bool          `json:"read"`
-	ResolvedAt   *time.Time    `json:"resolved_at,omitempty"`
-	Severity     AlertSeverity `json:"severity"`
-	SnoozedUntil *time.Time    `json:"snoozed_until,omitempty"`
-	Title        string        `json:"title"`
+	Links        *Links     `json:"links,omitempty"`
+	MachineId    *string    `json:"machine_id,omitempty"`
+	Read         bool       `json:"read"`
+	ResolvedAt   *time.Time `json:"resolved_at,omitempty"`
+	Severity     Severity   `json:"severity"`
+	SnoozedUntil *time.Time `json:"snoozed_until,omitempty"`
+	Title        string     `json:"title"`
 }
-
-// AlertSeverity defines model for Alert.Severity.
-type AlertSeverity string
 
 // AlertKind defines model for AlertKind.
 type AlertKind string
@@ -734,14 +788,26 @@ type AlertPage struct {
 // meter_exhausted: used_percent.
 // quota_waste: unused_percent, hours_before_reset.
 // sync_failing, agent_offline: after_hours.
+// meter_reset: used_percent (how full the window was before it reset).
+// budget: thresholds (percent of the budget).
+// spend_anomaly: usage_multiple, min_daily_cost, topups_per_day.
+// wrong_wallet: none.
 type AlertParams struct {
 	AfterHours       *float64 `json:"after_hours,omitempty"`
 	BelowPercent     *float64 `json:"below_percent,omitempty"`
 	DaysBefore       *[]int   `json:"days_before,omitempty"`
 	DaysLeft         *float64 `json:"days_left,omitempty"`
 	HoursBeforeReset *float64 `json:"hours_before_reset,omitempty"`
-	UnusedPercent    *float64 `json:"unused_percent,omitempty"`
-	UsedPercent      *float64 `json:"used_percent,omitempty"`
+
+	// MinDailyCost Ignore days below this estimated cost, in USD
+	MinDailyCost  *float64 `json:"min_daily_cost,omitempty"`
+	Thresholds    *[]int   `json:"thresholds,omitempty"`
+	TopupsPerDay  *int     `json:"topups_per_day,omitempty"`
+	UnusedPercent *float64 `json:"unused_percent,omitempty"`
+
+	// UsageMultiple Today's estimated usage cost against the median day of the last 14
+	UsageMultiple *float64 `json:"usage_multiple,omitempty"`
+	UsedPercent   *float64 `json:"used_percent,omitempty"`
 }
 
 // AlertRule defines model for AlertRule.
@@ -758,6 +824,10 @@ type AlertRule struct {
 	// meter_exhausted: used_percent.
 	// quota_waste: unused_percent, hours_before_reset.
 	// sync_failing, agent_offline: after_hours.
+	// meter_reset: used_percent (how full the window was before it reset).
+	// budget: thresholds (percent of the budget).
+	// spend_anomaly: usage_multiple, min_daily_cost, topups_per_day.
+	// wrong_wallet: none.
 	Params       AlertParams `json:"params"`
 	SnoozedUntil *time.Time  `json:"snoozed_until,omitempty"`
 }
@@ -774,6 +844,10 @@ type AlertRuleWrite struct {
 	// meter_exhausted: used_percent.
 	// quota_waste: unused_percent, hours_before_reset.
 	// sync_failing, agent_offline: after_hours.
+	// meter_reset: used_percent (how full the window was before it reset).
+	// budget: thresholds (percent of the budget).
+	// spend_anomaly: usage_multiple, min_daily_cost, topups_per_day.
+	// wrong_wallet: none.
 	Params       AlertParams `json:"params"`
 	SnoozedUntil *time.Time  `json:"snoozed_until,omitempty"`
 }
@@ -835,6 +909,40 @@ type AuthKind string
 // BillingCycle defines model for BillingCycle.
 type BillingCycle string
 
+// Budget defines model for Budget.
+type Budget struct {
+	// AccountId Absent or null for the org-wide budget
+	AccountId   *string `json:"account_id,omitempty"`
+	AccountName *string `json:"account_name,omitempty"`
+
+	// Amount An amount in integer minor units (cents for USD, fen for CNY, yen for JPY)
+	Amount Money  `json:"amount"`
+	Id     string `json:"id"`
+
+	// MonthToDate An amount in integer minor units (cents for USD, fen for CNY, yen for JPY)
+	MonthToDate Money   `json:"month_to_date"`
+	PercentUsed float64 `json:"percent_used"`
+
+	// Period Current month, YYYY-MM (UTC)
+	Period string `json:"period"`
+
+	// Projected An amount in integer minor units (cents for USD, fen for CNY, yen for JPY)
+	Projected  Money `json:"projected"`
+	Thresholds []int `json:"thresholds"`
+
+	// UnconvertedCount Charges this month without an exchange rate, left out of month_to_date
+	UnconvertedCount int `json:"unconverted_count"`
+}
+
+// BudgetInput defines model for BudgetInput.
+type BudgetInput struct {
+	AccountId *string `json:"account_id,omitempty"`
+
+	// Amount An amount in integer minor units (cents for USD, fen for CNY, yen for JPY)
+	Amount     Money  `json:"amount"`
+	Thresholds *[]int `json:"thresholds,omitempty"`
+}
+
 // CapacityForecast defines model for CapacityForecast.
 type CapacityForecast struct {
 	AccountId string `json:"account_id"`
@@ -844,6 +952,12 @@ type CapacityForecast struct {
 		Headroom float64   `json:"headroom"`
 	} `json:"points"`
 }
+
+// ChannelKind webhook: secret is the URL; the hub POSTs the alert as JSON.
+// ntfy: config.topic (required) and config.server (default https://ntfy.sh); secret is an optional access token.
+// telegram: config.chat_id; secret is the bot token.
+// discord, slack: secret is the incoming webhook URL.
+type ChannelKind string
 
 // Charge defines model for Charge.
 type Charge struct {
@@ -1022,6 +1136,16 @@ type LoginRequest struct {
 	Password string `json:"password"`
 }
 
+// LoginTotpRequired defines model for LoginTotpRequired.
+type LoginTotpRequired struct {
+	// Challenge Send back to POST /api/auth/login/totp with the code
+	Challenge    string                        `json:"challenge"`
+	TotpRequired LoginTotpRequiredTotpRequired `json:"totp_required"`
+}
+
+// LoginTotpRequiredTotpRequired defines model for LoginTotpRequired.TotpRequired.
+type LoginTotpRequiredTotpRequired bool
+
 // Machine defines model for Machine.
 type Machine struct {
 	AgentVersion string     `json:"agent_version"`
@@ -1157,6 +1281,58 @@ type Money struct {
 	//
 	// Example: USD
 	Currency CurrencyCode `json:"currency"`
+}
+
+// NotificationChannel defines model for NotificationChannel.
+type NotificationChannel struct {
+	Config    map[string]string `json:"config"`
+	CreatedAt time.Time         `json:"created_at"`
+	Enabled   bool              `json:"enabled"`
+	Id        string            `json:"id"`
+
+	// Kind webhook: secret is the URL; the hub POSTs the alert as JSON.
+	// ntfy: config.topic (required) and config.server (default https://ntfy.sh); secret is an optional access token.
+	// telegram: config.chat_id; secret is the bot token.
+	// discord, slack: secret is the incoming webhook URL.
+	Kind ChannelKind `json:"kind"`
+
+	// Kinds Alert kinds sent; empty means every kind
+	Kinds       []AlertKind `json:"kinds"`
+	LastError   *string     `json:"last_error,omitempty"`
+	LastSentAt  *time.Time  `json:"last_sent_at,omitempty"`
+	MinSeverity Severity    `json:"min_severity"`
+	Name        string      `json:"name"`
+	Secret      SecretInfo  `json:"secret"`
+}
+
+// NotificationChannelCreate defines model for NotificationChannelCreate.
+type NotificationChannelCreate struct {
+	Config  *map[string]string `json:"config,omitempty"`
+	Enabled *bool              `json:"enabled,omitempty"`
+
+	// Kind webhook: secret is the URL; the hub POSTs the alert as JSON.
+	// ntfy: config.topic (required) and config.server (default https://ntfy.sh); secret is an optional access token.
+	// telegram: config.chat_id; secret is the bot token.
+	// discord, slack: secret is the incoming webhook URL.
+	Kind        ChannelKind  `json:"kind"`
+	Kinds       *[]AlertKind `json:"kinds,omitempty"`
+	MinSeverity *Severity    `json:"min_severity,omitempty"`
+	Name        string       `json:"name"`
+
+	// Secret Webhook URL or token; write-only
+	Secret *string `json:"secret,omitempty"`
+}
+
+// NotificationChannelUpdate defines model for NotificationChannelUpdate.
+type NotificationChannelUpdate struct {
+	Config      *map[string]string `json:"config,omitempty"`
+	Enabled     *bool              `json:"enabled,omitempty"`
+	Kinds       *[]AlertKind       `json:"kinds,omitempty"`
+	MinSeverity *Severity          `json:"min_severity,omitempty"`
+	Name        *string            `json:"name,omitempty"`
+
+	// Secret Replaces the stored secret; write-only
+	Secret *string `json:"secret,omitempty"`
 }
 
 // Plan Subscription details. `price` is absent and `renews_on` null for pure API or wallet accounts.
@@ -1318,6 +1494,9 @@ type SetupRequest struct {
 	Password string  `json:"password"`
 }
 
+// Severity defines model for Severity.
+type Severity string
+
 // SmtpSettings defines model for SmtpSettings.
 type SmtpSettings struct {
 	From     string          `json:"from"`
@@ -1378,6 +1557,13 @@ type SyncState struct {
 	LastSyncedAt *time.Time `json:"last_synced_at,omitempty"`
 }
 
+// TotpStatus defines model for TotpStatus.
+type TotpStatus struct {
+	Enabled           bool       `json:"enabled"`
+	EnabledAt         *time.Time `json:"enabled_at,omitempty"`
+	RecoveryCodesLeft int        `json:"recovery_codes_left"`
+}
+
 // UsageRow Grouping keys present depend on group_by
 type UsageRow struct {
 	AccountId        *string `json:"account_id,omitempty"`
@@ -1389,14 +1575,17 @@ type UsageRow struct {
 	Cost []MicroMoney `json:"cost"`
 
 	// CostReported True when every row's cost came from the provider rather than the price table
-	CostReported    bool                `json:"cost_reported"`
-	Day             *openapi_types.Date `json:"day,omitempty"`
-	InputTokens     int64               `json:"input_tokens"`
-	Model           *string             `json:"model,omitempty"`
-	OutputTokens    int64               `json:"output_tokens"`
-	ProviderId      *string             `json:"provider_id,omitempty"`
-	ReasoningTokens int64               `json:"reasoning_tokens"`
-	Requests        int64               `json:"requests"`
+	CostReported bool                `json:"cost_reported"`
+	Day          *openapi_types.Date `json:"day,omitempty"`
+	InputTokens  int64               `json:"input_tokens"`
+	Model        *string             `json:"model,omitempty"`
+	OutputTokens int64               `json:"output_tokens"`
+
+	// Project Repository or working directory name the agent saw; empty when unknown
+	Project         *string `json:"project,omitempty"`
+	ProviderId      *string `json:"provider_id,omitempty"`
+	ReasoningTokens int64   `json:"reasoning_tokens"`
+	Requests        int64   `json:"requests"`
 }
 
 // User defines model for User.
@@ -1408,6 +1597,12 @@ type User struct {
 	LastLoginAt *time.Time `json:"last_login_at,omitempty"`
 	Name        string     `json:"name"`
 	Role        Role       `json:"role"`
+
+	// SsoLinked Signed in with single sign-on at least once
+	SsoLinked *bool `json:"sso_linked,omitempty"`
+
+	// TotpEnabled Two-factor sign-in is on
+	TotpEnabled *bool `json:"totp_enabled,omitempty"`
 }
 
 // UserCreate defines model for UserCreate.
@@ -1431,6 +1626,12 @@ type AccountId = string
 
 // AlertId defines model for AlertId.
 type AlertId = string
+
+// BudgetId defines model for BudgetId.
+type BudgetId = string
+
+// ChannelId defines model for ChannelId.
+type ChannelId = string
 
 // ChargeId defines model for ChargeId.
 type ChargeId = string
@@ -1532,6 +1733,12 @@ type ListAuditLogParams struct {
 	Limit  *Limit  `form:"limit,omitempty" json:"limit,omitempty"`
 }
 
+// LoginTotpJSONBody defines parameters for LoginTotp.
+type LoginTotpJSONBody struct {
+	Challenge string `json:"challenge"`
+	Code      string `json:"code"`
+}
+
 // ListChargesParams defines parameters for ListCharges.
 type ListChargesParams struct {
 	// From Inclusive start day
@@ -1614,6 +1821,17 @@ type ChangePasswordJSONBody struct {
 type CreateApiTokenJSONBody struct {
 	ExpiresAt *time.Time `json:"expires_at,omitempty"`
 	Name      string     `json:"name"`
+}
+
+// DisableMyTotpJSONBody defines parameters for DisableMyTotp.
+type DisableMyTotpJSONBody struct {
+	Code     string `json:"code"`
+	Password string `json:"password"`
+}
+
+// EnableMyTotpJSONBody defines parameters for EnableMyTotp.
+type EnableMyTotpJSONBody struct {
+	Code string `json:"code"`
 }
 
 // ListQuotasParams defines parameters for ListQuotas.
@@ -1711,6 +1929,12 @@ type UpdateAlertJSONRequestBody UpdateAlertJSONBody
 // LoginJSONRequestBody defines body for Login for application/json ContentType.
 type LoginJSONRequestBody = LoginRequest
 
+// LoginTotpJSONRequestBody defines body for LoginTotp for application/json ContentType.
+type LoginTotpJSONRequestBody LoginTotpJSONBody
+
+// PutBudgetJSONRequestBody defines body for PutBudget for application/json ContentType.
+type PutBudgetJSONRequestBody = BudgetInput
+
 // CreateChargeJSONRequestBody defines body for CreateCharge for application/json ContentType.
 type CreateChargeJSONRequestBody = ChargeCreate
 
@@ -1734,6 +1958,18 @@ type ChangePasswordJSONRequestBody ChangePasswordJSONBody
 
 // CreateApiTokenJSONRequestBody defines body for CreateApiToken for application/json ContentType.
 type CreateApiTokenJSONRequestBody CreateApiTokenJSONBody
+
+// DisableMyTotpJSONRequestBody defines body for DisableMyTotp for application/json ContentType.
+type DisableMyTotpJSONRequestBody DisableMyTotpJSONBody
+
+// EnableMyTotpJSONRequestBody defines body for EnableMyTotp for application/json ContentType.
+type EnableMyTotpJSONRequestBody EnableMyTotpJSONBody
+
+// CreateNotificationChannelJSONRequestBody defines body for CreateNotificationChannel for application/json ContentType.
+type CreateNotificationChannelJSONRequestBody = NotificationChannelCreate
+
+// UpdateNotificationChannelJSONRequestBody defines body for UpdateNotificationChannel for application/json ContentType.
+type UpdateNotificationChannelJSONRequestBody = NotificationChannelUpdate
 
 // UpdateSettingsJSONRequestBody defines body for UpdateSettings for application/json ContentType.
 type UpdateSettingsJSONRequestBody = SettingsUpdate
@@ -2051,10 +2287,63 @@ type ClientInterface interface {
 	// Corresponds with POST /api/auth/login (the `Login` operationId).
 	Login(ctx context.Context, body LoginJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
+	// LoginTotpWithBody Finish a login that needs a second factor
+	//
+	// `code` is the 6-digit code from the authenticator app or one unused
+	// recovery code. A challenge allows five attempts and expires after
+	// five minutes.
+	//
+	// Takes any type of body and a specified content type.
+	//
+	// Corresponds with POST /api/auth/login/totp (the `LoginTotp` operationId).
+	LoginTotpWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// LoginTotp Finish a login that needs a second factor
+	//
+	// `code` is the 6-digit code from the authenticator app or one unused
+	// recovery code. A challenge allows five attempts and expires after
+	// five minutes.
+	//
+	// Takes a body of the `application/json` content type.
+	//
+	// Corresponds with POST /api/auth/login/totp (the `LoginTotp` operationId).
+	LoginTotp(ctx context.Context, body LoginTotpJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
 	// Logout Logout
 	//
 	// Corresponds with POST /api/auth/logout (the `Logout` operationId).
 	Logout(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// GetOidcConfig Whether single sign-on is configured, for the login page
+	//
+	// Corresponds with GET /api/auth/oidc (the `GetOidcConfig` operationId).
+	GetOidcConfig(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// ListBudgets Monthly budgets with this month's spend and projection
+	//
+	// Viewers see the org budget and budgets of accounts they can see.
+	//
+	// Corresponds with GET /api/budgets (the `ListBudgets` operationId).
+	ListBudgets(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// PutBudgetWithBody Create or replace the budget for the org (account_id absent) or one account
+	//
+	// Takes any type of body and a specified content type.
+	//
+	// Corresponds with PUT /api/budgets (the `PutBudget` operationId).
+	PutBudgetWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// PutBudget Create or replace the budget for the org (account_id absent) or one account
+	//
+	// Takes a body of the `application/json` content type.
+	//
+	// Corresponds with PUT /api/budgets (the `PutBudget` operationId).
+	PutBudget(ctx context.Context, body PutBudgetJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// DeleteBudget Remove a budget
+	//
+	// Corresponds with DELETE /api/budgets/{budgetId} (the `DeleteBudget` operationId).
+	DeleteBudget(ctx context.Context, budgetId BudgetId, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// ListCharges List charges
 	//
@@ -2233,6 +2522,87 @@ type ClientInterface interface {
 	// Corresponds with DELETE /api/me/tokens/{tokenId} (the `RevokeApiToken` operationId).
 	RevokeApiToken(ctx context.Context, tokenId string, reqEditors ...RequestEditorFn) (*http.Response, error)
 
+	// DisableMyTotpWithBody Turn two-factor off
+	//
+	// Takes any type of body and a specified content type.
+	//
+	// Corresponds with DELETE /api/me/totp (the `DisableMyTotp` operationId).
+	DisableMyTotpWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// DisableMyTotp Turn two-factor off
+	//
+	// Takes a body of the `application/json` content type.
+	//
+	// Corresponds with DELETE /api/me/totp (the `DisableMyTotp` operationId).
+	DisableMyTotp(ctx context.Context, body DisableMyTotpJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// GetMyTotp Two-factor status
+	//
+	// Corresponds with GET /api/me/totp (the `GetMyTotp` operationId).
+	GetMyTotp(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// EnableMyTotpWithBody Confirm a code from the app; turns two-factor on and returns recovery codes once
+	//
+	// Takes any type of body and a specified content type.
+	//
+	// Corresponds with POST /api/me/totp/enable (the `EnableMyTotp` operationId).
+	EnableMyTotpWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// EnableMyTotp Confirm a code from the app; turns two-factor on and returns recovery codes once
+	//
+	// Takes a body of the `application/json` content type.
+	//
+	// Corresponds with POST /api/me/totp/enable (the `EnableMyTotp` operationId).
+	EnableMyTotp(ctx context.Context, body EnableMyTotpJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// SetupMyTotp Start two-factor setup; returns a new secret until confirmed
+	//
+	// Corresponds with POST /api/me/totp/setup (the `SetupMyTotp` operationId).
+	SetupMyTotp(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// ListNotificationChannels List alert channels besides email
+	//
+	// Corresponds with GET /api/notification-channels (the `ListNotificationChannels` operationId).
+	ListNotificationChannels(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// CreateNotificationChannelWithBody Add an alert channel
+	//
+	// Takes any type of body and a specified content type.
+	//
+	// Corresponds with POST /api/notification-channels (the `CreateNotificationChannel` operationId).
+	CreateNotificationChannelWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// CreateNotificationChannel Add an alert channel
+	//
+	// Takes a body of the `application/json` content type.
+	//
+	// Corresponds with POST /api/notification-channels (the `CreateNotificationChannel` operationId).
+	CreateNotificationChannel(ctx context.Context, body CreateNotificationChannelJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// DeleteNotificationChannel Remove an alert channel
+	//
+	// Corresponds with DELETE /api/notification-channels/{channelId} (the `DeleteNotificationChannel` operationId).
+	DeleteNotificationChannel(ctx context.Context, channelId ChannelId, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// UpdateNotificationChannelWithBody Change an alert channel; secret replaces the stored one when present
+	//
+	// Takes any type of body and a specified content type.
+	//
+	// Corresponds with PATCH /api/notification-channels/{channelId} (the `UpdateNotificationChannel` operationId).
+	UpdateNotificationChannelWithBody(ctx context.Context, channelId ChannelId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// UpdateNotificationChannel Change an alert channel; secret replaces the stored one when present
+	//
+	// Takes a body of the `application/json` content type.
+	//
+	// Corresponds with PATCH /api/notification-channels/{channelId} (the `UpdateNotificationChannel` operationId).
+	UpdateNotificationChannel(ctx context.Context, channelId ChannelId, body UpdateNotificationChannelJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// TestNotificationChannel Send a test message now
+	//
+	// Corresponds with POST /api/notification-channels/{channelId}/test (the `TestNotificationChannel` operationId).
+	TestNotificationChannel(ctx context.Context, channelId ChannelId, reqEditors ...RequestEditorFn) (*http.Response, error)
+
 	// ListProviders The provider catalog compiled into the hub
 	//
 	// Corresponds with GET /api/providers (the `ListProviders` operationId).
@@ -2360,6 +2730,11 @@ type ClientInterface interface {
 	//
 	// Corresponds with PATCH /api/users/{userId} (the `UpdateUser` operationId).
 	UpdateUser(ctx context.Context, userId UserId, body UpdateUserJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// ResetUserTotp Turn off another user's two-factor (lost phone)
+	//
+	// Corresponds with DELETE /api/users/{userId}/totp (the `ResetUserTotp` operationId).
+	ResetUserTotp(ctx context.Context, userId UserId, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// GetHealth Liveness check
 	//
@@ -2939,11 +3314,134 @@ func (c *Client) Login(ctx context.Context, body LoginJSONRequestBody, reqEditor
 	return c.Client.Do(req)
 }
 
+// LoginTotpWithBody Finish a login that needs a second factor
+//
+// `code` is the 6-digit code from the authenticator app or one unused
+// recovery code. A challenge allows five attempts and expires after
+// five minutes.
+//
+// Takes any type of body and a specified content type.
+//
+// Corresponds with POST /api/auth/login/totp (the `LoginTotp` operationId).
+func (c *Client) LoginTotpWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewLoginTotpRequestWithBody(c.Server, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// LoginTotp Finish a login that needs a second factor
+//
+// `code` is the 6-digit code from the authenticator app or one unused
+// recovery code. A challenge allows five attempts and expires after
+// five minutes.
+//
+// Takes a body of the `application/json` content type.
+//
+// Corresponds with POST /api/auth/login/totp (the `LoginTotp` operationId).
+func (c *Client) LoginTotp(ctx context.Context, body LoginTotpJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewLoginTotpRequest(c.Server, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
 // Logout Logout
 //
 // Corresponds with POST /api/auth/logout (the `Logout` operationId).
 func (c *Client) Logout(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewLogoutRequest(c.Server)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// GetOidcConfig Whether single sign-on is configured, for the login page
+//
+// Corresponds with GET /api/auth/oidc (the `GetOidcConfig` operationId).
+func (c *Client) GetOidcConfig(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetOidcConfigRequest(c.Server)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// ListBudgets Monthly budgets with this month's spend and projection
+//
+// Viewers see the org budget and budgets of accounts they can see.
+//
+// Corresponds with GET /api/budgets (the `ListBudgets` operationId).
+func (c *Client) ListBudgets(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewListBudgetsRequest(c.Server)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// PutBudgetWithBody Create or replace the budget for the org (account_id absent) or one account
+//
+// Takes any type of body and a specified content type.
+//
+// Corresponds with PUT /api/budgets (the `PutBudget` operationId).
+func (c *Client) PutBudgetWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewPutBudgetRequestWithBody(c.Server, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// PutBudget Create or replace the budget for the org (account_id absent) or one account
+//
+// Takes a body of the `application/json` content type.
+//
+// Corresponds with PUT /api/budgets (the `PutBudget` operationId).
+func (c *Client) PutBudget(ctx context.Context, body PutBudgetJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewPutBudgetRequest(c.Server, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// DeleteBudget Remove a budget
+//
+// Corresponds with DELETE /api/budgets/{budgetId} (the `DeleteBudget` operationId).
+func (c *Client) DeleteBudget(ctx context.Context, budgetId BudgetId, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewDeleteBudgetRequest(c.Server, budgetId)
 	if err != nil {
 		return nil, err
 	}
@@ -3421,6 +3919,217 @@ func (c *Client) RevokeApiToken(ctx context.Context, tokenId string, reqEditors 
 	return c.Client.Do(req)
 }
 
+// DisableMyTotpWithBody Turn two-factor off
+//
+// Takes any type of body and a specified content type.
+//
+// Corresponds with DELETE /api/me/totp (the `DisableMyTotp` operationId).
+func (c *Client) DisableMyTotpWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewDisableMyTotpRequestWithBody(c.Server, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// DisableMyTotp Turn two-factor off
+//
+// Takes a body of the `application/json` content type.
+//
+// Corresponds with DELETE /api/me/totp (the `DisableMyTotp` operationId).
+func (c *Client) DisableMyTotp(ctx context.Context, body DisableMyTotpJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewDisableMyTotpRequest(c.Server, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// GetMyTotp Two-factor status
+//
+// Corresponds with GET /api/me/totp (the `GetMyTotp` operationId).
+func (c *Client) GetMyTotp(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetMyTotpRequest(c.Server)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// EnableMyTotpWithBody Confirm a code from the app; turns two-factor on and returns recovery codes once
+//
+// Takes any type of body and a specified content type.
+//
+// Corresponds with POST /api/me/totp/enable (the `EnableMyTotp` operationId).
+func (c *Client) EnableMyTotpWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewEnableMyTotpRequestWithBody(c.Server, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// EnableMyTotp Confirm a code from the app; turns two-factor on and returns recovery codes once
+//
+// Takes a body of the `application/json` content type.
+//
+// Corresponds with POST /api/me/totp/enable (the `EnableMyTotp` operationId).
+func (c *Client) EnableMyTotp(ctx context.Context, body EnableMyTotpJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewEnableMyTotpRequest(c.Server, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// SetupMyTotp Start two-factor setup; returns a new secret until confirmed
+//
+// Corresponds with POST /api/me/totp/setup (the `SetupMyTotp` operationId).
+func (c *Client) SetupMyTotp(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewSetupMyTotpRequest(c.Server)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// ListNotificationChannels List alert channels besides email
+//
+// Corresponds with GET /api/notification-channels (the `ListNotificationChannels` operationId).
+func (c *Client) ListNotificationChannels(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewListNotificationChannelsRequest(c.Server)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// CreateNotificationChannelWithBody Add an alert channel
+//
+// Takes any type of body and a specified content type.
+//
+// Corresponds with POST /api/notification-channels (the `CreateNotificationChannel` operationId).
+func (c *Client) CreateNotificationChannelWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewCreateNotificationChannelRequestWithBody(c.Server, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// CreateNotificationChannel Add an alert channel
+//
+// Takes a body of the `application/json` content type.
+//
+// Corresponds with POST /api/notification-channels (the `CreateNotificationChannel` operationId).
+func (c *Client) CreateNotificationChannel(ctx context.Context, body CreateNotificationChannelJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewCreateNotificationChannelRequest(c.Server, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// DeleteNotificationChannel Remove an alert channel
+//
+// Corresponds with DELETE /api/notification-channels/{channelId} (the `DeleteNotificationChannel` operationId).
+func (c *Client) DeleteNotificationChannel(ctx context.Context, channelId ChannelId, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewDeleteNotificationChannelRequest(c.Server, channelId)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// UpdateNotificationChannelWithBody Change an alert channel; secret replaces the stored one when present
+//
+// Takes any type of body and a specified content type.
+//
+// Corresponds with PATCH /api/notification-channels/{channelId} (the `UpdateNotificationChannel` operationId).
+func (c *Client) UpdateNotificationChannelWithBody(ctx context.Context, channelId ChannelId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewUpdateNotificationChannelRequestWithBody(c.Server, channelId, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// UpdateNotificationChannel Change an alert channel; secret replaces the stored one when present
+//
+// Takes a body of the `application/json` content type.
+//
+// Corresponds with PATCH /api/notification-channels/{channelId} (the `UpdateNotificationChannel` operationId).
+func (c *Client) UpdateNotificationChannel(ctx context.Context, channelId ChannelId, body UpdateNotificationChannelJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewUpdateNotificationChannelRequest(c.Server, channelId, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// TestNotificationChannel Send a test message now
+//
+// Corresponds with POST /api/notification-channels/{channelId}/test (the `TestNotificationChannel` operationId).
+func (c *Client) TestNotificationChannel(ctx context.Context, channelId ChannelId, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewTestNotificationChannelRequest(c.Server, channelId)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
 // ListProviders The provider catalog compiled into the hub
 //
 // Corresponds with GET /api/providers (the `ListProviders` operationId).
@@ -3729,6 +4438,21 @@ func (c *Client) UpdateUserWithBody(ctx context.Context, userId UserId, contentT
 // Corresponds with PATCH /api/users/{userId} (the `UpdateUser` operationId).
 func (c *Client) UpdateUser(ctx context.Context, userId UserId, body UpdateUserJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewUpdateUserRequest(c.Server, userId, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// ResetUserTotp Turn off another user's two-factor (lost phone)
+//
+// Corresponds with DELETE /api/users/{userId}/totp (the `ResetUserTotp` operationId).
+func (c *Client) ResetUserTotp(ctx context.Context, userId UserId, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewResetUserTotpRequest(c.Server, userId)
 	if err != nil {
 		return nil, err
 	}
@@ -4907,6 +5631,46 @@ func NewLoginRequestWithBody(server string, contentType string, body io.Reader) 
 	return req, nil
 }
 
+// NewLoginTotpRequest calls the generic LoginTotp builder with application/json body
+func NewLoginTotpRequest(server string, body LoginTotpJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewLoginTotpRequestWithBody(server, "application/json", bodyReader)
+}
+
+// NewLoginTotpRequestWithBody constructs an http.Request for the LoginTotp method, with any body, and a specified content type
+func NewLoginTotpRequestWithBody(server string, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/api/auth/login/totp")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodPost, queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
 // NewLogoutRequest constructs an http.Request for the Logout method
 func NewLogoutRequest(server string) (*http.Request, error) {
 	var err error
@@ -4927,6 +5691,134 @@ func NewLogoutRequest(server string) (*http.Request, error) {
 	}
 
 	req, err := http.NewRequest(http.MethodPost, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewGetOidcConfigRequest constructs an http.Request for the GetOidcConfig method
+func NewGetOidcConfigRequest(server string) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/api/auth/oidc")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodGet, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewListBudgetsRequest constructs an http.Request for the ListBudgets method
+func NewListBudgetsRequest(server string) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/api/budgets")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodGet, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewPutBudgetRequest calls the generic PutBudget builder with application/json body
+func NewPutBudgetRequest(server string, body PutBudgetJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewPutBudgetRequestWithBody(server, "application/json", bodyReader)
+}
+
+// NewPutBudgetRequestWithBody constructs an http.Request for the PutBudget method, with any body, and a specified content type
+func NewPutBudgetRequestWithBody(server string, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/api/budgets")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodPut, queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
+// NewDeleteBudgetRequest constructs an http.Request for the DeleteBudget method
+func NewDeleteBudgetRequest(server string, budgetId BudgetId) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "budgetId", budgetId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/api/budgets/%s", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodDelete, queryURL.String(), nil)
 	if err != nil {
 		return nil, err
 	}
@@ -5974,6 +6866,322 @@ func NewRevokeApiTokenRequest(server string, tokenId string) (*http.Request, err
 	return req, nil
 }
 
+// NewDisableMyTotpRequest calls the generic DisableMyTotp builder with application/json body
+func NewDisableMyTotpRequest(server string, body DisableMyTotpJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewDisableMyTotpRequestWithBody(server, "application/json", bodyReader)
+}
+
+// NewDisableMyTotpRequestWithBody constructs an http.Request for the DisableMyTotp method, with any body, and a specified content type
+func NewDisableMyTotpRequestWithBody(server string, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/api/me/totp")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodDelete, queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
+// NewGetMyTotpRequest constructs an http.Request for the GetMyTotp method
+func NewGetMyTotpRequest(server string) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/api/me/totp")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodGet, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewEnableMyTotpRequest calls the generic EnableMyTotp builder with application/json body
+func NewEnableMyTotpRequest(server string, body EnableMyTotpJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewEnableMyTotpRequestWithBody(server, "application/json", bodyReader)
+}
+
+// NewEnableMyTotpRequestWithBody constructs an http.Request for the EnableMyTotp method, with any body, and a specified content type
+func NewEnableMyTotpRequestWithBody(server string, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/api/me/totp/enable")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodPost, queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
+// NewSetupMyTotpRequest constructs an http.Request for the SetupMyTotp method
+func NewSetupMyTotpRequest(server string) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/api/me/totp/setup")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodPost, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewListNotificationChannelsRequest constructs an http.Request for the ListNotificationChannels method
+func NewListNotificationChannelsRequest(server string) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/api/notification-channels")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodGet, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewCreateNotificationChannelRequest calls the generic CreateNotificationChannel builder with application/json body
+func NewCreateNotificationChannelRequest(server string, body CreateNotificationChannelJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewCreateNotificationChannelRequestWithBody(server, "application/json", bodyReader)
+}
+
+// NewCreateNotificationChannelRequestWithBody constructs an http.Request for the CreateNotificationChannel method, with any body, and a specified content type
+func NewCreateNotificationChannelRequestWithBody(server string, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/api/notification-channels")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodPost, queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
+// NewDeleteNotificationChannelRequest constructs an http.Request for the DeleteNotificationChannel method
+func NewDeleteNotificationChannelRequest(server string, channelId ChannelId) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "channelId", channelId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/api/notification-channels/%s", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodDelete, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewUpdateNotificationChannelRequest calls the generic UpdateNotificationChannel builder with application/json body
+func NewUpdateNotificationChannelRequest(server string, channelId ChannelId, body UpdateNotificationChannelJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewUpdateNotificationChannelRequestWithBody(server, channelId, "application/json", bodyReader)
+}
+
+// NewUpdateNotificationChannelRequestWithBody constructs an http.Request for the UpdateNotificationChannel method, with any body, and a specified content type
+func NewUpdateNotificationChannelRequestWithBody(server string, channelId ChannelId, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "channelId", channelId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/api/notification-channels/%s", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodPatch, queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
+// NewTestNotificationChannelRequest constructs an http.Request for the TestNotificationChannel method
+func NewTestNotificationChannelRequest(server string, channelId ChannelId) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "channelId", channelId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/api/notification-channels/%s/test", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodPost, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
 // NewListProvidersRequest constructs an http.Request for the ListProviders method
 func NewListProvidersRequest(server string) (*http.Request, error) {
 	var err error
@@ -6683,6 +7891,40 @@ func NewUpdateUserRequestWithBody(server string, userId UserId, contentType stri
 	return req, nil
 }
 
+// NewResetUserTotpRequest constructs an http.Request for the ResetUserTotp method
+func NewResetUserTotpRequest(server string, userId UserId) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "userId", userId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/api/users/%s/totp", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodDelete, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
 // NewGetHealthRequest constructs an http.Request for the GetHealth method
 func NewGetHealthRequest(server string) (*http.Request, error) {
 	var err error
@@ -7032,12 +8274,71 @@ type ClientWithResponsesInterface interface {
 	// Corresponds with POST /api/auth/login (the `Login` operationId).
 	LoginWithResponse(ctx context.Context, body LoginJSONRequestBody, reqEditors ...RequestEditorFn) (*LoginResponse, error)
 
+	// LoginTotpWithBodyWithResponse Finish a login that needs a second factor
+	//
+	// `code` is the 6-digit code from the authenticator app or one unused
+	// recovery code. A challenge allows five attempts and expires after
+	// five minutes.
+	//
+	// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with POST /api/auth/login/totp (the `LoginTotp` operationId).
+	LoginTotpWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*LoginTotpResponse, error)
+
+	// LoginTotpWithResponse Finish a login that needs a second factor
+	//
+	// `code` is the 6-digit code from the authenticator app or one unused
+	// recovery code. A challenge allows five attempts and expires after
+	// five minutes.
+	//
+	// Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with POST /api/auth/login/totp (the `LoginTotp` operationId).
+	LoginTotpWithResponse(ctx context.Context, body LoginTotpJSONRequestBody, reqEditors ...RequestEditorFn) (*LoginTotpResponse, error)
+
 	// LogoutWithResponse Logout
 	//
 	// Returns a wrapper object for the known response body format(s).
 	//
 	// Corresponds with POST /api/auth/logout (the `Logout` operationId).
 	LogoutWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*LogoutResponse, error)
+
+	// GetOidcConfigWithResponse Whether single sign-on is configured, for the login page
+	//
+	// Returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with GET /api/auth/oidc (the `GetOidcConfig` operationId).
+	GetOidcConfigWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*GetOidcConfigResponse, error)
+
+	// ListBudgetsWithResponse Monthly budgets with this month's spend and projection
+	//
+	// Viewers see the org budget and budgets of accounts they can see.
+	//
+	// Returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with GET /api/budgets (the `ListBudgets` operationId).
+	ListBudgetsWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*ListBudgetsResponse, error)
+
+	// PutBudgetWithBodyWithResponse Create or replace the budget for the org (account_id absent) or one account
+	//
+	// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with PUT /api/budgets (the `PutBudget` operationId).
+	PutBudgetWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PutBudgetResponse, error)
+
+	// PutBudgetWithResponse Create or replace the budget for the org (account_id absent) or one account
+	//
+	// Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with PUT /api/budgets (the `PutBudget` operationId).
+	PutBudgetWithResponse(ctx context.Context, body PutBudgetJSONRequestBody, reqEditors ...RequestEditorFn) (*PutBudgetResponse, error)
+
+	// DeleteBudgetWithResponse Remove a budget
+	//
+	// Returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with DELETE /api/budgets/{budgetId} (the `DeleteBudget` operationId).
+	DeleteBudgetWithResponse(ctx context.Context, budgetId BudgetId, reqEditors ...RequestEditorFn) (*DeleteBudgetResponse, error)
 
 	// ListChargesWithResponse List charges
 	//
@@ -7242,6 +8543,97 @@ type ClientWithResponsesInterface interface {
 	// Corresponds with DELETE /api/me/tokens/{tokenId} (the `RevokeApiToken` operationId).
 	RevokeApiTokenWithResponse(ctx context.Context, tokenId string, reqEditors ...RequestEditorFn) (*RevokeApiTokenResponse, error)
 
+	// DisableMyTotpWithBodyWithResponse Turn two-factor off
+	//
+	// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with DELETE /api/me/totp (the `DisableMyTotp` operationId).
+	DisableMyTotpWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*DisableMyTotpResponse, error)
+
+	// DisableMyTotpWithResponse Turn two-factor off
+	//
+	// Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with DELETE /api/me/totp (the `DisableMyTotp` operationId).
+	DisableMyTotpWithResponse(ctx context.Context, body DisableMyTotpJSONRequestBody, reqEditors ...RequestEditorFn) (*DisableMyTotpResponse, error)
+
+	// GetMyTotpWithResponse Two-factor status
+	//
+	// Returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with GET /api/me/totp (the `GetMyTotp` operationId).
+	GetMyTotpWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*GetMyTotpResponse, error)
+
+	// EnableMyTotpWithBodyWithResponse Confirm a code from the app; turns two-factor on and returns recovery codes once
+	//
+	// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with POST /api/me/totp/enable (the `EnableMyTotp` operationId).
+	EnableMyTotpWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*EnableMyTotpResponse, error)
+
+	// EnableMyTotpWithResponse Confirm a code from the app; turns two-factor on and returns recovery codes once
+	//
+	// Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with POST /api/me/totp/enable (the `EnableMyTotp` operationId).
+	EnableMyTotpWithResponse(ctx context.Context, body EnableMyTotpJSONRequestBody, reqEditors ...RequestEditorFn) (*EnableMyTotpResponse, error)
+
+	// SetupMyTotpWithResponse Start two-factor setup; returns a new secret until confirmed
+	//
+	// Returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with POST /api/me/totp/setup (the `SetupMyTotp` operationId).
+	SetupMyTotpWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*SetupMyTotpResponse, error)
+
+	// ListNotificationChannelsWithResponse List alert channels besides email
+	//
+	// Returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with GET /api/notification-channels (the `ListNotificationChannels` operationId).
+	ListNotificationChannelsWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*ListNotificationChannelsResponse, error)
+
+	// CreateNotificationChannelWithBodyWithResponse Add an alert channel
+	//
+	// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with POST /api/notification-channels (the `CreateNotificationChannel` operationId).
+	CreateNotificationChannelWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*CreateNotificationChannelResponse, error)
+
+	// CreateNotificationChannelWithResponse Add an alert channel
+	//
+	// Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with POST /api/notification-channels (the `CreateNotificationChannel` operationId).
+	CreateNotificationChannelWithResponse(ctx context.Context, body CreateNotificationChannelJSONRequestBody, reqEditors ...RequestEditorFn) (*CreateNotificationChannelResponse, error)
+
+	// DeleteNotificationChannelWithResponse Remove an alert channel
+	//
+	// Returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with DELETE /api/notification-channels/{channelId} (the `DeleteNotificationChannel` operationId).
+	DeleteNotificationChannelWithResponse(ctx context.Context, channelId ChannelId, reqEditors ...RequestEditorFn) (*DeleteNotificationChannelResponse, error)
+
+	// UpdateNotificationChannelWithBodyWithResponse Change an alert channel; secret replaces the stored one when present
+	//
+	// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with PATCH /api/notification-channels/{channelId} (the `UpdateNotificationChannel` operationId).
+	UpdateNotificationChannelWithBodyWithResponse(ctx context.Context, channelId ChannelId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpdateNotificationChannelResponse, error)
+
+	// UpdateNotificationChannelWithResponse Change an alert channel; secret replaces the stored one when present
+	//
+	// Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with PATCH /api/notification-channels/{channelId} (the `UpdateNotificationChannel` operationId).
+	UpdateNotificationChannelWithResponse(ctx context.Context, channelId ChannelId, body UpdateNotificationChannelJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdateNotificationChannelResponse, error)
+
+	// TestNotificationChannelWithResponse Send a test message now
+	//
+	// Returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with POST /api/notification-channels/{channelId}/test (the `TestNotificationChannel` operationId).
+	TestNotificationChannelWithResponse(ctx context.Context, channelId ChannelId, reqEditors ...RequestEditorFn) (*TestNotificationChannelResponse, error)
+
 	// ListProvidersWithResponse The provider catalog compiled into the hub
 	//
 	// Returns a wrapper object for the known response body format(s).
@@ -7387,6 +8779,13 @@ type ClientWithResponsesInterface interface {
 	//
 	// Corresponds with PATCH /api/users/{userId} (the `UpdateUser` operationId).
 	UpdateUserWithResponse(ctx context.Context, userId UserId, body UpdateUserJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdateUserResponse, error)
+
+	// ResetUserTotpWithResponse Turn off another user's two-factor (lost phone)
+	//
+	// Returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with DELETE /api/users/{userId}/totp (the `ResetUserTotp` operationId).
+	ResetUserTotpWithResponse(ctx context.Context, userId UserId, reqEditors ...RequestEditorFn) (*ResetUserTotpResponse, error)
 
 	// GetHealthWithResponse Liveness check
 	//
@@ -8489,6 +9888,8 @@ type LoginResponse struct {
 	HTTPResponse *http.Response
 	// JSON200 the response for an HTTP 200 `application/json` response
 	JSON200 *Me
+	// JSON202 the response for an HTTP 202 `application/json` response
+	JSON202 *LoginTotpRequired
 	// JSON401 the response for an HTTP 401 `application/json` response
 	JSON401 *Error
 	// JSON429 the response for an HTTP 429 `application/json` response
@@ -8498,6 +9899,11 @@ type LoginResponse struct {
 // GetJSON200 returns the response for an HTTP 200 `application/json` response
 func (r LoginResponse) GetJSON200() *Me {
 	return r.JSON200
+}
+
+// GetJSON202 returns the response for an HTTP 202 `application/json` response
+func (r LoginResponse) GetJSON202() *LoginTotpRequired {
+	return r.JSON202
 }
 
 // GetJSON401 returns the response for an HTTP 401 `application/json` response
@@ -8539,6 +9945,61 @@ func (r LoginResponse) ContentType() string {
 	return ""
 }
 
+type LoginTotpResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON200 the response for an HTTP 200 `application/json` response
+	JSON200 *Me
+	// JSON401 the response for an HTTP 401 `application/json` response
+	JSON401 *Error
+	// JSON429 the response for an HTTP 429 `application/json` response
+	JSON429 *Error
+}
+
+// GetJSON200 returns the response for an HTTP 200 `application/json` response
+func (r LoginTotpResponse) GetJSON200() *Me {
+	return r.JSON200
+}
+
+// GetJSON401 returns the response for an HTTP 401 `application/json` response
+func (r LoginTotpResponse) GetJSON401() *Error {
+	return r.JSON401
+}
+
+// GetJSON429 returns the response for an HTTP 429 `application/json` response
+func (r LoginTotpResponse) GetJSON429() *Error {
+	return r.JSON429
+}
+
+// GetBody returns the raw response body bytes
+func (r LoginTotpResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r LoginTotpResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r LoginTotpResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r LoginTotpResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
 type LogoutResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
@@ -8567,6 +10028,200 @@ func (r LogoutResponse) StatusCode() int {
 
 // ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
 func (r LogoutResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+type GetOidcConfigResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON200 the response for an HTTP 200 `application/json` response
+	JSON200 *struct {
+		Enabled bool `json:"enabled"`
+
+		// Name Button label, for example "Authentik"
+		Name *string `json:"name,omitempty"`
+
+		// StartUrl Where the button sends the browser (/auth/oidc/start)
+		StartUrl *string `json:"start_url,omitempty"`
+	}
+}
+
+// GetJSON200 returns the response for an HTTP 200 `application/json` response
+func (r GetOidcConfigResponse) GetJSON200() *struct {
+	Enabled bool `json:"enabled"`
+
+	// Name Button label, for example "Authentik"
+	Name *string `json:"name,omitempty"`
+
+	// StartUrl Where the button sends the browser (/auth/oidc/start)
+	StartUrl *string `json:"start_url,omitempty"`
+} {
+	return r.JSON200
+}
+
+// GetBody returns the raw response body bytes
+func (r GetOidcConfigResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r GetOidcConfigResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r GetOidcConfigResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r GetOidcConfigResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+type ListBudgetsResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON200 the response for an HTTP 200 `application/json` response
+	JSON200 *[]Budget
+}
+
+// GetJSON200 returns the response for an HTTP 200 `application/json` response
+func (r ListBudgetsResponse) GetJSON200() *[]Budget {
+	return r.JSON200
+}
+
+// GetBody returns the raw response body bytes
+func (r ListBudgetsResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r ListBudgetsResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r ListBudgetsResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r ListBudgetsResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+type PutBudgetResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON200 the response for an HTTP 200 `application/json` response
+	JSON200 *Budget
+	// JSON400 the response for an HTTP 400 `application/json` response
+	JSON400 *Error
+	// JSON404 the response for an HTTP 404 `application/json` response
+	JSON404 *Error
+}
+
+// GetJSON200 returns the response for an HTTP 200 `application/json` response
+func (r PutBudgetResponse) GetJSON200() *Budget {
+	return r.JSON200
+}
+
+// GetJSON400 returns the response for an HTTP 400 `application/json` response
+func (r PutBudgetResponse) GetJSON400() *Error {
+	return r.JSON400
+}
+
+// GetJSON404 returns the response for an HTTP 404 `application/json` response
+func (r PutBudgetResponse) GetJSON404() *Error {
+	return r.JSON404
+}
+
+// GetBody returns the raw response body bytes
+func (r PutBudgetResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r PutBudgetResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r PutBudgetResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r PutBudgetResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+type DeleteBudgetResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON404 the response for an HTTP 404 `application/json` response
+	JSON404 *Error
+}
+
+// GetJSON404 returns the response for an HTTP 404 `application/json` response
+func (r DeleteBudgetResponse) GetJSON404() *Error {
+	return r.JSON404
+}
+
+// GetBody returns the raw response body bytes
+func (r DeleteBudgetResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r DeleteBudgetResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r DeleteBudgetResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r DeleteBudgetResponse) ContentType() string {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.Header.Get("Content-Type")
 	}
@@ -9476,6 +11131,442 @@ func (r RevokeApiTokenResponse) ContentType() string {
 	return ""
 }
 
+type DisableMyTotpResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON401 the response for an HTTP 401 `application/json` response
+	JSON401 *Error
+}
+
+// GetJSON401 returns the response for an HTTP 401 `application/json` response
+func (r DisableMyTotpResponse) GetJSON401() *Error {
+	return r.JSON401
+}
+
+// GetBody returns the raw response body bytes
+func (r DisableMyTotpResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r DisableMyTotpResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r DisableMyTotpResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r DisableMyTotpResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+type GetMyTotpResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON200 the response for an HTTP 200 `application/json` response
+	JSON200 *TotpStatus
+}
+
+// GetJSON200 returns the response for an HTTP 200 `application/json` response
+func (r GetMyTotpResponse) GetJSON200() *TotpStatus {
+	return r.JSON200
+}
+
+// GetBody returns the raw response body bytes
+func (r GetMyTotpResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r GetMyTotpResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r GetMyTotpResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r GetMyTotpResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+type EnableMyTotpResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON200 the response for an HTTP 200 `application/json` response
+	JSON200 *struct {
+		// RecoveryCodes Ten single-use codes, shown once
+		RecoveryCodes []string `json:"recovery_codes"`
+	}
+	// JSON401 the response for an HTTP 401 `application/json` response
+	JSON401 *Error
+	// JSON409 the response for an HTTP 409 `application/json` response
+	JSON409 *Error
+}
+
+// GetJSON200 returns the response for an HTTP 200 `application/json` response
+func (r EnableMyTotpResponse) GetJSON200() *struct {
+	// RecoveryCodes Ten single-use codes, shown once
+	RecoveryCodes []string `json:"recovery_codes"`
+} {
+	return r.JSON200
+}
+
+// GetJSON401 returns the response for an HTTP 401 `application/json` response
+func (r EnableMyTotpResponse) GetJSON401() *Error {
+	return r.JSON401
+}
+
+// GetJSON409 returns the response for an HTTP 409 `application/json` response
+func (r EnableMyTotpResponse) GetJSON409() *Error {
+	return r.JSON409
+}
+
+// GetBody returns the raw response body bytes
+func (r EnableMyTotpResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r EnableMyTotpResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r EnableMyTotpResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r EnableMyTotpResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+type SetupMyTotpResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON200 the response for an HTTP 200 `application/json` response
+	JSON200 *struct {
+		// OtpauthUrl otpauth://totp/... for a QR code
+		OtpauthUrl string `json:"otpauth_url"`
+
+		// Secret Base32, for typing into the app
+		Secret string `json:"secret"`
+	}
+	// JSON409 the response for an HTTP 409 `application/json` response
+	JSON409 *Error
+}
+
+// GetJSON200 returns the response for an HTTP 200 `application/json` response
+func (r SetupMyTotpResponse) GetJSON200() *struct {
+	// OtpauthUrl otpauth://totp/... for a QR code
+	OtpauthUrl string `json:"otpauth_url"`
+
+	// Secret Base32, for typing into the app
+	Secret string `json:"secret"`
+} {
+	return r.JSON200
+}
+
+// GetJSON409 returns the response for an HTTP 409 `application/json` response
+func (r SetupMyTotpResponse) GetJSON409() *Error {
+	return r.JSON409
+}
+
+// GetBody returns the raw response body bytes
+func (r SetupMyTotpResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r SetupMyTotpResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r SetupMyTotpResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r SetupMyTotpResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+type ListNotificationChannelsResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON200 the response for an HTTP 200 `application/json` response
+	JSON200 *[]NotificationChannel
+}
+
+// GetJSON200 returns the response for an HTTP 200 `application/json` response
+func (r ListNotificationChannelsResponse) GetJSON200() *[]NotificationChannel {
+	return r.JSON200
+}
+
+// GetBody returns the raw response body bytes
+func (r ListNotificationChannelsResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r ListNotificationChannelsResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r ListNotificationChannelsResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r ListNotificationChannelsResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+type CreateNotificationChannelResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON201 the response for an HTTP 201 `application/json` response
+	JSON201 *NotificationChannel
+	// JSON400 the response for an HTTP 400 `application/json` response
+	JSON400 *Error
+}
+
+// GetJSON201 returns the response for an HTTP 201 `application/json` response
+func (r CreateNotificationChannelResponse) GetJSON201() *NotificationChannel {
+	return r.JSON201
+}
+
+// GetJSON400 returns the response for an HTTP 400 `application/json` response
+func (r CreateNotificationChannelResponse) GetJSON400() *Error {
+	return r.JSON400
+}
+
+// GetBody returns the raw response body bytes
+func (r CreateNotificationChannelResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r CreateNotificationChannelResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r CreateNotificationChannelResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r CreateNotificationChannelResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+type DeleteNotificationChannelResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON404 the response for an HTTP 404 `application/json` response
+	JSON404 *Error
+}
+
+// GetJSON404 returns the response for an HTTP 404 `application/json` response
+func (r DeleteNotificationChannelResponse) GetJSON404() *Error {
+	return r.JSON404
+}
+
+// GetBody returns the raw response body bytes
+func (r DeleteNotificationChannelResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r DeleteNotificationChannelResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r DeleteNotificationChannelResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r DeleteNotificationChannelResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+type UpdateNotificationChannelResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON200 the response for an HTTP 200 `application/json` response
+	JSON200 *NotificationChannel
+	// JSON400 the response for an HTTP 400 `application/json` response
+	JSON400 *Error
+	// JSON404 the response for an HTTP 404 `application/json` response
+	JSON404 *Error
+}
+
+// GetJSON200 returns the response for an HTTP 200 `application/json` response
+func (r UpdateNotificationChannelResponse) GetJSON200() *NotificationChannel {
+	return r.JSON200
+}
+
+// GetJSON400 returns the response for an HTTP 400 `application/json` response
+func (r UpdateNotificationChannelResponse) GetJSON400() *Error {
+	return r.JSON400
+}
+
+// GetJSON404 returns the response for an HTTP 404 `application/json` response
+func (r UpdateNotificationChannelResponse) GetJSON404() *Error {
+	return r.JSON404
+}
+
+// GetBody returns the raw response body bytes
+func (r UpdateNotificationChannelResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r UpdateNotificationChannelResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r UpdateNotificationChannelResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r UpdateNotificationChannelResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+type TestNotificationChannelResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON404 the response for an HTTP 404 `application/json` response
+	JSON404 *Error
+	// JSON422 the response for an HTTP 422 `application/json` response
+	JSON422 *Error
+}
+
+// GetJSON404 returns the response for an HTTP 404 `application/json` response
+func (r TestNotificationChannelResponse) GetJSON404() *Error {
+	return r.JSON404
+}
+
+// GetJSON422 returns the response for an HTTP 422 `application/json` response
+func (r TestNotificationChannelResponse) GetJSON422() *Error {
+	return r.JSON422
+}
+
+// GetBody returns the raw response body bytes
+func (r TestNotificationChannelResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r TestNotificationChannelResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r TestNotificationChannelResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r TestNotificationChannelResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
 type ListProvidersResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
@@ -10110,6 +12201,47 @@ func (r UpdateUserResponse) ContentType() string {
 	return ""
 }
 
+type ResetUserTotpResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON404 the response for an HTTP 404 `application/json` response
+	JSON404 *Error
+}
+
+// GetJSON404 returns the response for an HTTP 404 `application/json` response
+func (r ResetUserTotpResponse) GetJSON404() *Error {
+	return r.JSON404
+}
+
+// GetBody returns the raw response body bytes
+func (r ResetUserTotpResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r ResetUserTotpResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r ResetUserTotpResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r ResetUserTotpResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
 type GetHealthResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
@@ -10654,6 +12786,40 @@ func (c *ClientWithResponses) LoginWithResponse(ctx context.Context, body LoginJ
 	return ParseLoginResponse(rsp)
 }
 
+// LoginTotpWithBodyWithResponse Finish a login that needs a second factor
+//
+// `code` is the 6-digit code from the authenticator app or one unused
+// recovery code. A challenge allows five attempts and expires after
+// five minutes.
+//
+// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
+//
+// Corresponds with POST /api/auth/login/totp (the `LoginTotp` operationId).
+func (c *ClientWithResponses) LoginTotpWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*LoginTotpResponse, error) {
+	rsp, err := c.LoginTotpWithBody(ctx, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseLoginTotpResponse(rsp)
+}
+
+// LoginTotpWithResponse Finish a login that needs a second factor
+//
+// `code` is the 6-digit code from the authenticator app or one unused
+// recovery code. A challenge allows five attempts and expires after
+// five minutes.
+//
+// Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
+//
+// Corresponds with POST /api/auth/login/totp (the `LoginTotp` operationId).
+func (c *ClientWithResponses) LoginTotpWithResponse(ctx context.Context, body LoginTotpJSONRequestBody, reqEditors ...RequestEditorFn) (*LoginTotpResponse, error) {
+	rsp, err := c.LoginTotp(ctx, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseLoginTotpResponse(rsp)
+}
+
 // LogoutWithResponse Logout
 //
 // Returns a wrapper object for the known response body format(s).
@@ -10665,6 +12831,73 @@ func (c *ClientWithResponses) LogoutWithResponse(ctx context.Context, reqEditors
 		return nil, err
 	}
 	return ParseLogoutResponse(rsp)
+}
+
+// GetOidcConfigWithResponse Whether single sign-on is configured, for the login page
+//
+// Returns a wrapper object for the known response body format(s).
+//
+// Corresponds with GET /api/auth/oidc (the `GetOidcConfig` operationId).
+func (c *ClientWithResponses) GetOidcConfigWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*GetOidcConfigResponse, error) {
+	rsp, err := c.GetOidcConfig(ctx, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseGetOidcConfigResponse(rsp)
+}
+
+// ListBudgetsWithResponse Monthly budgets with this month's spend and projection
+//
+// Viewers see the org budget and budgets of accounts they can see.
+//
+// Returns a wrapper object for the known response body format(s).
+//
+// Corresponds with GET /api/budgets (the `ListBudgets` operationId).
+func (c *ClientWithResponses) ListBudgetsWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*ListBudgetsResponse, error) {
+	rsp, err := c.ListBudgets(ctx, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseListBudgetsResponse(rsp)
+}
+
+// PutBudgetWithBodyWithResponse Create or replace the budget for the org (account_id absent) or one account
+//
+// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
+//
+// Corresponds with PUT /api/budgets (the `PutBudget` operationId).
+func (c *ClientWithResponses) PutBudgetWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PutBudgetResponse, error) {
+	rsp, err := c.PutBudgetWithBody(ctx, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParsePutBudgetResponse(rsp)
+}
+
+// PutBudgetWithResponse Create or replace the budget for the org (account_id absent) or one account
+//
+// Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
+//
+// Corresponds with PUT /api/budgets (the `PutBudget` operationId).
+func (c *ClientWithResponses) PutBudgetWithResponse(ctx context.Context, body PutBudgetJSONRequestBody, reqEditors ...RequestEditorFn) (*PutBudgetResponse, error) {
+	rsp, err := c.PutBudget(ctx, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParsePutBudgetResponse(rsp)
+}
+
+// DeleteBudgetWithResponse Remove a budget
+//
+// Returns a wrapper object for the known response body format(s).
+//
+// Corresponds with DELETE /api/budgets/{budgetId} (the `DeleteBudget` operationId).
+func (c *ClientWithResponses) DeleteBudgetWithResponse(ctx context.Context, budgetId BudgetId, reqEditors ...RequestEditorFn) (*DeleteBudgetResponse, error) {
+	rsp, err := c.DeleteBudget(ctx, budgetId, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseDeleteBudgetResponse(rsp)
 }
 
 // ListChargesWithResponse List charges
@@ -11044,6 +13277,175 @@ func (c *ClientWithResponses) RevokeApiTokenWithResponse(ctx context.Context, to
 	return ParseRevokeApiTokenResponse(rsp)
 }
 
+// DisableMyTotpWithBodyWithResponse Turn two-factor off
+//
+// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
+//
+// Corresponds with DELETE /api/me/totp (the `DisableMyTotp` operationId).
+func (c *ClientWithResponses) DisableMyTotpWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*DisableMyTotpResponse, error) {
+	rsp, err := c.DisableMyTotpWithBody(ctx, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseDisableMyTotpResponse(rsp)
+}
+
+// DisableMyTotpWithResponse Turn two-factor off
+//
+// Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
+//
+// Corresponds with DELETE /api/me/totp (the `DisableMyTotp` operationId).
+func (c *ClientWithResponses) DisableMyTotpWithResponse(ctx context.Context, body DisableMyTotpJSONRequestBody, reqEditors ...RequestEditorFn) (*DisableMyTotpResponse, error) {
+	rsp, err := c.DisableMyTotp(ctx, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseDisableMyTotpResponse(rsp)
+}
+
+// GetMyTotpWithResponse Two-factor status
+//
+// Returns a wrapper object for the known response body format(s).
+//
+// Corresponds with GET /api/me/totp (the `GetMyTotp` operationId).
+func (c *ClientWithResponses) GetMyTotpWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*GetMyTotpResponse, error) {
+	rsp, err := c.GetMyTotp(ctx, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseGetMyTotpResponse(rsp)
+}
+
+// EnableMyTotpWithBodyWithResponse Confirm a code from the app; turns two-factor on and returns recovery codes once
+//
+// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
+//
+// Corresponds with POST /api/me/totp/enable (the `EnableMyTotp` operationId).
+func (c *ClientWithResponses) EnableMyTotpWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*EnableMyTotpResponse, error) {
+	rsp, err := c.EnableMyTotpWithBody(ctx, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseEnableMyTotpResponse(rsp)
+}
+
+// EnableMyTotpWithResponse Confirm a code from the app; turns two-factor on and returns recovery codes once
+//
+// Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
+//
+// Corresponds with POST /api/me/totp/enable (the `EnableMyTotp` operationId).
+func (c *ClientWithResponses) EnableMyTotpWithResponse(ctx context.Context, body EnableMyTotpJSONRequestBody, reqEditors ...RequestEditorFn) (*EnableMyTotpResponse, error) {
+	rsp, err := c.EnableMyTotp(ctx, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseEnableMyTotpResponse(rsp)
+}
+
+// SetupMyTotpWithResponse Start two-factor setup; returns a new secret until confirmed
+//
+// Returns a wrapper object for the known response body format(s).
+//
+// Corresponds with POST /api/me/totp/setup (the `SetupMyTotp` operationId).
+func (c *ClientWithResponses) SetupMyTotpWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*SetupMyTotpResponse, error) {
+	rsp, err := c.SetupMyTotp(ctx, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseSetupMyTotpResponse(rsp)
+}
+
+// ListNotificationChannelsWithResponse List alert channels besides email
+//
+// Returns a wrapper object for the known response body format(s).
+//
+// Corresponds with GET /api/notification-channels (the `ListNotificationChannels` operationId).
+func (c *ClientWithResponses) ListNotificationChannelsWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*ListNotificationChannelsResponse, error) {
+	rsp, err := c.ListNotificationChannels(ctx, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseListNotificationChannelsResponse(rsp)
+}
+
+// CreateNotificationChannelWithBodyWithResponse Add an alert channel
+//
+// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
+//
+// Corresponds with POST /api/notification-channels (the `CreateNotificationChannel` operationId).
+func (c *ClientWithResponses) CreateNotificationChannelWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*CreateNotificationChannelResponse, error) {
+	rsp, err := c.CreateNotificationChannelWithBody(ctx, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseCreateNotificationChannelResponse(rsp)
+}
+
+// CreateNotificationChannelWithResponse Add an alert channel
+//
+// Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
+//
+// Corresponds with POST /api/notification-channels (the `CreateNotificationChannel` operationId).
+func (c *ClientWithResponses) CreateNotificationChannelWithResponse(ctx context.Context, body CreateNotificationChannelJSONRequestBody, reqEditors ...RequestEditorFn) (*CreateNotificationChannelResponse, error) {
+	rsp, err := c.CreateNotificationChannel(ctx, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseCreateNotificationChannelResponse(rsp)
+}
+
+// DeleteNotificationChannelWithResponse Remove an alert channel
+//
+// Returns a wrapper object for the known response body format(s).
+//
+// Corresponds with DELETE /api/notification-channels/{channelId} (the `DeleteNotificationChannel` operationId).
+func (c *ClientWithResponses) DeleteNotificationChannelWithResponse(ctx context.Context, channelId ChannelId, reqEditors ...RequestEditorFn) (*DeleteNotificationChannelResponse, error) {
+	rsp, err := c.DeleteNotificationChannel(ctx, channelId, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseDeleteNotificationChannelResponse(rsp)
+}
+
+// UpdateNotificationChannelWithBodyWithResponse Change an alert channel; secret replaces the stored one when present
+//
+// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
+//
+// Corresponds with PATCH /api/notification-channels/{channelId} (the `UpdateNotificationChannel` operationId).
+func (c *ClientWithResponses) UpdateNotificationChannelWithBodyWithResponse(ctx context.Context, channelId ChannelId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpdateNotificationChannelResponse, error) {
+	rsp, err := c.UpdateNotificationChannelWithBody(ctx, channelId, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseUpdateNotificationChannelResponse(rsp)
+}
+
+// UpdateNotificationChannelWithResponse Change an alert channel; secret replaces the stored one when present
+//
+// Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
+//
+// Corresponds with PATCH /api/notification-channels/{channelId} (the `UpdateNotificationChannel` operationId).
+func (c *ClientWithResponses) UpdateNotificationChannelWithResponse(ctx context.Context, channelId ChannelId, body UpdateNotificationChannelJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdateNotificationChannelResponse, error) {
+	rsp, err := c.UpdateNotificationChannel(ctx, channelId, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseUpdateNotificationChannelResponse(rsp)
+}
+
+// TestNotificationChannelWithResponse Send a test message now
+//
+// Returns a wrapper object for the known response body format(s).
+//
+// Corresponds with POST /api/notification-channels/{channelId}/test (the `TestNotificationChannel` operationId).
+func (c *ClientWithResponses) TestNotificationChannelWithResponse(ctx context.Context, channelId ChannelId, reqEditors ...RequestEditorFn) (*TestNotificationChannelResponse, error) {
+	rsp, err := c.TestNotificationChannel(ctx, channelId, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseTestNotificationChannelResponse(rsp)
+}
+
 // ListProvidersWithResponse The provider catalog compiled into the hub
 //
 // Returns a wrapper object for the known response body format(s).
@@ -11302,6 +13704,19 @@ func (c *ClientWithResponses) UpdateUserWithResponse(ctx context.Context, userId
 		return nil, err
 	}
 	return ParseUpdateUserResponse(rsp)
+}
+
+// ResetUserTotpWithResponse Turn off another user's two-factor (lost phone)
+//
+// Returns a wrapper object for the known response body format(s).
+//
+// Corresponds with DELETE /api/users/{userId}/totp (the `ResetUserTotp` operationId).
+func (c *ClientWithResponses) ResetUserTotpWithResponse(ctx context.Context, userId UserId, reqEditors ...RequestEditorFn) (*ResetUserTotpResponse, error) {
+	rsp, err := c.ResetUserTotp(ctx, userId, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseResetUserTotpResponse(rsp)
 }
 
 // GetHealthWithResponse Liveness check
@@ -12103,6 +14518,53 @@ func ParseLoginResponse(rsp *http.Response) (*LoginResponse, error) {
 		}
 		response.JSON200 = &dest
 
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 202:
+		var dest LoginTotpRequired
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON202 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest Error
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 429:
+		var dest Error
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON429 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseLoginTotpResponse parses an HTTP response from a LoginTotpWithResponse call
+func ParseLoginTotpResponse(rsp *http.Response) (*LoginTotpResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &LoginTotpResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest Me
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
 		var dest Error
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
@@ -12133,6 +14595,135 @@ func ParseLogoutResponse(rsp *http.Response) (*LogoutResponse, error) {
 	response := &LogoutResponse{
 		Body:         bodyBytes,
 		HTTPResponse: rsp,
+	}
+
+	return response, nil
+}
+
+// ParseGetOidcConfigResponse parses an HTTP response from a GetOidcConfigWithResponse call
+func ParseGetOidcConfigResponse(rsp *http.Response) (*GetOidcConfigResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &GetOidcConfigResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest struct {
+			Enabled bool `json:"enabled"`
+
+			// Name Button label, for example "Authentik"
+			Name *string `json:"name,omitempty"`
+
+			// StartUrl Where the button sends the browser (/auth/oidc/start)
+			StartUrl *string `json:"start_url,omitempty"`
+		}
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseListBudgetsResponse parses an HTTP response from a ListBudgetsWithResponse call
+func ParseListBudgetsResponse(rsp *http.Response) (*ListBudgetsResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &ListBudgetsResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest []Budget
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParsePutBudgetResponse parses an HTTP response from a PutBudgetWithResponse call
+func ParsePutBudgetResponse(rsp *http.Response) (*PutBudgetResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &PutBudgetResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest Budget
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest Error
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest Error
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseDeleteBudgetResponse parses an HTTP response from a DeleteBudgetWithResponse call
+func ParseDeleteBudgetResponse(rsp *http.Response) (*DeleteBudgetResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &DeleteBudgetResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case rsp.StatusCode == 204:
+		break // No content-type
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest Error
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
+
 	}
 
 	return response, nil
@@ -12729,6 +15320,307 @@ func ParseRevokeApiTokenResponse(rsp *http.Response) (*RevokeApiTokenResponse, e
 	return response, nil
 }
 
+// ParseDisableMyTotpResponse parses an HTTP response from a DisableMyTotpWithResponse call
+func ParseDisableMyTotpResponse(rsp *http.Response) (*DisableMyTotpResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &DisableMyTotpResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case rsp.StatusCode == 204:
+		break // No content-type
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest Error
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseGetMyTotpResponse parses an HTTP response from a GetMyTotpWithResponse call
+func ParseGetMyTotpResponse(rsp *http.Response) (*GetMyTotpResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &GetMyTotpResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest TotpStatus
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseEnableMyTotpResponse parses an HTTP response from a EnableMyTotpWithResponse call
+func ParseEnableMyTotpResponse(rsp *http.Response) (*EnableMyTotpResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &EnableMyTotpResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest struct {
+			// RecoveryCodes Ten single-use codes, shown once
+			RecoveryCodes []string `json:"recovery_codes"`
+		}
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest Error
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 409:
+		var dest Error
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON409 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseSetupMyTotpResponse parses an HTTP response from a SetupMyTotpWithResponse call
+func ParseSetupMyTotpResponse(rsp *http.Response) (*SetupMyTotpResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &SetupMyTotpResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest struct {
+			// OtpauthUrl otpauth://totp/... for a QR code
+			OtpauthUrl string `json:"otpauth_url"`
+
+			// Secret Base32, for typing into the app
+			Secret string `json:"secret"`
+		}
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 409:
+		var dest Error
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON409 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseListNotificationChannelsResponse parses an HTTP response from a ListNotificationChannelsWithResponse call
+func ParseListNotificationChannelsResponse(rsp *http.Response) (*ListNotificationChannelsResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &ListNotificationChannelsResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest []NotificationChannel
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseCreateNotificationChannelResponse parses an HTTP response from a CreateNotificationChannelWithResponse call
+func ParseCreateNotificationChannelResponse(rsp *http.Response) (*CreateNotificationChannelResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &CreateNotificationChannelResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 201:
+		var dest NotificationChannel
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON201 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest Error
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseDeleteNotificationChannelResponse parses an HTTP response from a DeleteNotificationChannelWithResponse call
+func ParseDeleteNotificationChannelResponse(rsp *http.Response) (*DeleteNotificationChannelResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &DeleteNotificationChannelResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case rsp.StatusCode == 204:
+		break // No content-type
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest Error
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseUpdateNotificationChannelResponse parses an HTTP response from a UpdateNotificationChannelWithResponse call
+func ParseUpdateNotificationChannelResponse(rsp *http.Response) (*UpdateNotificationChannelResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &UpdateNotificationChannelResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest NotificationChannel
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest Error
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest Error
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseTestNotificationChannelResponse parses an HTTP response from a TestNotificationChannelWithResponse call
+func ParseTestNotificationChannelResponse(rsp *http.Response) (*TestNotificationChannelResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &TestNotificationChannelResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case rsp.StatusCode == 204:
+		break // No content-type
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest Error
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 422:
+		var dest Error
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON422 = &dest
+
+	}
+
+	return response, nil
+}
+
 // ParseListProvidersResponse parses an HTTP response from a ListProvidersWithResponse call
 func ParseListProvidersResponse(rsp *http.Response) (*ListProvidersResponse, error) {
 	bodyBytes, err := io.ReadAll(rsp.Body)
@@ -13148,6 +16040,35 @@ func ParseUpdateUserResponse(rsp *http.Response) (*UpdateUserResponse, error) {
 			return nil, err
 		}
 		response.JSON409 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseResetUserTotpResponse parses an HTTP response from a ResetUserTotpWithResponse call
+func ParseResetUserTotpResponse(rsp *http.Response) (*ResetUserTotpResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &ResetUserTotpResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case rsp.StatusCode == 204:
+		break // No content-type
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest Error
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
 
 	}
 
