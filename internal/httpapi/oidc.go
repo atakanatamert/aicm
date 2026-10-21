@@ -59,6 +59,9 @@ func (s *Server) oidcCallback(w http.ResponseWriter, r *http.Request) {
 			redirectLoginError(w, r, "sso_unknown_user")
 		case errors.Is(err, auth.ErrOIDCUnverified):
 			redirectLoginError(w, r, "sso_unverified")
+		case errors.Is(err, auth.ErrOIDCState):
+			// Expired, replayed or forged flow: start again from the button.
+			redirectLoginError(w, r, "sso_failed")
 		default:
 			// Do not log the exchange error: provider messages can echo
 			// request parameters, and the authorization code is a credential.
