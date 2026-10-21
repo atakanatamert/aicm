@@ -5,7 +5,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 
 type UsageRow = components["schemas"]["UsageRow"]
 
-export type UsageGroupBy = "day" | "model" | "account" | "provider"
+export type UsageGroupBy = "day" | "model" | "account" | "provider" | "project"
 
 const tokens = new Intl.NumberFormat(undefined, { maximumFractionDigits: 0 })
 
@@ -14,6 +14,7 @@ const HEAD_BY_GROUP: Record<UsageGroupBy, string> = {
   model: "Model",
   account: "Account",
   provider: "Provider",
+  project: "Project",
 }
 
 /** The grouping key of a row; the server only fills the keys it grouped by. */
@@ -27,6 +28,8 @@ function rowLabel(groupBy: UsageGroupBy, row: UsageRow): string {
       return row.account_name ?? row.account_id ?? "–"
     case "provider":
       return row.provider_id ?? "–"
+    case "project":
+      return row.project || "Unknown"
   }
 }
 

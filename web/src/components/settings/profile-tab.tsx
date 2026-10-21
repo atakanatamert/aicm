@@ -14,6 +14,7 @@ import { Terminal } from "@/components/ui/hairline"
 import { formatDate, formatRelative } from "@/lib/format"
 import { CopyField } from "./fields"
 import { MCP_HINT, messageOf } from "./helpers"
+import { TwoFactorCard } from "./two-factor-card"
 
 type ApiTokenCreated = components["schemas"]["ApiTokenCreated"]
 
@@ -21,6 +22,7 @@ export function ProfileTab() {
   return (
     <div className="grid grid-cols-1 items-start gap-6 py-6 xl:grid-cols-2">
       <PasswordCard />
+      <TwoFactorCard />
       <TokensCard />
     </div>
   )

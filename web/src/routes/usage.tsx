@@ -22,7 +22,7 @@ const RANGE_LABEL: Record<UsageRange, string> = {
   year: "This year",
 }
 
-const GROUPS: UsageGroupBy[] = ["day", "model", "account", "provider"]
+const GROUPS: UsageGroupBy[] = ["day", "model", "account", "provider", "project"]
 
 /** Inclusive UTC day range for a picker choice. */
 function rangeOf(range: UsageRange): { from: string; to: string } {

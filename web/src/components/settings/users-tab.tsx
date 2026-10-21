@@ -1,13 +1,15 @@
 import { useState, type FormEvent } from "react"
-import { RefreshCw } from "lucide-react"
+import { MoreHorizontal, RefreshCw } from "lucide-react"
 import { toast } from "sonner"
 import { query, queryClient } from "@/api/client"
 import type { components } from "@/api/schema"
 import { ConfirmDialog } from "@/components/machines/confirm-dialog"
 import { EmptyState } from "@/components/empty-state"
 import { StatusDot } from "@/components/status-dot"
+import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
@@ -15,6 +17,7 @@ import { Switch } from "@/components/ui/switch"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Lockers } from "@/components/ui/hairline"
 import { formatRelative } from "@/lib/format"
+import { useMe } from "@/hooks/use-me"
 import { CopyField, TableSkeleton } from "./fields"
 import { generatePassword, messageOf, toastMutationError } from "./helpers"
 
@@ -34,9 +37,11 @@ function refresh() {
 }
 
 export function UsersTab() {
+  const { isAdmin } = useMe()
   const users = query.useQuery("get", "/api/users")
   const [inviteOpen, setInviteOpen] = useState(false)
   const [resetTarget, setResetTarget] = useState<User | null>(null)
+  const [totpTarget, setTotpTarget] = useState<User | null>(null)
 
   return (
     <section className="py-6">
@@ -79,7 +84,13 @@ export function UsersTab() {
             </TableHeader>
             <TableBody>
               {users.data.map((user) => (
-                <UserRow key={user.id} user={user} onReset={() => setResetTarget(user)} />
+                <UserRow
+                  key={user.id}
+                  user={user}
+                  isAdmin={isAdmin}
+                  onReset={() => setResetTarget(user)}
+                  onDisableTotp={() => setTotpTarget(user)}
+                />
               ))}
             </TableBody>
           </Table>
@@ -88,11 +99,12 @@ export function UsersTab() {
 
       <InviteDialog open={inviteOpen} onOpenChange={setInviteOpen} />
       <ResetPasswordDialog user={resetTarget} onDone={() => setResetTarget(null)} />
+      <ResetTotpDialog user={totpTarget} onDone={() => setTotpTarget(null)} />
     </section>
   )
 }
 
-function UserRow({ user, onReset }: { user: User; onReset: () => void }) {
+function UserRow({ user, isAdmin, onReset, onDisableTotp }: { user: User; isAdmin: boolean; onReset: () => void; onDisableTotp: () => void }) {
   const patch = query.useMutation("patch", "/api/users/{userId}", {
     onSuccess: (updated) => {
       toast.success(`Saved ${updated.email}.`)
@@ -112,7 +124,21 @@ function UserRow({ user, onReset }: { user: User; onReset: () => void }) {
   return (
     <>
       <TableRow>
-        <TableCell className="text-sm">{user.email}</TableCell>
+        <TableCell className="text-sm">
+          <span className="flex flex-wrap items-center gap-1.5">
+            {user.email}
+            {user.totp_enabled && (
+              <Badge variant="secondary" aria-label="Two-factor sign-in is on">
+                2FA
+              </Badge>
+            )}
+            {user.sso_linked && (
+              <Badge variant="secondary" aria-label="Signs in with single sign-on">
+                SSO
+              </Badge>
+            )}
+          </span>
+        </TableCell>
         <TableCell className="text-sm">{user.name || <span className="text-muted-foreground">—</span>}</TableCell>
         <TableCell>
           <Select
@@ -169,9 +195,27 @@ function UserRow({ user, onReset }: { user: User; onReset: () => void }) {
           {user.last_login_at ? formatRelative(user.last_login_at) : "Never"}
         </TableCell>
         <TableCell className="text-right">
-          <Button variant="ghost" size="sm" onClick={onReset}>
-            Reset password
-          </Button>
+          {isAdmin ? (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="icon" aria-label={`Actions for ${user.email}`}>
+                  <MoreHorizontal />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onSelect={onReset}>Reset password</DropdownMenuItem>
+                {user.totp_enabled && (
+                  <DropdownMenuItem variant="destructive" onSelect={onDisableTotp}>
+                    Turn off two-factor
+                  </DropdownMenuItem>
+                )}
+              </DropdownMenuContent>
+            </DropdownMenu>
+          ) : (
+            <Button variant="ghost" size="sm" onClick={onReset}>
+              Reset password
+            </Button>
+          )}
         </TableCell>
       </TableRow>
       <ConfirmDialog
@@ -401,5 +445,38 @@ function ResetPasswordDialog({ user, onDone }: { user: User | null; onDone: () =
         )}
       </DialogContent>
     </Dialog>
+  )
+}
+
+/** Admin turns off another user's two-factor, for a lost phone or lost codes. */
+function ResetTotpDialog({ user, onDone }: { user: User | null; onDone: () => void }) {
+  const reset = query.useMutation("delete", "/api/users/{userId}/totp", {
+    onSuccess: () => {
+      toast.success("Two-factor turned off.")
+      refresh()
+      onDone()
+    },
+    onError: (err) => toastMutationError(err, "Could not turn two-factor off."),
+  })
+
+  const close = () => {
+    if (reset.isPending) return
+    reset.reset()
+    onDone()
+  }
+
+  return (
+    <ConfirmDialog
+      open={user !== null}
+      onOpenChange={(open) => {
+        if (!open) close()
+      }}
+      title={`Turn off two-factor for ${user?.email ?? ""}?`}
+      description="Use this when the user lost their phone or recovery codes and can no longer sign in. They can turn two-factor back on from their profile."
+      confirmLabel="Turn off"
+      destructive
+      pending={reset.isPending}
+      onConfirm={() => user && reset.mutate({ params: { path: { userId: user.id } } })}
+    />
   )
 }
