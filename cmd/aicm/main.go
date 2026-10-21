@@ -358,7 +358,8 @@ func serve(ctx context.Context, args []string) error {
 	quotaSvc.SetBalanceHook(charges.TopUpHook())
 	alertSvc := alert.NewService(pool, log, quotaSvc, providers)
 	settingsSvc := settings.NewService(pool, store)
-	alertSvc.SetHook(notify.Hook())
+	channelSvc := notify.NewChannelService(pool, store, log, cfg.PublicURL)
+	alertSvc.SetHook(notify.Hook(pool))
 
 	reg := jobs.NewRegistry()
 	jobs.Register(reg, &fx.RefreshWorker{Service: fxSvc})
@@ -375,6 +376,12 @@ func serve(ctx context.Context, args []string) error {
 	jobs.Register(reg, &notify.SendAlertWorker{
 		Pool:      pool,
 		Settings:  settingsSvc,
+		PublicURL: cfg.PublicURL,
+		Log:       log,
+	})
+	jobs.Register(reg, &notify.DeliverAlertWorker{
+		Pool:      pool,
+		Secrets:   store,
 		PublicURL: cfg.PublicURL,
 		Log:       log,
 	})
@@ -408,6 +415,7 @@ func serve(ctx context.Context, args []string) error {
 			AgentHub:  agentHub,
 			Alerts:    alertSvc,
 			Settings:  settingsSvc,
+			Channels:  channelSvc,
 			Install:   install.Handler(),
 			MCP:       mcpserver.HTTPHandler(selfURL(cfg.ListenAddr)),
 			Web:       web.Handler(),

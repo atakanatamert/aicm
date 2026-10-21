@@ -30,6 +30,7 @@ import (
 	"github.com/atakanatamert/aicm/internal/fx"
 	"github.com/atakanatamert/aicm/internal/jobs"
 	"github.com/atakanatamert/aicm/internal/machine"
+	"github.com/atakanatamert/aicm/internal/notify"
 	"github.com/atakanatamert/aicm/internal/provider"
 	"github.com/atakanatamert/aicm/internal/quota"
 	"github.com/atakanatamert/aicm/internal/secrets"
@@ -63,6 +64,7 @@ type Deps struct {
 	AgentHub  *agenthub.Hub
 	Alerts    *alert.Service
 	Settings  *settings.Service
+	Channels  *notify.ChannelService
 	Install   http.Handler // public install scripts; nil disables them
 	// MCP serves the MCP tools at /mcp when set.
 	MCP http.Handler

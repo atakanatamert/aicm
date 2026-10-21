@@ -43,26 +43,6 @@ func (s *Server) SetupMyTotp(context.Context, SetupMyTotpRequestObject) (SetupMy
 	return nil, ErrNotImplemented
 }
 
-func (s *Server) ListNotificationChannels(context.Context, ListNotificationChannelsRequestObject) (ListNotificationChannelsResponseObject, error) {
-	return nil, ErrNotImplemented
-}
-
-func (s *Server) CreateNotificationChannel(context.Context, CreateNotificationChannelRequestObject) (CreateNotificationChannelResponseObject, error) {
-	return nil, ErrNotImplemented
-}
-
-func (s *Server) DeleteNotificationChannel(context.Context, DeleteNotificationChannelRequestObject) (DeleteNotificationChannelResponseObject, error) {
-	return nil, ErrNotImplemented
-}
-
-func (s *Server) UpdateNotificationChannel(context.Context, UpdateNotificationChannelRequestObject) (UpdateNotificationChannelResponseObject, error) {
-	return nil, ErrNotImplemented
-}
-
-func (s *Server) TestNotificationChannel(context.Context, TestNotificationChannelRequestObject) (TestNotificationChannelResponseObject, error) {
-	return nil, ErrNotImplemented
-}
-
 func (s *Server) ResetUserTotp(context.Context, ResetUserTotpRequestObject) (ResetUserTotpResponseObject, error) {
 	return nil, ErrNotImplemented
 }

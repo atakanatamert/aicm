@@ -119,9 +119,11 @@ func (w *SendAlertWorker) Work(ctx context.Context, job *river.Job[SendAlertArgs
 	return nil
 }
 
-// Hook returns an alert.Hook that queues the email from inside the alert
-// evaluation job, using that job's River client.
-func Hook() alert.Hook {
+// Hook returns an alert.Hook that queues the email and one delivery per
+// matching enabled channel from inside the alert evaluation job, using that
+// job's River client. pool reads the org's channels; the evaluation job
+// itself has no transaction around the hook call.
+func Hook(pool *pgxpool.Pool) alert.Hook {
 	return func(ctx context.Context, a alert.NewAlert) error {
 		client, err := river.ClientFromContextSafely[pgx.Tx](ctx)
 		if err != nil {
@@ -132,6 +134,25 @@ func Hook() alert.Hook {
 			AlertID: a.Alert.ID,
 		}, nil); err != nil {
 			return fmt.Errorf("queueing alert email: %w", err)
+		}
+		if pool == nil {
+			return nil
+		}
+		channels, err := db.New(pool).ListEnabledNotificationChannels(ctx, a.Alert.OrgID)
+		if err != nil {
+			return fmt.Errorf("listing alert channels: %w", err)
+		}
+		for _, ch := range channels {
+			if !ChannelMatches(ch, a.Alert.Kind, a.Alert.Severity) {
+				continue
+			}
+			if _, err := client.Insert(ctx, DeliverAlertArgs{
+				OrgID:     a.Alert.OrgID,
+				AlertID:   a.Alert.ID,
+				ChannelID: ch.ID,
+			}, nil); err != nil {
+				return fmt.Errorf("queueing alert delivery: %w", err)
+			}
 		}
 		return nil
 	}
