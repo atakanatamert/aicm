@@ -3469,8 +3469,9 @@ export interface operations {
         requestBody?: never;
         responses: {
             /**
-             * @description One row per account, day and model. Columns: day, account_id,
-             *     account_name, provider_id, model, source, requests, input_tokens,
+             * @description One row per account, day, model and project. Columns: day,
+             *     account_id, account_name, provider_id, model, project, source,
+             *     requests, input_tokens,
              *     output_tokens, cache_read_tokens, cache_write_tokens,
              *     reasoning_tokens, cost (decimal), cost_currency, cost_reported
              */
