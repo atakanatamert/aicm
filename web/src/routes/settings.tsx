@@ -5,12 +5,13 @@ import { useMe } from "@/hooks/use-me"
 import { AuditTab } from "@/components/settings/audit-tab"
 import { EmailTab } from "@/components/settings/email-tab"
 import { GroupsTab } from "@/components/settings/groups-tab"
+import { NotificationsTab } from "@/components/settings/notifications-tab"
 import { OrganizationTab } from "@/components/settings/organization-tab"
 import { ProfileTab } from "@/components/settings/profile-tab"
 import { UsersTab } from "@/components/settings/users-tab"
 
 // Tab keys the URL understands; anything else falls back to Profile.
-const TAB_VALUES = ["profile", "users", "groups", "organization", "email", "audit"] as const
+const TAB_VALUES = ["profile", "users", "groups", "organization", "notifications", "email", "audit"] as const
 type TabValue = (typeof TAB_VALUES)[number]
 
 function tabOf(raw: string | null): TabValue {
@@ -25,7 +26,7 @@ export default function Settings() {
     <>
       <PageHeader
         title="Settings"
-        description="Your password and API tokens; admins also manage users, groups, the organization, email and the audit log."
+        description="Your password and API tokens; admins also manage users, groups, the organization, alert channels, email and the audit log."
       />
       <div className="mx-auto w-full max-w-6xl px-4 sm:px-6">
         <Tabs
@@ -38,6 +39,7 @@ export default function Settings() {
               {isAdmin && <TabsTrigger value="users">Users</TabsTrigger>}
               {isAdmin && <TabsTrigger value="groups">Groups</TabsTrigger>}
               {isAdmin && <TabsTrigger value="organization">Organization</TabsTrigger>}
+              {isAdmin && <TabsTrigger value="notifications">Notifications</TabsTrigger>}
               {isAdmin && <TabsTrigger value="email">Email</TabsTrigger>}
               {isAdmin && <TabsTrigger value="audit">Audit log</TabsTrigger>}
             </TabsList>
@@ -55,6 +57,9 @@ export default function Settings() {
               </TabsContent>
               <TabsContent value="organization">
                 <OrganizationTab />
+              </TabsContent>
+              <TabsContent value="notifications">
+                <NotificationsTab />
               </TabsContent>
               <TabsContent value="email">
                 <EmailTab />

@@ -36,12 +36,33 @@ function barOf(meter: MeterView): { value: number; max: number } | null {
   return null
 }
 
+/**
+ * "Runs out around November 3 at this pace" for a wallet that never resets.
+ * Needs a currency meter, a known burn and more than 48 h of headroom; the
+ * caller says "in about N hours" for anything closer.
+ */
+function runwayLine(meter: MeterView, now: Date): string | undefined {
+  if (meter.def.reset_kind !== "never" || meter.def.unit !== "currency") return undefined
+  const hours = meter.score.hours_to_empty
+  if (hours === null || hours === undefined || hours <= 0) return undefined
+  const when = new Intl.DateTimeFormat(undefined, { dateStyle: "long" }).format(
+    new Date(now.getTime() + hours * 3600 * 1000),
+  )
+  return `Runs out around ${when} at this pace`
+}
+
 // One provider-native meter: the provider's label and numbers, reset time,
 // when the reading was captured and where it came from, and a bar only when a
 // limit is known.
 export function MeterRow({ meter }: { meter: MeterView }) {
   const reading = meter.latest
   const bar = barOf(meter)
+  const now = new Date()
+  const hoursToEmpty = meter.score.hours_to_empty
+  const runway =
+    hoursToEmpty !== null && hoursToEmpty !== undefined && hoursToEmpty > 0 && hoursToEmpty < 48
+      ? `Runs out in about ${Math.round(hoursToEmpty)} ${Math.round(hoursToEmpty) === 1 ? "hour" : "hours"} at this pace`
+      : runwayLine(meter, now)
 
   const parts: string[] = []
   if (reading?.used !== null && reading?.used !== undefined) {
@@ -72,6 +93,7 @@ export function MeterRow({ meter }: { meter: MeterView }) {
           label={`${meter.def.label} used`}
         />
       )}
+      {runway && <p className="text-xs font-medium">{runway}</p>}
       <p className="text-xs text-muted-foreground">
         {parts.length > 0 ? parts.join(" · ") : "No reading yet"}
         {reading?.resets_at && (

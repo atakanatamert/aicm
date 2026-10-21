@@ -3,6 +3,7 @@ import type { components } from "@/api/schema"
 import { query } from "@/api/client"
 import { AccessCard } from "@/components/account-detail/access-card"
 import { ArchiveCard } from "@/components/account-detail/archive-card"
+import { BudgetCard } from "@/components/account-detail/budget-card"
 import { ChargesCard } from "@/components/account-detail/charges-card"
 import { KeyCard } from "@/components/account-detail/key-card"
 import { MachinesCard } from "@/components/account-detail/machines-card"
@@ -108,6 +109,8 @@ export default function AccountDetail() {
             <KeyCard account={data} canEdit={canEdit} />
           </SectionCard>
         </div>
+
+        <BudgetCard account={data} />
 
         <MetersCard account={data} quota={accountQuota} canEdit={canEdit} />
         <MachinesCard accountId={data.id} />

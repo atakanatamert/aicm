@@ -2,6 +2,7 @@ import { Suspense, lazy, useEffect, useState } from "react"
 import { errorOf, query } from "@/api/client"
 import { EmptyState } from "@/components/empty-state"
 import { PageHeader } from "@/components/page-header"
+import { BudgetsCard } from "@/components/overview/budgets-card"
 import { ProviderTable } from "@/components/overview/provider-table"
 import { RecordChargeDialog } from "@/components/overview/record-charge-dialog"
 import { RenewalsStrip } from "@/components/overview/renewals-strip"
@@ -112,6 +113,8 @@ export default function Overview() {
               </div>
             )}
           </section>
+
+          <BudgetsCard />
 
           {suggested.isError ? (
             <InlineError error={suggested.error} fallback="Could not load suggested top-ups." />

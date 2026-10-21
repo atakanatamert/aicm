@@ -62,6 +62,30 @@ export const ALERT_KINDS: KindMeta[] = [
     label: "Agent offline",
     fields: [{ key: "after_hours", label: "After hours", placeholder: "48" }],
   },
+  {
+    kind: "meter_reset",
+    label: "Limits are back",
+    fields: [{ key: "used_percent", label: "Used %", placeholder: "90" }],
+  },
+  {
+    kind: "budget",
+    label: "Budget",
+    fields: [{ key: "thresholds", label: "Thresholds %", placeholder: "80, 100", list: true }],
+  },
+  {
+    kind: "spend_anomaly",
+    label: "Unusual spend",
+    fields: [
+      { key: "usage_multiple", label: "Usage multiple", placeholder: "3" },
+      { key: "min_daily_cost", label: "Min daily cost (USD)", placeholder: "5" },
+      { key: "topups_per_day", label: "Top-ups per day", placeholder: "2" },
+    ],
+  },
+  {
+    kind: "wrong_wallet",
+    label: "Billed to the wrong wallet",
+    fields: [],
+  },
 ]
 
 /** One comma-separated or numeric draft value turned into a number or list. */
@@ -113,6 +137,18 @@ export function buildParams(meta: KindMeta, draft: Record<string, string>): { pa
         break
       case "after_hours":
         params.after_hours = value as number
+        break
+      case "thresholds":
+        params.thresholds = value as number[]
+        break
+      case "usage_multiple":
+        params.usage_multiple = value as number
+        break
+      case "min_daily_cost":
+        params.min_daily_cost = value as number
+        break
+      case "topups_per_day":
+        params.topups_per_day = value as number
         break
     }
   }
