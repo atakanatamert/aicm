@@ -301,6 +301,15 @@ func (s *Service) Evaluate(ctx context.Context, now time.Time) (int, error) {
 					}
 				}
 			}
+
+			if r, ok := rulesByKey.get(a.OrgID, a.ID, "meter_reset"); ok && ruleActive(r, now) {
+				if c, ok := resetCandidate(now, a, name, def, rows,
+					floatOr(paramsOf(r).UsedPercent, 90), links); ok {
+					if err := emit(c); err != nil {
+						return len(fresh), err
+					}
+				}
+			}
 		}
 	}
 
@@ -324,6 +333,16 @@ func (s *Service) Evaluate(ctx context.Context, now time.Time) (int, error) {
 		}); err != nil {
 			return len(fresh), err
 		}
+	}
+
+	if err := s.evalBudgets(ctx, now, rulesByKey, emit); err != nil {
+		return len(fresh), err
+	}
+	if err := s.evalSpendAnomalies(ctx, now, rulesByKey, accounts, emit); err != nil {
+		return len(fresh), err
+	}
+	if err := s.evalWallets(ctx, now, rulesByKey, accounts, emit); err != nil {
+		return len(fresh), err
 	}
 
 	for _, a := range fresh {

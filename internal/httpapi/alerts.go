@@ -64,9 +64,15 @@ func fromAlertParams(p AlertParams) alert.RuleParams {
 		UnusedPercent:    p.UnusedPercent,
 		HoursBeforeReset: p.HoursBeforeReset,
 		AfterHours:       p.AfterHours,
+		UsageMultiple:    p.UsageMultiple,
+		MinDailyCost:     p.MinDailyCost,
+		TopupsPerDay:     p.TopupsPerDay,
 	}
 	if p.DaysBefore != nil {
 		out.DaysBefore = *p.DaysBefore
+	}
+	if p.Thresholds != nil {
+		out.Thresholds = *p.Thresholds
 	}
 	return out
 }

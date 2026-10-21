@@ -26,6 +26,7 @@ import (
 	"github.com/atakanatamert/aicm/internal/alert"
 	"github.com/atakanatamert/aicm/internal/audit"
 	"github.com/atakanatamert/aicm/internal/auth"
+	"github.com/atakanatamert/aicm/internal/budget"
 	"github.com/atakanatamert/aicm/internal/charge"
 	"github.com/atakanatamert/aicm/internal/fx"
 	"github.com/atakanatamert/aicm/internal/jobs"
@@ -63,6 +64,7 @@ type Deps struct {
 	Machines  *machine.Service
 	AgentHub  *agenthub.Hub
 	Alerts    *alert.Service
+	Budgets   *budget.Service
 	Settings  *settings.Service
 	Channels  *notify.ChannelService
 	Install   http.Handler // public install scripts; nil disables them

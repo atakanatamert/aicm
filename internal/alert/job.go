@@ -38,29 +38,25 @@ func (w *EvaluateWorker) Work(ctx context.Context, _ *river.Job[EvaluateArgs]) e
 	return nil
 }
 
-// hourlySchedule fires once an hour at a fixed minute, in UTC.
-type hourlySchedule struct {
-	minute int
-}
+// quarterHourSchedule fires at minutes 0, 15, 30 and 45, in UTC.
+type quarterHourSchedule struct{}
 
-// Next returns the next occurrence of the schedule after now.
-func (s hourlySchedule) Next(now time.Time) time.Time {
+// Next returns the next quarter hour after now.
+func (quarterHourSchedule) Next(now time.Time) time.Time {
 	now = now.UTC()
-	next := time.Date(now.Year(), now.Month(), now.Day(), now.Hour(), s.minute, 0, 0, time.UTC)
-	if !next.After(now) {
-		next = next.Add(time.Hour)
-	}
-	return next
+	next := now.Truncate(15 * time.Minute).Add(15 * time.Minute)
+	return time.Date(next.Year(), next.Month(), next.Day(), next.Hour(), next.Minute(), 0, 0, time.UTC)
 }
 
-// PeriodicJob evaluates rules every hour at minute 5, and once on start so a
-// fresh hub fills its inbox immediately.
+// PeriodicJob evaluates rules every 15 minutes, and once on start so a fresh
+// hub fills its inbox immediately. UniqueOpts keeps a delayed tick from
+// queueing the same period twice.
 func PeriodicJob() *river.PeriodicJob {
 	return river.NewPeriodicJob(
-		hourlySchedule{minute: 5},
+		quarterHourSchedule{},
 		func() (river.JobArgs, *river.InsertOpts) {
 			return EvaluateArgs{}, &river.InsertOpts{
-				UniqueOpts: river.UniqueOpts{ByPeriod: time.Hour},
+				UniqueOpts: river.UniqueOpts{ByPeriod: 15 * time.Minute},
 			}
 		},
 		&river.PeriodicJobOpts{ID: "alert_evaluate", RunOnStart: true},

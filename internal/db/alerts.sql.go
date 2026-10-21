@@ -310,6 +310,38 @@ func (q *Queries) ListAlertMeters(ctx context.Context) ([]QuotaMeter, error) {
 	return items, nil
 }
 
+const listAlertOrgs = `-- name: ListAlertOrgs :many
+SELECT id, slug, name, created_at
+FROM orgs
+ORDER BY id
+`
+
+// System job: every org, for kinds that are not tied to an account.
+func (q *Queries) ListAlertOrgs(ctx context.Context) ([]Org, error) {
+	rows, err := q.db.Query(ctx, listAlertOrgs)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []Org{}
+	for rows.Next() {
+		var i Org
+		if err := rows.Scan(
+			&i.ID,
+			&i.Slug,
+			&i.Name,
+			&i.CreatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const listAlertReadings = `-- name: ListAlertReadings :many
 SELECT r.id, r.org_id, r.meter_id, r.used, r.remaining, r.limit_value, r.resets_at, r.captured_at, r.source, r.machine_id, r.received_at FROM quota_readings r
 WHERE r.captured_at >= $1
@@ -432,6 +464,145 @@ func (q *Queries) ListAlertRulesForOrg(ctx context.Context, arg ListAlertRulesFo
 			&i.SnoozedUntil,
 			&i.CreatedAt,
 			&i.UpdatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listAlertTopups = `-- name: ListAlertTopups :many
+SELECT org_id, account_id, count(*)::bigint AS topups
+FROM charges
+WHERE kind = 'topup'
+  AND status IN ('confirmed', 'suggested')
+  AND occurred_on >= $1::date
+GROUP BY org_id, account_id
+HAVING count(*) > 0
+ORDER BY org_id, account_id
+`
+
+type ListAlertTopupsRow struct {
+	OrgID     string
+	AccountID string
+	Topups    int64
+}
+
+// System job: confirmed and suggested top-up charges since a day, per
+// account.
+func (q *Queries) ListAlertTopups(ctx context.Context, since time.Time) ([]ListAlertTopupsRow, error) {
+	rows, err := q.db.Query(ctx, listAlertTopups, since)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []ListAlertTopupsRow{}
+	for rows.Next() {
+		var i ListAlertTopupsRow
+		if err := rows.Scan(&i.OrgID, &i.AccountID, &i.Topups); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listAlertUsageDaily = `-- name: ListAlertUsageDaily :many
+SELECT org_id, account_id, day, sum(cost_micro)::bigint AS cost_micro
+FROM usage_daily
+WHERE day >= $1::date
+  AND day <= $2::date
+  AND cost_currency = 'USD'
+GROUP BY org_id, account_id, day
+ORDER BY account_id, day
+`
+
+type ListAlertUsageDailyParams struct {
+	Since time.Time
+	Today time.Time
+}
+
+type ListAlertUsageDailyRow struct {
+	OrgID     string
+	AccountID string
+	Day       time.Time
+	CostMicro int64
+}
+
+// System job: estimated usage cost per account and day, USD only, for the
+// anomaly check's today and its median window.
+func (q *Queries) ListAlertUsageDaily(ctx context.Context, arg ListAlertUsageDailyParams) ([]ListAlertUsageDailyRow, error) {
+	rows, err := q.db.Query(ctx, listAlertUsageDaily, arg.Since, arg.Today)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []ListAlertUsageDailyRow{}
+	for rows.Next() {
+		var i ListAlertUsageDailyRow
+		if err := rows.Scan(
+			&i.OrgID,
+			&i.AccountID,
+			&i.Day,
+			&i.CostMicro,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listAlertWallets = `-- name: ListAlertWallets :many
+SELECT am.org_id, am.account_id, am.machine_id, am.harness, am.details,
+       m.name AS machine_name
+FROM account_machines am
+JOIN machines m ON m.org_id = am.org_id AND m.id = am.machine_id
+JOIN accounts a ON a.org_id = am.org_id AND a.id = am.account_id
+WHERE a.auth_kind = 'agent_capture'
+  AND a.status = 'active'
+  AND a.archived_at IS NULL
+  AND m.revoked_at IS NULL
+ORDER BY am.org_id, am.account_id, m.name, am.harness
+`
+
+type ListAlertWalletsRow struct {
+	OrgID       string
+	AccountID   string
+	MachineID   string
+	Harness     string
+	Details     json.RawMessage
+	MachineName string
+}
+
+// System job: harnesses on active subscription accounts, with the details
+// that say whether the harness bills an API key or paid extra usage.
+func (q *Queries) ListAlertWallets(ctx context.Context) ([]ListAlertWalletsRow, error) {
+	rows, err := q.db.Query(ctx, listAlertWallets)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []ListAlertWalletsRow{}
+	for rows.Next() {
+		var i ListAlertWalletsRow
+		if err := rows.Scan(
+			&i.OrgID,
+			&i.AccountID,
+			&i.MachineID,
+			&i.Harness,
+			&i.Details,
+			&i.MachineName,
 		); err != nil {
 			return nil, err
 		}

@@ -15,18 +15,6 @@ func (s *Server) GetOidcConfig(context.Context, GetOidcConfigRequestObject) (Get
 	return nil, ErrNotImplemented
 }
 
-func (s *Server) ListBudgets(context.Context, ListBudgetsRequestObject) (ListBudgetsResponseObject, error) {
-	return nil, ErrNotImplemented
-}
-
-func (s *Server) PutBudget(context.Context, PutBudgetRequestObject) (PutBudgetResponseObject, error) {
-	return nil, ErrNotImplemented
-}
-
-func (s *Server) DeleteBudget(context.Context, DeleteBudgetRequestObject) (DeleteBudgetResponseObject, error) {
-	return nil, ErrNotImplemented
-}
-
 func (s *Server) DisableMyTotp(context.Context, DisableMyTotpRequestObject) (DisableMyTotpResponseObject, error) {
 	return nil, ErrNotImplemented
 }

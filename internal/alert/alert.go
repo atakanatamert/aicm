@@ -21,6 +21,7 @@ import (
 
 	"github.com/atakanatamert/aicm/internal/audit"
 	"github.com/atakanatamert/aicm/internal/auth"
+	"github.com/atakanatamert/aicm/internal/budget"
 	"github.com/atakanatamert/aicm/internal/db"
 	"github.com/atakanatamert/aicm/internal/provider"
 	"github.com/atakanatamert/aicm/internal/quota"
@@ -49,6 +50,10 @@ var kinds = map[string]struct{}{
 	"quota_waste":     {},
 	"sync_failing":    {},
 	"agent_offline":   {},
+	"meter_reset":     {},
+	"budget":          {},
+	"spend_anomaly":   {},
+	"wrong_wallet":    {},
 }
 
 // NewAlert is passed to the hook after an alert row is inserted for the
@@ -71,6 +76,12 @@ type RuleParams struct {
 	UnusedPercent    *float64 `json:"unused_percent,omitempty"`
 	HoursBeforeReset *float64 `json:"hours_before_reset,omitempty"`
 	AfterHours       *float64 `json:"after_hours,omitempty"`
+	// Thresholds is the budget kind's list of percent-of-budget triggers.
+	Thresholds []int `json:"thresholds,omitempty"`
+	// UsageMultiple, MinDailyCost and TopupsPerDay configure spend_anomaly.
+	UsageMultiple *float64 `json:"usage_multiple,omitempty"`
+	MinDailyCost  *float64 `json:"min_daily_cost,omitempty"`
+	TopupsPerDay  *int     `json:"topups_per_day,omitempty"`
 }
 
 // RuleWrite is one upsert. AccountID nil writes the org default, which needs
@@ -88,14 +99,16 @@ type Service struct {
 	pool      *pgxpool.Pool
 	q         *db.Queries
 	quota     *quota.Service
+	budgets   *budget.Service
 	providers []provider.Provider
 	log       *slog.Logger
 	hook      Hook
 }
 
-// NewService builds the alert service.
-func NewService(pool *pgxpool.Pool, log *slog.Logger, quotaSvc *quota.Service, providers []provider.Provider) *Service {
-	return &Service{pool: pool, q: db.New(pool), quota: quotaSvc, providers: providers, log: log}
+// NewService builds the alert service. budgets may be nil, in which case
+// the budget kind is skipped.
+func NewService(pool *pgxpool.Pool, log *slog.Logger, quotaSvc *quota.Service, providers []provider.Provider, budgets *budget.Service) *Service {
+	return &Service{pool: pool, q: db.New(pool), quota: quotaSvc, budgets: budgets, providers: providers, log: log}
 }
 
 // SetHook installs the sender called for every newly inserted alert.
@@ -338,9 +351,8 @@ func validateRule(w RuleWrite) error {
 	}
 	switch w.Kind {
 	case "renewal", "promo_ending":
-		if p.BelowPercent != nil || p.DaysLeft != nil || p.UsedPercent != nil ||
-			p.UnusedPercent != nil || p.HoursBeforeReset != nil || p.AfterHours != nil {
-			return invalid("kind %s only accepts days_before", w.Kind)
+		if f := unexpectedField(p, "days_before"); f != "" {
+			return invalid("kind %s only accepts days_before, not %s", w.Kind, f)
 		}
 		for _, d := range p.DaysBefore {
 			if d < 0 {
@@ -348,9 +360,8 @@ func validateRule(w RuleWrite) error {
 			}
 		}
 	case "low_balance":
-		if p.DaysBefore != nil || p.UsedPercent != nil || p.UnusedPercent != nil ||
-			p.HoursBeforeReset != nil || p.AfterHours != nil {
-			return invalid("kind low_balance only accepts below_percent and days_left")
+		if f := unexpectedField(p, "below_percent", "days_left"); f != "" {
+			return invalid("kind low_balance only accepts below_percent and days_left, not %s", f)
 		}
 		if err := percent("below_percent", p.BelowPercent); err != nil {
 			return err
@@ -358,18 +369,16 @@ func validateRule(w RuleWrite) error {
 		if err := nonNegative("days_left", p.DaysLeft); err != nil {
 			return err
 		}
-	case "meter_exhausted":
-		if p.DaysBefore != nil || p.BelowPercent != nil || p.DaysLeft != nil ||
-			p.UnusedPercent != nil || p.HoursBeforeReset != nil || p.AfterHours != nil {
-			return invalid("kind meter_exhausted only accepts used_percent")
+	case "meter_exhausted", "meter_reset":
+		if f := unexpectedField(p, "used_percent"); f != "" {
+			return invalid("kind %s only accepts used_percent, not %s", w.Kind, f)
 		}
 		if err := percent("used_percent", p.UsedPercent); err != nil {
 			return err
 		}
 	case "quota_waste":
-		if p.DaysBefore != nil || p.BelowPercent != nil || p.DaysLeft != nil ||
-			p.UsedPercent != nil || p.AfterHours != nil {
-			return invalid("kind quota_waste only accepts unused_percent and hours_before_reset")
+		if f := unexpectedField(p, "unused_percent", "hours_before_reset"); f != "" {
+			return invalid("kind quota_waste only accepts unused_percent and hours_before_reset, not %s", f)
 		}
 		if err := percent("unused_percent", p.UnusedPercent); err != nil {
 			return err
@@ -378,17 +387,76 @@ func validateRule(w RuleWrite) error {
 			return err
 		}
 	case "sync_failing", "agent_offline":
-		if p.DaysBefore != nil || p.BelowPercent != nil || p.DaysLeft != nil ||
-			p.UsedPercent != nil || p.UnusedPercent != nil || p.HoursBeforeReset != nil {
-			return invalid("kind %s only accepts after_hours", w.Kind)
+		if f := unexpectedField(p, "after_hours"); f != "" {
+			return invalid("kind %s only accepts after_hours, not %s", w.Kind, f)
 		}
 		if err := nonNegative("after_hours", p.AfterHours); err != nil {
 			return err
+		}
+	case "budget":
+		if f := unexpectedField(p, "thresholds"); f != "" {
+			return invalid("kind budget only accepts thresholds, not %s", f)
+		}
+		for _, t := range p.Thresholds {
+			if t < 1 || t > 1000 {
+				return invalid("thresholds must be between 1 and 1000")
+			}
+		}
+	case "spend_anomaly":
+		if f := unexpectedField(p, "usage_multiple", "min_daily_cost", "topups_per_day"); f != "" {
+			return invalid("kind spend_anomaly only accepts usage_multiple, min_daily_cost and topups_per_day, not %s", f)
+		}
+		if p.UsageMultiple != nil && (!finite(*p.UsageMultiple) || *p.UsageMultiple < 1) {
+			return invalid("usage_multiple must be 1 or more")
+		}
+		if err := nonNegative("min_daily_cost", p.MinDailyCost); err != nil {
+			return err
+		}
+		if p.TopupsPerDay != nil && *p.TopupsPerDay < 1 {
+			return invalid("topups_per_day must be 1 or more")
+		}
+	case "wrong_wallet":
+		if f := unexpectedField(p); f != "" {
+			return invalid("kind wrong_wallet accepts no params, not %s", f)
 		}
 	default:
 		return invalid("unknown kind %q", w.Kind)
 	}
 	return nil
+}
+
+// unexpectedField names the first populated param that kind does not
+// accept, or "" when every populated field is allowed.
+func unexpectedField(p RuleParams, allowed ...string) string {
+	ok := make(map[string]struct{}, len(allowed))
+	for _, name := range allowed {
+		ok[name] = struct{}{}
+	}
+	fields := []struct {
+		name    string
+		present bool
+	}{
+		{"days_before", len(p.DaysBefore) > 0},
+		{"below_percent", p.BelowPercent != nil},
+		{"days_left", p.DaysLeft != nil},
+		{"used_percent", p.UsedPercent != nil},
+		{"unused_percent", p.UnusedPercent != nil},
+		{"hours_before_reset", p.HoursBeforeReset != nil},
+		{"after_hours", p.AfterHours != nil},
+		{"thresholds", len(p.Thresholds) > 0},
+		{"usage_multiple", p.UsageMultiple != nil},
+		{"min_daily_cost", p.MinDailyCost != nil},
+		{"topups_per_day", p.TopupsPerDay != nil},
+	}
+	for _, f := range fields {
+		if !f.present {
+			continue
+		}
+		if _, isAllowed := ok[f.name]; !isAllowed {
+			return f.name
+		}
+	}
+	return ""
 }
 
 func percent(name string, v *float64) error {

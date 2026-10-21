@@ -27,6 +27,7 @@ import (
 	"github.com/atakanatamert/aicm/internal/alert"
 	"github.com/atakanatamert/aicm/internal/audit"
 	"github.com/atakanatamert/aicm/internal/auth"
+	"github.com/atakanatamert/aicm/internal/budget"
 	"github.com/atakanatamert/aicm/internal/charge"
 	"github.com/atakanatamert/aicm/internal/config"
 	"github.com/atakanatamert/aicm/internal/db"
@@ -354,9 +355,10 @@ func serve(ctx context.Context, args []string) error {
 	auditSvc := audit.NewService(pool)
 	accounts := account.NewService(pool, store, providers, log)
 	charges := charge.NewService(pool, fxSvc, log)
+	budgets := budget.NewService(pool, fxSvc)
 	syncSvc := syncer.NewService(pool, log, providers, store, quotaSvc, usageSvc, charges)
 	quotaSvc.SetBalanceHook(charges.TopUpHook())
-	alertSvc := alert.NewService(pool, log, quotaSvc, providers)
+	alertSvc := alert.NewService(pool, log, quotaSvc, providers, budgets)
 	settingsSvc := settings.NewService(pool, store)
 	channelSvc := notify.NewChannelService(pool, store, log, cfg.PublicURL)
 	alertSvc.SetHook(notify.Hook(pool))
@@ -414,6 +416,7 @@ func serve(ctx context.Context, args []string) error {
 			Machines:  machineSvc,
 			AgentHub:  agentHub,
 			Alerts:    alertSvc,
+			Budgets:   budgets,
 			Settings:  settingsSvc,
 			Channels:  channelSvc,
 			Install:   install.Handler(),

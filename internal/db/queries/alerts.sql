@@ -38,6 +38,49 @@ SELECT * FROM machines
 WHERE revoked_at IS NULL
 ORDER BY org_id, id;
 
+-- name: ListAlertOrgs :many
+-- System job: every org, for kinds that are not tied to an account.
+SELECT *
+FROM orgs
+ORDER BY id;
+
+-- name: ListAlertUsageDaily :many
+-- System job: estimated usage cost per account and day, USD only, for the
+-- anomaly check's today and its median window.
+SELECT org_id, account_id, day, sum(cost_micro)::bigint AS cost_micro
+FROM usage_daily
+WHERE day >= sqlc.arg(since)::date
+  AND day <= sqlc.arg(today)::date
+  AND cost_currency = 'USD'
+GROUP BY org_id, account_id, day
+ORDER BY account_id, day;
+
+-- name: ListAlertTopups :many
+-- System job: confirmed and suggested top-up charges since a day, per
+-- account.
+SELECT org_id, account_id, count(*)::bigint AS topups
+FROM charges
+WHERE kind = 'topup'
+  AND status IN ('confirmed', 'suggested')
+  AND occurred_on >= sqlc.arg(since)::date
+GROUP BY org_id, account_id
+HAVING count(*) > 0
+ORDER BY org_id, account_id;
+
+-- name: ListAlertWallets :many
+-- System job: harnesses on active subscription accounts, with the details
+-- that say whether the harness bills an API key or paid extra usage.
+SELECT am.org_id, am.account_id, am.machine_id, am.harness, am.details,
+       m.name AS machine_name
+FROM account_machines am
+JOIN machines m ON m.org_id = am.org_id AND m.id = am.machine_id
+JOIN accounts a ON a.org_id = am.org_id AND a.id = am.account_id
+WHERE a.auth_kind = 'agent_capture'
+  AND a.status = 'active'
+  AND a.archived_at IS NULL
+  AND m.revoked_at IS NULL
+ORDER BY am.org_id, am.account_id, m.name, am.harness;
+
 -- name: InsertAlert :one
 -- The unique (org_id, event_key) makes evaluation idempotent: a duplicate
 -- returns no row, so the caller never emails or hooks the same event twice.

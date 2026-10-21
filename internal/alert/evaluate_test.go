@@ -13,7 +13,9 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	"github.com/atakanatamert/aicm/internal/alert"
+	"github.com/atakanatamert/aicm/internal/budget"
 	"github.com/atakanatamert/aicm/internal/dbtest"
+	"github.com/atakanatamert/aicm/internal/fx"
 	"github.com/atakanatamert/aicm/internal/quota"
 )
 
@@ -24,7 +26,9 @@ func newService(t *testing.T) (*alert.Service, *pgxpool.Pool, string) {
 	pool := dbtest.New(t)
 	orgID := dbtest.DefaultOrgID(t, pool)
 	log := slog.New(slog.NewTextHandler(io.Discard, nil))
-	return alert.NewService(pool, log, quota.NewService(pool, log, nil, nil), nil), pool, orgID
+	fxSvc := fx.NewService(pool, log)
+	budgets := budget.NewService(pool, fxSvc)
+	return alert.NewService(pool, log, quota.NewService(pool, log, nil, nil), nil, budgets), pool, orgID
 }
 
 // plainAccount inserts an active account without a subscription.
@@ -255,8 +259,10 @@ func TestMeterExhaustedOncePerWindow(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if n != 1 {
-		t.Fatalf("new window at 91%%: got %d new alerts, want 1", n)
+	// The previous window was 95% used, so the new one also raises the
+	// meter_reset alert; the exhausted alert is still one per window.
+	if n != 2 {
+		t.Fatalf("new window at 91%%: got %d new alerts, want 2", n)
 	}
 	if got := countAlerts(t, pool, orgID, "meter_exhausted"); got != 2 {
 		t.Fatalf("total meter alerts: got %d, want 2", got)
