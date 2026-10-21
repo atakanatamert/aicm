@@ -59,3 +59,4 @@ Monthly budgets for the org and for single accounts, with month-to-date spend an
 
 ## Outcome (filled in by Opus)
 
+Merged in `cabcc65` after the first attempt. The writer also edited internal/alert/alert.go (kinds and params live there); accepted.

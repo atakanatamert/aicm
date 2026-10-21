@@ -52,3 +52,4 @@ Users can turn on two-factor sign-in with any authenticator app (RFC 6238 TOTP) 
 
 ## Outcome (filled in by Opus)
 
+Merged in `1590d8d` after the first attempt. Opus verified the full OIDC round trip against a local mock provider (PKCE S256, state, nonce, email_verified, login by verified email) and added sso_failed for replayed or forged state. merge.sh no longer regenerates the provider registry (it dropped zai.NewAPI).

@@ -57,3 +57,5 @@ Touch nothing else.
 - [ ] As a viewer: no Notifications tab, no budget edit controls.
 
 ## Outcome (filled in by Opus)
+
+Merged in `1578aec` after the first attempt (GLM). Opus removed the duplicated run-out line on wallet cards and lazy-loaded screens so the main bundle is under the size warning.

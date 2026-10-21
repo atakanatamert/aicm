@@ -47,8 +47,8 @@ Tasks 1–5 are the contracts Opus writes before any delegation. Large tasks wer
 | 40 | Agent | Project per usage event; billing mode and extra usage details | DeepSeek | 36 | merged |
 | 41 | Hub | Usage by project | DeepSeek | 36 | merged |
 | 42 | Hub | Two-factor (TOTP) and OIDC sign-in | DeepSeek | 36 | merged |
-| 43a | UI | Channels, budgets, new alert kinds, wallet runway | GLM | 37, 38 | in progress |
-| 43b | UI | Two-factor, SSO button, usage by project | GLM | 41, 42 | in progress |
+| 43a | UI | Channels, budgets, new alert kinds, wallet runway | GLM | 37, 38 | merged |
+| 43b | UI | Two-factor, SSO button, usage by project | GLM | 41, 42 | merged |
 | 28a | UI | Alerts inbox and rules, Machines | GLM | 14a, 18a, 24 | merged |
 | 28b | UI | Settings | GLM | 7b, 8, 14b, 24 | merged |
 | 29 | MCP | `aicm-agent mcp` and hub `/mcp` | DeepSeek | 3, 13 | merged |

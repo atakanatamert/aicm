@@ -60,3 +60,4 @@ Admins add channels besides email under Settings. Every new alert goes to each e
 
 ## Outcome (filled in by Opus)
 
+Merged in `3946571` after the first attempt. Opus kept transport errors useful without leaking URLs (the url.Error cause only) and checked a webhook test end to end.

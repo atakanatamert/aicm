@@ -53,3 +53,5 @@ Touch nothing else.
 - [ ] Browser smoke on a local hub: turn on two-factor (compute codes from the secret with a small script), log out, log in with password then code; log in with a recovery code; admin turns it off for another user. With `AICM_OIDC_*` pointing at an unreachable issuer the button shows and the error message renders. Usage grouped by project shows rows (seed events with projects via SQL). Desktop and mobile, light and dark, described in the summary.
 
 ## Outcome (filled in by Opus)
+
+Merged in `2c137c7` after the first attempt (GLM).

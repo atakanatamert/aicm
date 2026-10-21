@@ -49,3 +49,4 @@ The hub keeps the project the agent reports on every usage event, rolls usage up
 
 ## Outcome (filled in by Opus)
 
+Merged in `f01187c` after the first attempt. Usage already on a hub keeps project "" because events carry no directory and Claude Code prunes old logs, so a rescan could lose history; projects apply from now on.

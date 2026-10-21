@@ -48,3 +48,4 @@ Every usage event the agent sends names its project (repository), so the hub can
 
 ## Outcome (filled in by Opus)
 
+Merged in `6448612` after the first attempt plus Opus fixes to project naming: linked git worktrees count as their main repository, the walk stops below the home directory, and loose folders directly under home or in temp directories are not projects. Fixtures moved off /tmp.
