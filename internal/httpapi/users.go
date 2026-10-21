@@ -259,6 +259,8 @@ func toUser(u db.User) User {
 		Name:        u.Name,
 		Role:        Role(u.Role),
 		Disabled:    u.DisabledAt != nil,
+		TotpEnabled: new(u.TotpEnabledAt != nil),
+		SsoLinked:   new(u.OidcSubject != nil),
 		LastLoginAt: u.LastLoginAt,
 		CreatedAt:   u.CreatedAt,
 	}

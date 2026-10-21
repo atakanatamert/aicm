@@ -125,6 +125,12 @@ func NewRouter(d Deps) http.Handler {
 		base.Handle("GET /install.sh", d.Install)
 		base.Handle("GET /install.ps1", d.Install)
 	}
+	if d.Auth != nil {
+		// OIDC lives outside the generated router: it is a browser redirect
+		// flow that answers with redirects and cookies, not JSON operations.
+		base.HandleFunc("GET /auth/oidc/start", s.oidcStart)
+		base.HandleFunc("GET /auth/oidc/callback", s.oidcCallback)
+	}
 	if d.MCP != nil {
 		// MCP authenticates each request with its own bearer token and loops
 		// every tool call back through the API, so it also sits outside the

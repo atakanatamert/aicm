@@ -56,15 +56,21 @@ func (s *Server) Login(ctx context.Context, req LoginRequestObject) (LoginRespon
 		return nil, BadRequest("request body is required")
 	}
 	_, userAgent, ip := auth.RequestMeta(ctx)
-	session, err := s.Auth.Login(ctx, req.Body.Email, req.Body.Password, userAgent, ip)
+	result, err := s.Auth.Login(ctx, req.Body.Email, req.Body.Password, userAgent, ip)
 	if err != nil {
 		return nil, mapAuthError(err)
 	}
-	me, err := s.currentUser(ctx, session.Principal)
+	if result.TOTPRequired() {
+		return Login202JSONResponse{
+			TotpRequired: true,
+			Challenge:    result.Challenge,
+		}, nil
+	}
+	me, err := s.currentUser(ctx, result.Session.Principal)
 	if err != nil {
 		return nil, err
 	}
-	return loginOK{me: me, cookie: s.Auth.SessionCookie(session.Token, session.ExpiresAt)}, nil
+	return loginOK{me: me, cookie: s.Auth.SessionCookie(result.Session.Token, result.Session.ExpiresAt)}, nil
 }
 
 // Logout deletes the session and clears the cookie.
@@ -115,15 +121,7 @@ func (s *Server) currentUser(ctx context.Context, p auth.Principal) (Me, error) 
 		return Me{}, mapAuthError(err)
 	}
 	var me Me
-	me.User = User{
-		Id:          user.ID,
-		Email:       user.Email,
-		Name:        user.Name,
-		Role:        Role(user.Role),
-		Disabled:    user.DisabledAt != nil,
-		CreatedAt:   user.CreatedAt,
-		LastLoginAt: user.LastLoginAt,
-	}
+	me.User = toUser(user)
 	me.Org.Id = org.ID
 	me.Org.Name = org.Name
 	me.Org.DisplayCurrency = settings.DisplayCurrency

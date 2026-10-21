@@ -35,6 +35,18 @@ type Hub struct {
 	LogFormat string
 	// MasterKey is the 32-byte key that wraps every org data key.
 	MasterKey []byte
+	// OIDC is single sign-on; disabled unless issuer, client id and secret
+	// are all set.
+	OIDC OIDC
+}
+
+// OIDC holds the provider settings for single sign-on.
+type OIDC struct {
+	Issuer       string
+	ClientID     string
+	ClientSecret string
+	Name         string
+	Scopes       []string
 }
 
 // LoadHub reads the hub configuration from the environment.
@@ -44,6 +56,13 @@ func LoadHub() (Hub, error) {
 		ListenAddr:  getenv("AICM_LISTEN_ADDR", ":8080"),
 		PublicURL:   strings.TrimRight(getenv("AICM_PUBLIC_URL", "http://localhost:8080"), "/"),
 		LogFormat:   getenv("AICM_LOG_FORMAT", "json"),
+		OIDC: OIDC{
+			Issuer:       strings.TrimSpace(os.Getenv("AICM_OIDC_ISSUER")),
+			ClientID:     strings.TrimSpace(os.Getenv("AICM_OIDC_CLIENT_ID")),
+			ClientSecret: os.Getenv("AICM_OIDC_CLIENT_SECRET"),
+			Name:         getenv("AICM_OIDC_NAME", "Single sign-on"),
+			Scopes:       strings.Fields(getenv("AICM_OIDC_SCOPES", "openid email profile")),
+		},
 	}
 	var errs []error
 	if c.DatabaseURL == "" {

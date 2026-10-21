@@ -396,6 +396,15 @@ func serve(ctx context.Context, args []string) error {
 	}
 	machineSvc := machine.NewService(pool, store, cfg.PublicURL, log)
 	agentHub := agenthub.New(pool, log, machineSvc, usageSvc, quotaSvc, accounts, providers)
+	authSvc := auth.NewService(pool, log, cfg.PublicURL,
+		auth.WithSecrets(store),
+		auth.WithOIDC(auth.OIDCConfig{
+			Issuer:       cfg.OIDC.Issuer,
+			ClientID:     cfg.OIDC.ClientID,
+			ClientSecret: cfg.OIDC.ClientSecret,
+			Name:         cfg.OIDC.Name,
+			Scopes:       cfg.OIDC.Scopes,
+		}))
 
 	srv := &http.Server{
 		Addr: cfg.ListenAddr,
@@ -404,7 +413,7 @@ func serve(ctx context.Context, args []string) error {
 			DB:        pool,
 			Jobs:      riverClient,
 			Secrets:   store,
-			Auth:      auth.NewService(pool, log, cfg.PublicURL),
+			Auth:      authSvc,
 			Usage:     usageSvc,
 			Quota:     quotaSvc,
 			Audit:     auditSvc,

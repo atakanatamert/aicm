@@ -22,6 +22,7 @@ import (
 
 	"github.com/atakanatamert/aicm/internal/audit"
 	"github.com/atakanatamert/aicm/internal/db"
+	"github.com/atakanatamert/aicm/internal/secrets"
 )
 
 const (
@@ -57,7 +58,26 @@ var (
 	ErrForbidden       = errors.New("forbidden")
 )
 
-// Service owns password checks, sessions and API token authentication.
+// LoginResult is a completed login session or, when the user has two-factor
+// on, the challenge the browser must send to LoginTOTP.
+type LoginResult struct {
+	Session   *Session
+	Challenge string
+}
+
+// TOTPRequired reports whether the result still needs a second factor.
+func (r LoginResult) TOTPRequired() bool { return r.Challenge != "" }
+
+// Option configures optional parts of the auth service.
+type Option func(*Service)
+
+// WithSecrets sets the store that holds TOTP secrets.
+func WithSecrets(store secrets.Store) Option {
+	return func(s *Service) { s.secrets = store }
+}
+
+// Service owns password checks, sessions, TOTP, OIDC and API token
+// authentication.
 type Service struct {
 	pool         *pgxpool.Pool
 	queries      *db.Queries
@@ -65,12 +85,15 @@ type Service struct {
 	publicURL    string
 	publicOrigin string
 	limiter      loginLimiter
+	secrets      secrets.Store
+	steps        stepTracker
+	oidc         *oidcClient
 }
 
 // NewService builds the auth service. publicURL is the hub's externally
 // reachable base URL, used for cookie security and the CSRF origin check.
-func NewService(pool *pgxpool.Pool, log *slog.Logger, publicURL string) *Service {
-	return &Service{
+func NewService(pool *pgxpool.Pool, log *slog.Logger, publicURL string, opts ...Option) *Service {
+	s := &Service{
 		pool:         pool,
 		queries:      db.New(pool),
 		log:          log,
@@ -78,6 +101,10 @@ func NewService(pool *pgxpool.Pool, log *slog.Logger, publicURL string) *Service
 		publicOrigin: originOf(publicURL),
 		limiter:      loginLimiter{attempts: make(map[string][]time.Time)},
 	}
+	for _, opt := range opts {
+		opt(s)
+	}
+	return s
 }
 
 // originOf returns scheme://host for an absolute URL, or "".
@@ -165,13 +192,14 @@ func (s *Service) CompleteSetup(ctx context.Context, email, name, password, user
 }
 
 // Login checks the password and creates a session. Unknown emails, wrong
-// passwords and disabled users all return ErrInvalidLogin.
-func (s *Service) Login(ctx context.Context, email, password, userAgent string, ip netip.Addr) (Session, error) {
+// passwords and disabled users all return ErrInvalidLogin. When the user has
+// two-factor on it returns a challenge instead of a session.
+func (s *Service) Login(ctx context.Context, email, password, userAgent string, ip netip.Addr) (LoginResult, error) {
 	email = strings.TrimSpace(email)
 	key := strings.ToLower(email)
 	now := time.Now()
 	if s.limiter.tooMany(key, now) {
-		return Session{}, ErrTooManyAttempts
+		return LoginResult{}, ErrTooManyAttempts
 	}
 
 	user, err := s.queries.GetUserByEmail(ctx, email)
@@ -179,25 +207,33 @@ func (s *Service) Login(ctx context.Context, email, password, userAgent string, 
 		// Burn the same work as a real verification.
 		_ = VerifyPassword(dummyPasswordHash, password)
 		s.limiter.fail(key, now)
-		return Session{}, ErrInvalidLogin
+		return LoginResult{}, ErrInvalidLogin
 	}
 	if err != nil {
-		return Session{}, fmt.Errorf("loading user: %w", err)
+		return LoginResult{}, fmt.Errorf("loading user: %w", err)
 	}
 	if !VerifyPassword(user.PasswordHash, password) || user.DisabledAt != nil {
 		s.limiter.fail(key, now)
-		return Session{}, ErrInvalidLogin
+		return LoginResult{}, ErrInvalidLogin
 	}
 	s.limiter.reset(key)
 
+	if user.TotpEnabledAt != nil {
+		challenge, err := s.createLoginChallenge(ctx, user)
+		if err != nil {
+			return LoginResult{}, err
+		}
+		return LoginResult{Challenge: challenge}, nil
+	}
+
 	session, err := s.createSession(ctx, s.queries, user, userAgent, ip)
 	if err != nil {
-		return Session{}, err
+		return LoginResult{}, err
 	}
 	if err := s.queries.TouchUserLogin(ctx, db.TouchUserLoginParams{OrgID: user.OrgID, ID: user.ID}); err != nil {
 		s.log.WarnContext(ctx, "recording login failed", "user_id", user.ID, "err", err)
 	}
-	return session, nil
+	return LoginResult{Session: &session}, nil
 }
 
 // Logout deletes the session behind the raw cookie value.

@@ -36,6 +36,22 @@ docker compose up -d
 
 To rotate the master key: `docker compose exec hub aicm rotate-key --new-key-file <file>`.
 
+## Sign-in
+
+**Two-factor.** *Settings → Profile* turns on two-factor for your account: scan the secret with any TOTP app (RFC 6238), confirm a code, and save the ten single-use recovery codes it shows once. An admin can turn it off for a user who lost their phone from *Settings → Users*.
+
+**Single sign-on (OIDC).** Sign-in through Authentik, Pocket ID, Keycloak, Google or any other OpenID Connect provider is enabled when all three of these are set:
+
+| Variable | Meaning |
+| --- | --- |
+| `AICM_OIDC_ISSUER` | Provider issuer URL, for example `https://auth.example.com/application/o/aicm/` |
+| `AICM_OIDC_CLIENT_ID` | Client id registered with the provider |
+| `AICM_OIDC_CLIENT_SECRET` | Client secret |
+| `AICM_OIDC_NAME` | Button label on the login page (default `Single sign-on`) |
+| `AICM_OIDC_SCOPES` | Space-separated scopes (default `openid email profile`) |
+
+Register `<AICM_PUBLIC_URL>/auth/oidc/callback` as the redirect URI. The hub discovers the provider on the first sign-in attempt, so it starts normally while the provider is down. Single sign-on only signs in existing users and matches them by verified email; it never creates accounts. Two-factor codes are not asked for after OIDC login because the provider runs its own MFA.
+
 ## Supported providers
 
 <!-- providers:start -->
