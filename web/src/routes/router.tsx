@@ -1,16 +1,8 @@
 import { Navigate, Outlet, RouterProvider, createBrowserRouter, useLocation } from "react-router"
 import { errorOf, query } from "@/api/client"
 import { AppShell } from "@/components/app-shell"
-import Accounts from "@/routes/accounts"
-import AccountDetail from "@/routes/account-detail"
-import Alerts from "@/routes/alerts"
 import Login from "@/routes/login"
-import Machines from "@/routes/machines"
-import Overview from "@/routes/overview"
-import Quotas from "@/routes/quotas"
-import Settings from "@/routes/settings"
 import Setup from "@/routes/setup"
-import Usage from "@/routes/usage"
 
 function AuthLoading({ children }: { children?: string }) {
   return <div className="grid min-h-svh place-items-center text-sm text-muted-foreground">{children ?? "Loading…"}</div>
@@ -44,6 +36,9 @@ function RequireAuth() {
   return <Outlet />
 }
 
+// Each screen loads on first visit, keeping the first download small.
+const screen = (load: () => Promise<{ default: React.ComponentType }>) => async () => ({ Component: (await load()).default })
+
 const router = createBrowserRouter([
   {
     element: <RequireAuth />,
@@ -51,14 +46,14 @@ const router = createBrowserRouter([
       {
         element: <AppShell />,
         children: [
-          { path: "/", element: <Overview /> },
-          { path: "/quotas", element: <Quotas /> },
-          { path: "/accounts", element: <Accounts /> },
-          { path: "/accounts/:id", element: <AccountDetail /> },
-          { path: "/usage", element: <Usage /> },
-          { path: "/alerts", element: <Alerts /> },
-          { path: "/machines", element: <Machines /> },
-          { path: "/settings", element: <Settings /> },
+          { path: "/", lazy: screen(() => import("@/routes/overview")) },
+          { path: "/quotas", lazy: screen(() => import("@/routes/quotas")) },
+          { path: "/accounts", lazy: screen(() => import("@/routes/accounts")) },
+          { path: "/accounts/:id", lazy: screen(() => import("@/routes/account-detail")) },
+          { path: "/usage", lazy: screen(() => import("@/routes/usage")) },
+          { path: "/alerts", lazy: screen(() => import("@/routes/alerts")) },
+          { path: "/machines", lazy: screen(() => import("@/routes/machines")) },
+          { path: "/settings", lazy: screen(() => import("@/routes/settings")) },
         ],
       },
     ],
