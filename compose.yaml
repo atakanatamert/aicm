@@ -33,6 +33,23 @@ services:
     ports:
       - "${AICM_PORT:-8080}:8080"
 
+  # Nightly database dump plus a copy of the master key in ./backups (14 kept).
+  # Restore both together: docs/operations.md.
+  backup:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    entrypoint: ["/bin/sh", "/backup.sh"]
+    environment:
+      PGPASSWORD: ${AICM_DB_PASSWORD:-aicm}
+    volumes:
+      - ./deploy/backup/backup.sh:/backup.sh:ro
+      - ./backups:/backups
+      # Read-write only so a restore can put master.key back (see README).
+      - hub-data:/hub-data
+
 volumes:
   db-data:
   hub-data:

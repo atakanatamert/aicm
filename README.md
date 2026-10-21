@@ -19,13 +19,22 @@ docker compose up -d --build
 
 Open `AICM_PUBLIC_URL` (default http://localhost:8080) and create the first admin. Then:
 
-1. **Add your machines:** *Machines → Add a machine* shows a one-line command for macOS/Linux, Homebrew, Windows and Docker. It installs `aicm-agent` as a user-level service, enrolls it and starts sending usage and quota meters. Accounts it finds appear under *Accounts → Found on your machines* for you to confirm.
-2. **Claude limits:** run `aicm-agent statusline install` once so Claude Code's statusline also records your 5-hour and weekly limits (your own statusline keeps working; `aicm-agent statusline uninstall` reverts it).
-3. **API accounts:** *Accounts → Add account* takes an admin or normal key (OpenRouter, Anthropic, OpenAI, xAI, DeepSeek, Moonshot, Z.ai, GitHub Copilot). Keys are encrypted and never shown again.
-4. **Subscriptions:** add plan, price and renewal date for each subscription; you get an email 7 days and 1 day before it renews once SMTP is set under *Settings → Email*.
+1. **Add your machines:** *Machines → Add a machine* (or the import panel on a new hub) shows a one-line command for macOS/Linux, Homebrew, Windows and Docker. It installs `aicm-agent` as a user-level service, enrolls it and starts sending usage and limits. Accounts it finds (Claude, ChatGPT, and API keys stored in omp) appear under *Accounts → Found on your machines*; confirming one imports its key and, for subscriptions, fills in the plan's list price, renewal day and estimated past fees.
+2. **Claude limits:** the installer wraps Claude Code's statusline so it records your 5-hour and weekly limits (your own statusline keeps working; `aicm-agent statusline uninstall` reverts it, `--no-statusline` skips it).
+3. **Other API accounts:** *Accounts → Add account* takes an admin or normal key. Keys are encrypted and never shown again.
+4. **Email:** set SMTP under *Settings → Email* (any provider, for example Amazon SES SMTP credentials) to get renewal and low-balance alerts by email; the in-app inbox works without it.
 5. **MCP:** create an API token under *Settings → Profile*, then `claude mcp add aicm --env AICM_TOKEN=<token> -- aicm-agent mcp --hub <hub URL>`. Other clients can use `POST <hub URL>/mcp` with `Authorization: Bearer <token>`.
 
-**Back up the master key.** The hub generates it on first start in the `hub-data` volume (`/var/lib/aicm/master.key`). Every stored provider key is encrypted with it; without it you must re-enter every key. To rotate: `docker compose exec hub aicm rotate-key --new-key-file <file>`.
+**Backups.** The `backup` service writes a database dump every night to `./backups` (the newest 14 are kept) together with `master.key`, the key every stored provider key is encrypted with. Copy that folder somewhere else as well; a dump without its `master.key` restores everything except the API keys. To restore into a fresh install, start only the database, load the dump, put the key back, then start the hub:
+
+```sh
+docker compose up -d db
+docker compose exec -T db pg_restore -U aicm -d aicm --clean --if-exists --no-owner < backups/aicm-<stamp>.dump
+docker compose run --rm --no-deps --entrypoint sh backup -c 'cp /backups/master.key /hub-data/master.key && chown 65532:65532 /hub-data/master.key'
+docker compose up -d
+```
+
+To rotate the master key: `docker compose exec hub aicm rotate-key --new-key-file <file>`.
 
 ## Supported providers
 

@@ -6,3 +6,4 @@ web/dist/*
 !web/dist/.keep
 *.test
 coverage.out
+/backups/
