@@ -70,8 +70,8 @@ type Info struct {
 	// Unofficial marks adapters that call undocumented endpoints. The sync
 	// engine skips them unless the account opted in (Decision 9).
 	Unofficial bool
-	// MinPollInterval is the shortest gap between two syncs of one account.
-	// The sync engine enforces it from accounts.last_synced_at.
+	// MinPollInterval is the shortest gap between two scheduled syncs of one
+	// account. "Sync now" only waits a minute after the last sync.
 	MinPollInterval time.Duration
 	// ModelFamilies lists the model families the account can run, for
 	// recommend_account: "claude", "gpt", "gemini", "grok", "deepseek",

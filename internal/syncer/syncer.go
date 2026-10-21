@@ -91,9 +91,14 @@ func (s *Service) syncable(p provider.Provider) bool {
 	return u || q || (c && s.charges != nil)
 }
 
+// manualSyncGap is how long "Sync now" waits after the last sync. Scheduled
+// syncs keep the provider's MinPollInterval; one click a minute is not a
+// load on any provider.
+const manualSyncGap = time.Minute
+
 // Request queues a manual sync for an account the principal may see, after
-// checking that its provider fetches something and the poll interval has
-// passed. It writes one audit row.
+// checking that its provider fetches something and the last sync is at
+// least manualSyncGap old. It writes one audit row.
 func (s *Service) Request(ctx context.Context, p auth.Principal, accountID string, client *river.Client[pgx.Tx]) error {
 	userID := p.UserID
 	if userID == "" {
@@ -111,7 +116,7 @@ func (s *Service) Request(ctx context.Context, p auth.Principal, accountID strin
 		return ErrNothingToSync
 	}
 	if a.LastSyncedAt != nil {
-		if wait := pollInterval(prov.Info()) - s.now().Sub(*a.LastSyncedAt); wait > 0 {
+		if wait := manualSyncGap - s.now().Sub(*a.LastSyncedAt); wait > 0 {
 			return &TooSoonError{RetryAfter: wait.Round(time.Second)}
 		}
 	}

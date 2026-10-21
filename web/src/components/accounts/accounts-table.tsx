@@ -27,6 +27,12 @@ function keyText(a: Account): string {
   return a.auth_kind === "agent_capture" ? "agent" : "manual"
 }
 
+/** False for key-only providers the hub cannot fetch anything from. */
+function hubSyncs(a: Account, providers: ProviderInfo[]): boolean {
+  const caps = providers.find((p) => p.id === a.provider_id)?.capabilities
+  return !caps || caps.usage || caps.quota || caps.charges
+}
+
 function providerName(a: Account, providers: ProviderInfo[]): string {
   return providers.find((p) => p.id === a.provider_id)?.name ?? a.provider_id
 }
@@ -201,7 +207,11 @@ export function AccountsTable({ accounts, providers }: { accounts: Account[]; pr
                       ) : a.sync.last_synced_at ? (
                         <StatusDot tone="ok">Synced {formatRelative(a.sync.last_synced_at)}</StatusDot>
                       ) : a.auth_kind === "api_key" || a.auth_kind === "admin_key" ? (
-                        <StatusDot tone="idle">Not synced yet</StatusDot>
+                        hubSyncs(a, providers) ? (
+                          <StatusDot tone="idle">Not synced yet</StatusDot>
+                        ) : (
+                          <StatusDot tone="idle">Key stored · usage via agent</StatusDot>
+                        )
                       ) : (
                         <StatusDot tone="ok">Via agent</StatusDot>
                       )}

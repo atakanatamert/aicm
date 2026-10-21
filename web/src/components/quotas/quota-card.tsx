@@ -103,7 +103,7 @@ export function QuotaCard({ quota, canEdit }: { quota: AccountQuota; canEdit: bo
           wallet={hasWalletMeter(quota.meters)}
           renewal={account.plan.renews_on != null}
         />
-        {canEdit && <SyncButton accountId={account.id} providerId={account.provider_id} />}
+        {canEdit && <SyncButton accountId={account.id} providerId={account.provider_id} lastSyncedAt={account.last_synced_at} />}
       </CardFooter>
     </Card>
   )
