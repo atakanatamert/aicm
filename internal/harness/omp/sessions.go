@@ -173,7 +173,8 @@ func scanSessionFile(ctx context.Context, path string, prev harness.Cursor, keys
 		return nil, prev, fmt.Errorf("seek: %w", err)
 	}
 
-	sessionID := readSessionID(path)
+	sessionID, cwd := readSessionHeader(path)
+	project := harness.Project(cwd)
 	reader := bufio.NewReader(f)
 	var events []agentlink.UsageEvent
 	for {
@@ -188,7 +189,7 @@ func scanSessionFile(ctx context.Context, path string, prev harness.Cursor, keys
 			return nil, prev, fmt.Errorf("reading line: %w", err)
 		}
 		offset += int64(len(line))
-		if event, ok := parseSessionLine(line, sessionID, keys); ok {
+		if event, ok := parseSessionLine(line, sessionID, project, keys); ok {
 			events = append(events, event)
 		}
 	}
@@ -202,7 +203,7 @@ func scanSessionFile(ctx context.Context, path string, prev harness.Cursor, keys
 }
 
 // parseSessionLine converts one complete line to a usage event.
-func parseSessionLine(line []byte, sessionID string, keys map[string]keyEntry) (agentlink.UsageEvent, bool) {
+func parseSessionLine(line []byte, sessionID, project string, keys map[string]keyEntry) (agentlink.UsageEvent, bool) {
 	var parsed sessionLine
 	if err := json.Unmarshal(line, &parsed); err != nil {
 		return agentlink.UsageEvent{}, false
@@ -252,6 +253,7 @@ func parseSessionLine(line []byte, sessionID string, keys map[string]keyEntry) (
 		OutputTokens:     tokenCount(message.Usage.Output),
 		CacheReadTokens:  tokenCount(message.Usage.CacheRead),
 		CacheWriteTokens: tokenCount(message.Usage.CacheWrite),
+		Project:          project,
 	}
 	if cost, ok := costMicro(message.Usage.Cost); ok {
 		event.CostMicro = &cost
@@ -380,9 +382,11 @@ func costMicro(cost *sessionCost) (int64, bool) {
 	return int64(micro), true
 }
 
-// readSessionID reads the session header so resumed and subagent files use the
-// same id on every scan. Files without a header fall back to their file name.
-func readSessionID(path string) string {
+// readSessionHeader reads the session header so resumed and subagent files use
+// the same id on every scan, and returns the session's working directory. A
+// resumed scan starts mid-file, so the header cannot come from the lines being
+// read. Files without a header fall back to their file name.
+func readSessionHeader(path string) (id, cwd string) {
 	if f, err := os.Open(path); err == nil { //nolint:gosec // session path from the harness directory
 		reader := bufio.NewReader(f)
 		for range 10 {
@@ -391,10 +395,15 @@ func readSessionID(path string) string {
 				var header struct {
 					Type string `json:"type"`
 					ID   string `json:"id"`
+					Cwd  string `json:"cwd"`
 				}
-				if json.Unmarshal(bytes.TrimSpace(line), &header) == nil && header.Type == "session" && header.ID != "" {
+				if json.Unmarshal(bytes.TrimSpace(line), &header) == nil && header.Type == "session" {
 					_ = f.Close()
-					return header.ID
+					id = header.ID
+					if id == "" {
+						id = sessionIDFromPath(path)
+					}
+					return id, header.Cwd
 				}
 			}
 			if err != nil {
@@ -403,7 +412,7 @@ func readSessionID(path string) string {
 		}
 		_ = f.Close()
 	}
-	return sessionIDFromPath(path)
+	return sessionIDFromPath(path), ""
 }
 
 func sessionIDFromPath(path string) string {

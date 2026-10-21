@@ -1,5 +1,5 @@
 {"type":"title","title":"synthetic omp session"}
-{"type":"session","version":1,"id":"sess-synthetic-0001","timestamp":"2026-01-02T03:04:05Z","cwd":"/tmp/synthetic"}
+{"type":"session","version":1,"id":"sess-synthetic-0001","timestamp":"2026-01-02T03:04:05Z","cwd":"/work/synthetic"}
 {"type":"message","id":"msg-user-1","timestamp":"2026-01-02T03:04:06Z","message":{"role":"user","content":[{"type":"text","text":"hello"}],"timestamp":1767323046000}}
 {"type":"message","id":"msg-user-2","timestamp":"2026-01-02T03:04:06.250Z","message":{"role":"user","provider":"deepseek","model":"deepseek-chat","usage":{"input":99,"output":99,"cacheRead":0,"cacheWrite":0},"timestamp":1767323046250}}
 {"type":"message","id":"msg-a1","timestamp":"2026-01-02T03:04:07.500Z","message":{"role":"assistant","provider":"deepseek","model":"deepseek-chat","usage":{"input":1200,"output":345,"cacheRead":67,"cacheWrite":8,"totalTokens":1620,"cost":{"input":0.00012,"output":0.00034,"cacheRead":0.00001,"cacheWrite":0.000002,"total":0.0125775}},"timestamp":1767323047500}}

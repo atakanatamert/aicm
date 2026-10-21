@@ -10,6 +10,8 @@
     "auth_kind": "agent_capture",
     "has_api_key": false,
     "details": {
+      "billing_mode": "api_key",
+      "extra_usage": "on",
       "organization_uuid": "8c7d6e5f-4a3b-2c1d-0e9f-8a7b6c5d4e3f",
       "plan_tier": "max_20x",
       "rate_limit_tier": "default_claude_max_20x",

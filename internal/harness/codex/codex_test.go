@@ -56,8 +56,8 @@ func TestRolloutGolden(t *testing.T) {
 	path := filepath.Join(day, "rollout-2026-03-04T10-00-00-"+sessionID+".jsonl")
 
 	lines := []string{
-		`{"timestamp":"2026-03-04T10:00:00.000Z","type":"session_meta","payload":{"session_id":"` + sessionID + `","id":"` + sessionID + `","timestamp":"2026-03-04T10:00:00Z","cwd":"/tmp/project","originator":"codex_cli_rs","cli_version":"0.1.0"}}`,
-		`{"timestamp":"2026-03-04T10:00:01.000Z","type":"turn_context","payload":{"model":"gpt-5.1-codex","cwd":"/tmp/project","approval_policy":"never","sandbox_policy":{"mode":"read-only"}}}`,
+		`{"timestamp":"2026-03-04T10:00:00.000Z","type":"session_meta","payload":{"session_id":"` + sessionID + `","id":"` + sessionID + `","timestamp":"2026-03-04T10:00:00Z","cwd":"/work/project","originator":"codex_cli_rs","cli_version":"0.1.0"}}`,
+		`{"timestamp":"2026-03-04T10:00:01.000Z","type":"turn_context","payload":{"model":"gpt-5.1-codex","cwd":"/work/project","approval_policy":"never","sandbox_policy":{"mode":"read-only"}}}`,
 		`{"timestamp":"2026-03-04T10:00:02.000Z","type":"event_msg","payload":{"type":"token_count","info":null,"rate_limits":{"primary":{"used_percent":5,"window_minutes":300,"resets_in_seconds":18000}}}}`,
 		`{"timestamp":"2026-03-04T10:00:03.000Z","type":"event_msg","payload":{"type":"token_count","info":{"last_token_usage":{"input_tokens":1000,"cached_input_tokens":400,"output_tokens":50,"reasoning_output_tokens":10}},"rate_limits":null}}`,
 		`{"timestamp":"2026-03-04T10:00:04.000Z","type":"event_msg","payload":{"type":"token_count","info":{"last_token_usage":{"input_tokens":2000,"cached_input_tokens":800,"output_tokens":100,"reasoning_output_tokens":20}},"rate_limits":{"primary":{"used_percent":12,"window_minutes":300,"resets_at":1772636400},"secondary":{"used_percent":40,"window_minutes":10080,"resets_in_seconds":604800},"credits":{"has_credits":true,"unlimited":false,"balance":"12.5"},"plan_type":"plus"}}}`,

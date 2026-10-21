@@ -73,6 +73,7 @@ type usageLine struct {
 	Type      string `json:"type"`
 	Timestamp string `json:"timestamp"`
 	RequestID string `json:"requestId"`
+	Cwd       string `json:"cwd"`
 	Message   *struct {
 		ID    string `json:"id"`
 		Model string `json:"model"`
@@ -110,6 +111,7 @@ func parseUsageLine(line []byte, ref agentlink.AccountRef) (agentlink.UsageEvent
 		OutputTokens:     l.Message.Usage.OutputTokens,
 		CacheWriteTokens: l.Message.Usage.CacheCreationInputTokens,
 		CacheReadTokens:  l.Message.Usage.CacheReadInputTokens,
+		Project:          harness.Project(l.Cwd),
 	}, true
 }
 

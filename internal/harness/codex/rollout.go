@@ -117,7 +117,7 @@ func readRollout(ctx context.Context, path string, cur harness.Cursor, ref agent
 		return next, nil, nil, fmt.Errorf("seeking to %d: %w", offset, err)
 	}
 
-	st := rolloutState{sessionID: sessionIDFromPath(path)}
+	st := rolloutState{sessionID: sessionIDFromPath(path), cwd: sessionCwd(path)}
 	reader := bufio.NewReaderSize(f, 64*1024)
 	var usage []agentlink.UsageEvent
 	var reports []agentlink.MeterReport
@@ -155,6 +155,7 @@ func readRollout(ctx context.Context, path string, cur harness.Cursor, ref agent
 type rolloutState struct {
 	sessionID string
 	model     string
+	cwd       string
 }
 
 type rolloutLine struct {
@@ -212,6 +213,7 @@ func parseRolloutLine(raw []byte, st *rolloutState, ref agentlink.AccountRef) ([
 		var meta struct {
 			SessionID string `json:"session_id"`
 			ID        string `json:"id"`
+			Cwd       string `json:"cwd"`
 		}
 		if err := json.Unmarshal(line.Payload, &meta); err != nil {
 			return nil, nil
@@ -220,6 +222,9 @@ func parseRolloutLine(raw []byte, st *rolloutState, ref agentlink.AccountRef) ([
 			st.sessionID = meta.SessionID
 		} else if meta.ID != "" {
 			st.sessionID = meta.ID
+		}
+		if meta.Cwd != "" {
+			st.cwd = meta.Cwd
 		}
 		return nil, nil
 	case "turn_context":
@@ -272,6 +277,7 @@ func parseRolloutLine(raw []byte, st *rolloutState, ref agentlink.AccountRef) ([
 			OutputTokens:    t.OutputTokens,
 			CacheReadTokens: t.CachedInputTokens,
 			ReasoningTokens: t.ReasoningOutputTok,
+			Project:         harness.Project(st.cwd),
 		})
 	}
 
@@ -499,6 +505,37 @@ func hasReadings(limits *rolloutRateLimits) bool {
 		return true
 	}
 	return limits.Credits != nil && limits.Credits.HasCredits && !limits.Credits.Unlimited && limits.Credits.Balance != nil
+}
+
+// sessionCwd returns the session's working directory from the session_meta
+// line at the top of a rollout. A resumed scan starts mid-file, so the cwd
+// cannot be taken from the lines being read.
+func sessionCwd(path string) string {
+	f, err := os.Open(path) //nolint:gosec // path comes from the Codex sessions directory
+	if err != nil {
+		return ""
+	}
+	defer f.Close() //nolint:errcheck // read-only file
+	reader := bufio.NewReaderSize(f, 64*1024)
+	for range 10 {
+		line, err := reader.ReadBytes('\n')
+		if trimmed := bytes.TrimSpace(line); len(trimmed) > 0 {
+			var entry rolloutLine
+			if json.Unmarshal(trimmed, &entry) == nil && entry.Type == "session_meta" {
+				var meta struct {
+					Cwd string `json:"cwd"`
+				}
+				if json.Unmarshal(entry.Payload, &meta) == nil {
+					return meta.Cwd
+				}
+				return ""
+			}
+		}
+		if err != nil {
+			break
+		}
+	}
+	return ""
 }
 
 // sessionIDFromPath extracts the thread id from

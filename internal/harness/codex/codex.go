@@ -61,6 +61,7 @@ func (h *Harness) Discover(ctx context.Context) ([]agentlink.DiscoveredAccount, 
 		return nil, err
 	}
 	if acct != nil {
+		setBillingMode(acct, h.billingMode())
 		h.setAccount(acct)
 		return []agentlink.DiscoveredAccount{*acct}, nil
 	}
@@ -76,8 +77,40 @@ func (h *Harness) Discover(ctx context.Context) ([]agentlink.DiscoveredAccount, 
 	if acct == nil {
 		return nil, nil
 	}
+	setBillingMode(acct, h.billingMode())
 	h.setAccount(acct)
 	return []agentlink.DiscoveredAccount{*acct}, nil
+}
+
+// billingMode reports whether Codex is configured to bill a plain API key.
+// Only whether OPENAI_API_KEY is non-empty and the stored auth_mode are read;
+// the key and the tokens are never decoded here.
+func (h *Harness) billingMode() string {
+	data, err := os.ReadFile(filepath.Join(h.dir, "auth.json")) //nolint:gosec // path built by New
+	if err != nil {
+		return "subscription"
+	}
+	var auth struct {
+		APIKey   *string `json:"OPENAI_API_KEY"`
+		AuthMode string  `json:"auth_mode"`
+	}
+	if json.Unmarshal(data, &auth) != nil {
+		return "subscription"
+	}
+	if auth.APIKey == nil || strings.TrimSpace(*auth.APIKey) == "" {
+		return "subscription"
+	}
+	if strings.EqualFold(auth.AuthMode, "chatgpt") {
+		return "subscription"
+	}
+	return "api_key"
+}
+
+func setBillingMode(acct *agentlink.DiscoveredAccount, mode string) {
+	if acct.Details == nil {
+		acct.Details = map[string]string{}
+	}
+	acct.Details[agentlink.DetailBillingMode] = mode
 }
 
 // Scan reads new rollout lines and returns the advanced cursors. Compressed

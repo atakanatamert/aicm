@@ -14,7 +14,8 @@
     "cache_write_tokens": 8,
     "reasoning_tokens": 0,
     "cost_micro": 12578,
-    "cost_currency": "USD"
+    "cost_currency": "USD",
+    "project": "synthetic"
   },
   {
     "account": {
@@ -31,7 +32,8 @@
     "cache_write_tokens": 0,
     "reasoning_tokens": 0,
     "cost_micro": 2,
-    "cost_currency": "USD"
+    "cost_currency": "USD",
+    "project": "synthetic"
   },
   {
     "account": {
@@ -46,7 +48,8 @@
     "output_tokens": 40,
     "cache_read_tokens": 0,
     "cache_write_tokens": 0,
-    "reasoning_tokens": 0
+    "reasoning_tokens": 0,
+    "project": "synthetic"
   },
   {
     "account": {
@@ -61,7 +64,8 @@
     "output_tokens": 6,
     "cache_read_tokens": 0,
     "cache_write_tokens": 0,
-    "reasoning_tokens": 0
+    "reasoning_tokens": 0,
+    "project": "synthetic"
   },
   {
     "account": {
@@ -78,7 +82,8 @@
     "cache_write_tokens": 0,
     "reasoning_tokens": 0,
     "cost_micro": 100,
-    "cost_currency": "USD"
+    "cost_currency": "USD",
+    "project": "synthetic"
   },
   {
     "account": {
@@ -95,6 +100,7 @@
     "cache_write_tokens": 0,
     "reasoning_tokens": 0,
     "cost_micro": 20,
-    "cost_currency": "USD"
+    "cost_currency": "USD",
+    "project": "synthetic"
   }
 ]

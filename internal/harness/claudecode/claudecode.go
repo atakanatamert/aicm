@@ -78,13 +78,15 @@ func New(home, dataDir string) *Harness {
 func (h *Harness) ID() string { return ID }
 
 type dirAccount struct {
-	dir     configDir
-	ref     agentlink.AccountRef
-	label   string
-	plan    string
-	org     string
-	tier    string
-	started string
+	dir         configDir
+	ref         agentlink.AccountRef
+	label       string
+	plan        string
+	org         string
+	tier        string
+	started     string
+	billingMode string
+	extraUsage  string
 }
 
 type claudeJSON struct {
@@ -94,7 +96,13 @@ type claudeJSON struct {
 		OrganizationUUID          string `json:"organizationUuid"`
 		OrganizationRateLimitTier string `json:"organizationRateLimitTier"`
 		SubscriptionCreatedAt     string `json:"subscriptionCreatedAt"`
+		HasExtraUsageEnabled      *bool  `json:"hasExtraUsageEnabled"`
 	} `json:"oauthAccount"`
+	// CustomAPIKeyResponses lists API keys the user approved for this
+	// machine. Only whether the list has entries is read.
+	CustomAPIKeyResponses *struct {
+		Approved json.RawMessage `json:"approved"`
+	} `json:"customApiKeyResponses"`
 }
 
 type credentialsJSON struct {
@@ -125,6 +133,10 @@ func (h *Harness) Discover(ctx context.Context) ([]agentlink.DiscoveredAccount, 
 		}
 		if a.started != "" {
 			details[agentlink.DetailSubscriptionStarted] = a.started
+		}
+		details[agentlink.DetailBillingMode] = a.billingMode
+		if a.extraUsage != "" {
+			details[agentlink.DetailExtraUsage] = a.extraUsage
 		}
 		if len(details) == 0 {
 			details = nil
@@ -159,17 +171,85 @@ func (h *Harness) accounts(ctx context.Context) []dirAccount {
 		if tier == "" {
 			tier = cfg.OAuthAccount.OrganizationRateLimitTier
 		}
+		billingMode, extraUsage := billingDetails(dir, &cfg)
 		out = append(out, dirAccount{
-			dir:     dir,
-			ref:     agentlink.AccountRef{ProviderID: "claude", ExternalID: cfg.OAuthAccount.AccountUUID},
-			label:   cfg.OAuthAccount.EmailAddress,
-			plan:    plan,
-			org:     cfg.OAuthAccount.OrganizationUUID,
-			tier:    tier,
-			started: cfg.OAuthAccount.SubscriptionCreatedAt,
+			dir:         dir,
+			ref:         agentlink.AccountRef{ProviderID: "claude", ExternalID: cfg.OAuthAccount.AccountUUID},
+			label:       cfg.OAuthAccount.EmailAddress,
+			plan:        plan,
+			org:         cfg.OAuthAccount.OrganizationUUID,
+			tier:        tier,
+			started:     cfg.OAuthAccount.SubscriptionCreatedAt,
+			billingMode: billingMode,
+			extraUsage:  extraUsage,
 		})
 	}
 	return out
+}
+
+// billingDetails reports whether this config dir bills an API key instead of
+// the subscription, and whether paid extra usage is on. Only the presence of
+// the keys is inspected; key values never leave the file.
+func billingDetails(dir configDir, cfg *claudeJSON) (mode, extra string) {
+	mode = "subscription"
+	if settingsUseAPIKey(filepath.Join(dir.path, "settings.json")) {
+		mode = "api_key"
+	}
+	if cfg.CustomAPIKeyResponses != nil && hasApprovedKey(cfg.CustomAPIKeyResponses.Approved) {
+		mode = "api_key"
+	}
+	if cfg.OAuthAccount != nil && cfg.OAuthAccount.HasExtraUsageEnabled != nil {
+		extra = "off"
+		if *cfg.OAuthAccount.HasExtraUsageEnabled {
+			extra = "on"
+		}
+	}
+	return mode, extra
+}
+
+// settingsUseAPIKey reports whether a Claude settings file points the CLI at
+// an API key or auth token instead of the subscription login.
+func settingsUseAPIKey(path string) bool {
+	data, err := os.ReadFile(path) //nolint:gosec // path is a harness config dir chosen by New
+	if err != nil {
+		return false
+	}
+	var settings struct {
+		Env          map[string]json.RawMessage `json:"env"`
+		APIKeyHelper string                     `json:"apiKeyHelper"`
+	}
+	if json.Unmarshal(data, &settings) != nil {
+		return false
+	}
+	if strings.TrimSpace(settings.APIKeyHelper) != "" {
+		return true
+	}
+	for _, name := range []string{"ANTHROPIC_API_KEY", "ANTHROPIC_AUTH_TOKEN"} {
+		if nonEmptyJSON(settings.Env[name]) {
+			return true
+		}
+	}
+	return false
+}
+
+// nonEmptyJSON reports whether a raw JSON value holds something other than
+// null or an empty string. The value itself is not kept.
+func nonEmptyJSON(raw json.RawMessage) bool {
+	value := strings.TrimSpace(string(raw))
+	return value != "" && value != "null" && value != `""`
+}
+
+// hasApprovedKey reports whether customApiKeyResponses.approved has entries.
+func hasApprovedKey(raw json.RawMessage) bool {
+	var list []string
+	if json.Unmarshal(raw, &list) == nil {
+		return len(list) > 0
+	}
+	var byKey map[string]json.RawMessage
+	if json.Unmarshal(raw, &byKey) == nil {
+		return len(byKey) > 0
+	}
+	return false
 }
 
 func (h *Harness) configPath(dir configDir) string {

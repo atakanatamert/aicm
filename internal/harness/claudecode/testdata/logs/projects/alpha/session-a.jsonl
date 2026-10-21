@@ -1,9 +1,9 @@
-{"type":"assistant","timestamp":"2026-10-01T10:00:00Z","requestId":"req_1","message":{"id":"msg_a","model":"claude-sonnet-4-5","usage":{"input_tokens":100,"output_tokens":20,"cache_creation_input_tokens":10,"cache_read_input_tokens":5}}}
+{"type":"assistant","timestamp":"2026-10-01T10:00:00Z","requestId":"req_1","message":{"id":"msg_a","model":"claude-sonnet-4-5","usage":{"input_tokens":100,"output_tokens":20,"cache_creation_input_tokens":10,"cache_read_input_tokens":5}},"cwd":"/Users/dev/src/alpha-repo"}
 {"type":"user","timestamp":"2026-10-01T10:00:01Z","message":{"role":"user","content":"hello"}}
-{"type":"assistant","timestamp":"2026-10-01T10:00:02Z","requestId":"req_1","message":{"id":"msg_a","model":"claude-sonnet-4-5","usage":{"input_tokens":100,"output_tokens":25,"cache_creation_input_tokens":10,"cache_read_input_tokens":7}}}
+{"type":"assistant","timestamp":"2026-10-01T10:00:02Z","requestId":"req_1","message":{"id":"msg_a","model":"claude-sonnet-4-5","usage":{"input_tokens":100,"output_tokens":25,"cache_creation_input_tokens":10,"cache_read_input_tokens":7}},"cwd":"/Users/dev/src/alpha-repo"}
 {"type":"system","timestamp":"2026-10-01T10:00:03Z","subtype":"turn_duration"}
 {not valid json
 {"type":"assistant","timestamp":"2026-10-01T10:01:00Z","requestId":"req_2","message":{"id":"msg_b","model":"<synthetic>","usage":{"input_tokens":9,"output_tokens":9}}}
 {"type":"assistant","timestamp":"2026-10-01T10:02:00Z","message":{"id":"msg_c","model":"claude-sonnet-4-5","usage":{"input_tokens":9,"output_tokens":9}}}
-{"type":"assistant","timestamp":"2026-10-01T10:10:00Z","requestId":"req_3","message":{"id":"msg_d","model":"claude-opus-4-1","usage":{"input_tokens":200,"output_tokens":40,"cache_creation_input_tokens":0,"cache_read_input_tokens":50}}}
+{"type":"assistant","timestamp":"2026-10-01T10:10:00Z","requestId":"req_3","message":{"id":"msg_d","model":"claude-opus-4-1","usage":{"input_tokens":200,"output_tokens":40,"cache_creation_input_tokens":0,"cache_read_input_tokens":50}},"cwd":"/Users/dev/src/alpha-repo"}
 {"type":"assistant","timestamp":"2026-10-01T10:20:00Z","requestId":"req_partial","message":{"id":"msg_partial","model":"claude-sonnet-4-5","usage":{"input_tokens":1,
