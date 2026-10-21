@@ -3,11 +3,15 @@ import { errorOf, query, queryClient } from "@/api/client"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 
-// Editor-only "Sync now". 409 nothing_to_sync and 429 too_soon (whose message
-// carries the retry time) show inline under the button.
-export function SyncButton({ accountId }: { accountId: string }) {
+// Editor-only "Sync now", shown only for providers the hub can fetch from:
+// subscriptions read by an agent update on their own. 429 too_soon (whose
+// message carries the retry time) shows inline under the button.
+export function SyncButton({ accountId, providerId }: { accountId: string; providerId: string }) {
   const sync = query.useMutation("post", "/api/accounts/{accountId}/sync")
+  const providers = query.useQuery("get", "/api/providers", undefined, { staleTime: Infinity })
   const [note, setNote] = useState<{ text: string; error: boolean } | null>(null)
+  const caps = providers.data?.find((p) => p.id === providerId)?.capabilities
+  if (!caps || !(caps.usage || caps.quota || caps.charges)) return null
 
   async function onSync() {
     setNote(null)

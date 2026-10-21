@@ -61,7 +61,7 @@ function AccountHeader({ account, wallet }: { account: Account; wallet: boolean 
           wallet={wallet}
           renewal={account.plan.renews_on != null}
         />
-        {canEdit && <SyncButton accountId={account.id} />}
+        {canEdit && <SyncButton accountId={account.id} providerId={account.provider_id} />}
       </div>
     </div>
   )
