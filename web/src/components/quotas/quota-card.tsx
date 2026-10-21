@@ -39,6 +39,8 @@ function urgentReason(quota: AccountQuota): string | undefined {
     return bindingMeter(quota)?.def.reset_kind === "never" ? "Balance is empty" : "Runs out before it resets at current use"
   }
   if (quota.score.headroom < 0.3) {
+    // Wallets show their run-out date on the meter row; say why it's urgent.
+    if (bindingMeter(quota)?.def.reset_kind === "never") return "Balance is running low"
     const hours = bindingMeter(quota)?.score.hours_to_empty
     return hours !== null && hours !== undefined
       ? hours >= 48
