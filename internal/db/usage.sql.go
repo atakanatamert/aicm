@@ -36,6 +36,25 @@ func (q *Queries) DeleteAPIUsageDaily(ctx context.Context, arg DeleteAPIUsageDai
 	return err
 }
 
+const deleteAgentUsageDaily = `-- name: DeleteAgentUsageDaily :exec
+DELETE FROM usage_daily
+WHERE org_id = $1::uuid
+  AND account_id = $2::uuid
+  AND source = 'agent'
+  AND day = $3
+`
+
+type DeleteAgentUsageDailyParams struct {
+	OrgID     string
+	AccountID string
+	Day       time.Time
+}
+
+func (q *Queries) DeleteAgentUsageDaily(ctx context.Context, arg DeleteAgentUsageDailyParams) error {
+	_, err := q.db.Exec(ctx, deleteAgentUsageDaily, arg.OrgID, arg.AccountID, arg.Day)
+	return err
+}
+
 const insertAPIUsageDaily = `-- name: InsertAPIUsageDaily :exec
 INSERT INTO usage_daily (
     org_id, account_id, day, model, source, requests,
@@ -98,7 +117,7 @@ func (q *Queries) InsertAPIUsageDaily(ctx context.Context, arg InsertAPIUsageDai
 const insertUsageEvent = `-- name: InsertUsageEvent :execrows
 INSERT INTO usage_events (
     org_id, account_id, machine_id, source, message_id, occurred_at, model,
-    input_tokens, output_tokens, cache_read_tokens, cache_write_tokens,
+    project, input_tokens, output_tokens, cache_read_tokens, cache_write_tokens,
     reasoning_tokens, cost_micro, cost_currency
 ) VALUES (
     $1::uuid,
@@ -114,7 +133,8 @@ INSERT INTO usage_events (
     $11,
     $12,
     $13,
-    $14::char(3)
+    $14,
+    $15::char(3)
 )
 ON CONFLICT (machine_id, source, message_id) DO NOTHING
 `
@@ -127,6 +147,7 @@ type InsertUsageEventParams struct {
 	MessageID        string
 	OccurredAt       time.Time
 	Model            string
+	Project          string
 	InputTokens      int64
 	OutputTokens     int64
 	CacheReadTokens  int64
@@ -145,6 +166,7 @@ func (q *Queries) InsertUsageEvent(ctx context.Context, arg InsertUsageEventPara
 		arg.MessageID,
 		arg.OccurredAt,
 		arg.Model,
+		arg.Project,
 		arg.InputTokens,
 		arg.OutputTokens,
 		arg.CacheReadTokens,
@@ -162,6 +184,7 @@ func (q *Queries) InsertUsageEvent(ctx context.Context, arg InsertUsageEventPara
 const rollupUsageEvents = `-- name: RollupUsageEvents :many
 SELECT
     model,
+    project,
     count(*)::bigint AS requests,
     COALESCE(sum(input_tokens), 0)::bigint AS input_tokens,
     COALESCE(sum(output_tokens), 0)::bigint AS output_tokens,
@@ -182,8 +205,8 @@ WHERE org_id = $1::uuid
   AND account_id = $2::uuid
   AND occurred_at >= $3
   AND occurred_at < $4
-GROUP BY model
-ORDER BY model
+GROUP BY model, project
+ORDER BY model, project
 `
 
 type RollupUsageEventsParams struct {
@@ -195,6 +218,7 @@ type RollupUsageEventsParams struct {
 
 type RollupUsageEventsRow struct {
 	Model                    string
+	Project                  string
 	Requests                 int64
 	InputTokens              int64
 	OutputTokens             int64
@@ -228,6 +252,7 @@ func (q *Queries) RollupUsageEvents(ctx context.Context, arg RollupUsageEventsPa
 		var i RollupUsageEventsRow
 		if err := rows.Scan(
 			&i.Model,
+			&i.Project,
 			&i.Requests,
 			&i.InputTokens,
 			&i.OutputTokens,
@@ -256,7 +281,7 @@ func (q *Queries) RollupUsageEvents(ctx context.Context, arg RollupUsageEventsPa
 
 const upsertAgentUsageDaily = `-- name: UpsertAgentUsageDaily :exec
 INSERT INTO usage_daily (
-    org_id, account_id, day, model, source, requests,
+    org_id, account_id, day, model, project, source, requests,
     input_tokens, output_tokens, cache_read_tokens, cache_write_tokens,
     reasoning_tokens, cost_micro, cost_currency, cost_reported, updated_at
 ) VALUES (
@@ -264,16 +289,17 @@ INSERT INTO usage_daily (
     $2::uuid,
     $3,
     $4,
-    'agent',
     $5,
+    'agent',
     $6,
     $7,
     $8,
     $9,
     $10,
     $11,
-    $12::char(3),
-    $13,
+    $12,
+    $13::char(3),
+    $14,
     now()
 )
 ON CONFLICT (account_id, day, model, source, project) DO UPDATE SET
@@ -294,6 +320,7 @@ type UpsertAgentUsageDailyParams struct {
 	AccountID        string
 	Day              time.Time
 	Model            string
+	Project          string
 	Requests         int64
 	InputTokens      int64
 	OutputTokens     int64
@@ -311,6 +338,7 @@ func (q *Queries) UpsertAgentUsageDaily(ctx context.Context, arg UpsertAgentUsag
 		arg.AccountID,
 		arg.Day,
 		arg.Model,
+		arg.Project,
 		arg.Requests,
 		arg.InputTokens,
 		arg.OutputTokens,
@@ -629,6 +657,117 @@ func (q *Queries) UsageByModel(ctx context.Context, arg UsageByModelParams) ([]U
 			&i.AccountID,
 			&i.AccountName,
 			&i.ProviderID,
+			&i.Requests,
+			&i.InputTokens,
+			&i.OutputTokens,
+			&i.CacheReadTokens,
+			&i.CacheWriteTokens,
+			&i.ReasoningTokens,
+			&i.CostReported,
+			&i.Cost,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const usageByProject = `-- name: UsageByProject :many
+SELECT
+    NULL::date AS day,
+    ''::text AS model,
+    ''::text AS account_id,
+    ''::text AS account_name,
+    ''::text AS provider_id,
+    d.project AS project,
+    COALESCE(sum(d.requests), 0)::bigint AS requests,
+    COALESCE(sum(d.input_tokens), 0)::bigint AS input_tokens,
+    COALESCE(sum(d.output_tokens), 0)::bigint AS output_tokens,
+    COALESCE(sum(d.cache_read_tokens), 0)::bigint AS cache_read_tokens,
+    COALESCE(sum(d.cache_write_tokens), 0)::bigint AS cache_write_tokens,
+    COALESCE(sum(d.reasoning_tokens), 0)::bigint AS reasoning_tokens,
+    bool_and(d.cost_reported) AS cost_reported,
+    COALESCE((
+        SELECT jsonb_agg(jsonb_build_object('micro', c.micro, 'currency', c.currency) ORDER BY c.currency)
+        FROM (
+            SELECT sum(d2.cost_micro)::bigint AS micro, d2.cost_currency::text AS currency
+            FROM usage_daily d2
+            JOIN accounts a2 ON a2.org_id = d2.org_id AND a2.id = d2.account_id
+            WHERE d2.org_id = $1::uuid
+              AND account_visible($1::uuid, $2::uuid, $3::boolean, d2.account_id)
+              AND d2.project = d.project
+              AND ($4::uuid IS NULL OR d2.account_id = $4::uuid)
+              AND ($5::text IS NULL OR a2.provider_id = $5::text)
+            GROUP BY d2.cost_currency
+        ) c
+    ), '[]'::jsonb)::text AS cost
+FROM usage_daily d
+JOIN accounts a ON a.org_id = d.org_id AND a.id = d.account_id
+WHERE d.org_id = $1::uuid
+  AND account_visible($1::uuid, $2::uuid, $3::boolean, d.account_id)
+  AND d.day >= $6
+  AND d.day <= $7
+  AND ($4::uuid IS NULL OR d.account_id = $4::uuid)
+  AND ($5::text IS NULL OR a.provider_id = $5::text)
+GROUP BY d.project
+ORDER BY d.project
+`
+
+type UsageByProjectParams struct {
+	OrgID      string
+	UserID     string
+	IsAdmin    bool
+	AccountID  *string
+	ProviderID *string
+	FromDay    time.Time
+	ToDay      time.Time
+}
+
+type UsageByProjectRow struct {
+	Day              *time.Time
+	Model            string
+	AccountID        string
+	AccountName      string
+	ProviderID       string
+	Project          string
+	Requests         int64
+	InputTokens      int64
+	OutputTokens     int64
+	CacheReadTokens  int64
+	CacheWriteTokens int64
+	ReasoningTokens  int64
+	CostReported     bool
+	Cost             string
+}
+
+func (q *Queries) UsageByProject(ctx context.Context, arg UsageByProjectParams) ([]UsageByProjectRow, error) {
+	rows, err := q.db.Query(ctx, usageByProject,
+		arg.OrgID,
+		arg.UserID,
+		arg.IsAdmin,
+		arg.AccountID,
+		arg.ProviderID,
+		arg.FromDay,
+		arg.ToDay,
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []UsageByProjectRow{}
+	for rows.Next() {
+		var i UsageByProjectRow
+		if err := rows.Scan(
+			&i.Day,
+			&i.Model,
+			&i.AccountID,
+			&i.AccountName,
+			&i.ProviderID,
+			&i.Project,
 			&i.Requests,
 			&i.InputTokens,
 			&i.OutputTokens,

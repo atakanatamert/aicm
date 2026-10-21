@@ -86,6 +86,11 @@ func (s *Server) GetUsage(ctx context.Context, req GetUsageRequestObject) (GetUs
 			providerID := r.ProviderID
 			row.ProviderId = &providerID
 		}
+		if req.Params.GroupBy == GetUsageParamsGroupByProject {
+			// '' is a real group (unknown or provider-reported); keep it.
+			project := r.Project
+			row.Project = &project
+		}
 		for j, c := range r.Cost {
 			row.Cost[j] = MicroMoney{AmountMicro: c.Micro, Currency: c.Currency}
 		}

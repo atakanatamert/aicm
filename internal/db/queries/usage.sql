@@ -1,7 +1,7 @@
 -- name: InsertUsageEvent :execrows
 INSERT INTO usage_events (
     org_id, account_id, machine_id, source, message_id, occurred_at, model,
-    input_tokens, output_tokens, cache_read_tokens, cache_write_tokens,
+    project, input_tokens, output_tokens, cache_read_tokens, cache_write_tokens,
     reasoning_tokens, cost_micro, cost_currency
 ) VALUES (
     sqlc.arg(org_id)::uuid,
@@ -11,6 +11,7 @@ INSERT INTO usage_events (
     sqlc.arg(message_id),
     sqlc.arg(occurred_at),
     sqlc.arg(model),
+    sqlc.arg(project),
     sqlc.arg(input_tokens),
     sqlc.arg(output_tokens),
     sqlc.arg(cache_read_tokens),
@@ -24,6 +25,7 @@ ON CONFLICT (machine_id, source, message_id) DO NOTHING;
 -- name: RollupUsageEvents :many
 SELECT
     model,
+    project,
     count(*)::bigint AS requests,
     COALESCE(sum(input_tokens), 0)::bigint AS input_tokens,
     COALESCE(sum(output_tokens), 0)::bigint AS output_tokens,
@@ -44,12 +46,12 @@ WHERE org_id = sqlc.arg(org_id)::uuid
   AND account_id = sqlc.arg(account_id)::uuid
   AND occurred_at >= sqlc.arg(from_time)
   AND occurred_at < sqlc.arg(to_time)
-GROUP BY model
-ORDER BY model;
+GROUP BY model, project
+ORDER BY model, project;
 
 -- name: UpsertAgentUsageDaily :exec
 INSERT INTO usage_daily (
-    org_id, account_id, day, model, source, requests,
+    org_id, account_id, day, model, project, source, requests,
     input_tokens, output_tokens, cache_read_tokens, cache_write_tokens,
     reasoning_tokens, cost_micro, cost_currency, cost_reported, updated_at
 ) VALUES (
@@ -57,6 +59,7 @@ INSERT INTO usage_daily (
     sqlc.arg(account_id)::uuid,
     sqlc.arg(day),
     sqlc.arg(model),
+    sqlc.arg(project),
     'agent',
     sqlc.arg(requests),
     sqlc.arg(input_tokens),
@@ -80,6 +83,13 @@ ON CONFLICT (account_id, day, model, source, project) DO UPDATE SET
     cost_currency = excluded.cost_currency,
     cost_reported = excluded.cost_reported,
     updated_at = now();
+
+-- name: DeleteAgentUsageDaily :exec
+DELETE FROM usage_daily
+WHERE org_id = sqlc.arg(org_id)::uuid
+  AND account_id = sqlc.arg(account_id)::uuid
+  AND source = 'agent'
+  AND day = sqlc.arg(day);
 
 -- name: DeleteAPIUsageDaily :exec
 DELETE FROM usage_daily
@@ -267,3 +277,43 @@ WHERE d.org_id = sqlc.arg(org_id)::uuid
   AND (sqlc.narg(provider_id)::text IS NULL OR a.provider_id = sqlc.narg(provider_id)::text)
 GROUP BY a.provider_id
 ORDER BY a.provider_id;
+
+-- name: UsageByProject :many
+SELECT
+    NULL::date AS day,
+    ''::text AS model,
+    ''::text AS account_id,
+    ''::text AS account_name,
+    ''::text AS provider_id,
+    d.project AS project,
+    COALESCE(sum(d.requests), 0)::bigint AS requests,
+    COALESCE(sum(d.input_tokens), 0)::bigint AS input_tokens,
+    COALESCE(sum(d.output_tokens), 0)::bigint AS output_tokens,
+    COALESCE(sum(d.cache_read_tokens), 0)::bigint AS cache_read_tokens,
+    COALESCE(sum(d.cache_write_tokens), 0)::bigint AS cache_write_tokens,
+    COALESCE(sum(d.reasoning_tokens), 0)::bigint AS reasoning_tokens,
+    bool_and(d.cost_reported) AS cost_reported,
+    COALESCE((
+        SELECT jsonb_agg(jsonb_build_object('micro', c.micro, 'currency', c.currency) ORDER BY c.currency)
+        FROM (
+            SELECT sum(d2.cost_micro)::bigint AS micro, d2.cost_currency::text AS currency
+            FROM usage_daily d2
+            JOIN accounts a2 ON a2.org_id = d2.org_id AND a2.id = d2.account_id
+            WHERE d2.org_id = sqlc.arg(org_id)::uuid
+              AND account_visible(sqlc.arg(org_id)::uuid, sqlc.arg(user_id)::uuid, sqlc.arg(is_admin)::boolean, d2.account_id)
+              AND d2.project = d.project
+              AND (sqlc.narg(account_id)::uuid IS NULL OR d2.account_id = sqlc.narg(account_id)::uuid)
+              AND (sqlc.narg(provider_id)::text IS NULL OR a2.provider_id = sqlc.narg(provider_id)::text)
+            GROUP BY d2.cost_currency
+        ) c
+    ), '[]'::jsonb)::text AS cost
+FROM usage_daily d
+JOIN accounts a ON a.org_id = d.org_id AND a.id = d.account_id
+WHERE d.org_id = sqlc.arg(org_id)::uuid
+  AND account_visible(sqlc.arg(org_id)::uuid, sqlc.arg(user_id)::uuid, sqlc.arg(is_admin)::boolean, d.account_id)
+  AND d.day >= sqlc.arg(from_day)
+  AND d.day <= sqlc.arg(to_day)
+  AND (sqlc.narg(account_id)::uuid IS NULL OR d.account_id = sqlc.narg(account_id)::uuid)
+  AND (sqlc.narg(provider_id)::text IS NULL OR a.provider_id = sqlc.narg(provider_id)::text)
+GROUP BY d.project
+ORDER BY d.project;

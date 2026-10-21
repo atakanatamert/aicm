@@ -25,7 +25,7 @@ func (r usageCSVResponse) VisitExportUsageResponse(w http.ResponseWriter) error 
 
 	cw := csv.NewWriter(w)
 	if err := cw.Write([]string{
-		"day", "account_id", "account_name", "provider_id", "model", "source",
+		"day", "account_id", "account_name", "provider_id", "model", "project", "source",
 		"requests", "input_tokens", "output_tokens", "cache_read_tokens",
 		"cache_write_tokens", "reasoning_tokens", "cost", "cost_currency",
 		"cost_reported",
@@ -35,7 +35,7 @@ func (r usageCSVResponse) VisitExportUsageResponse(w http.ResponseWriter) error 
 	for _, row := range r.rows {
 		if err := cw.Write([]string{
 			row.Day.Format(time.DateOnly), row.AccountID, row.AccountName,
-			row.ProviderID, row.Model, row.Source,
+			row.ProviderID, row.Model, row.Project, row.Source,
 			strconv.FormatInt(row.Requests, 10), strconv.FormatInt(row.InputTokens, 10),
 			strconv.FormatInt(row.OutputTokens, 10), strconv.FormatInt(row.CacheReadTokens, 10),
 			strconv.FormatInt(row.CacheWriteTokens, 10), strconv.FormatInt(row.ReasoningTokens, 10),

@@ -9,6 +9,7 @@ SELECT
     a.name AS account_name,
     a.provider_id,
     d.model,
+    d.project,
     d.source,
     d.requests,
     d.input_tokens,
@@ -27,7 +28,7 @@ WHERE d.org_id = sqlc.arg(org_id)
   AND d.day <= sqlc.arg(to_day)
   AND (sqlc.narg(account_id)::uuid IS NULL OR d.account_id = sqlc.narg(account_id)::uuid)
   AND (sqlc.narg(provider_id)::text IS NULL OR a.provider_id = sqlc.narg(provider_id)::text)
-ORDER BY d.day, a.name, d.account_id, d.model, d.source;
+ORDER BY d.day, a.name, d.account_id, d.model, d.project, d.source;
 
 -- name: ExportReadingRows :many
 SELECT

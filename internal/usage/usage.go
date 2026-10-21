@@ -78,6 +78,7 @@ func (s *Service) RecordAgentEvents(ctx context.Context, orgID, machineID string
 			MessageID:        e.MessageID,
 			OccurredAt:       e.OccurredAt,
 			Model:            e.Model,
+			Project:          e.Project,
 			InputTokens:      e.InputTokens,
 			OutputTokens:     e.OutputTokens,
 			CacheReadTokens:  e.CacheReadTokens,
@@ -103,6 +104,15 @@ func (s *Service) RecordAgentEvents(ctx context.Context, orgID, machineID string
 		if err != nil {
 			return 0, fmt.Errorf("rolling up usage for account %s on %s: %w", k.accountID, k.day.Format(time.DateOnly), err)
 		}
+		// Replace the day's agent rows, so a row rolled up before projects
+		// existed (project '') never survives beside its project rows.
+		if err := q.DeleteAgentUsageDaily(ctx, db.DeleteAgentUsageDailyParams{
+			OrgID:     orgID,
+			AccountID: k.accountID,
+			Day:       k.day,
+		}); err != nil {
+			return 0, fmt.Errorf("clearing usage rollup for account %s on %s: %w", k.accountID, k.day.Format(time.DateOnly), err)
+		}
 		for _, r := range rows {
 			cost, currency, reported, err := s.rollupCost(ctx, r)
 			if err != nil {
@@ -113,6 +123,7 @@ func (s *Service) RecordAgentEvents(ctx context.Context, orgID, machineID string
 				AccountID:        k.accountID,
 				Day:              k.day,
 				Model:            r.Model,
+				Project:          r.Project,
 				Requests:         r.Requests,
 				InputTokens:      r.InputTokens,
 				OutputTokens:     r.OutputTokens,
@@ -240,7 +251,7 @@ type Query struct {
 	OrgID, UserID string
 	IsAdmin       bool
 	From, To      time.Time
-	GroupBy       string // day | model | account | provider
+	GroupBy       string // day | model | account | provider | project
 	AccountID     string // optional
 	ProviderID    string // optional
 }
@@ -249,6 +260,7 @@ type Query struct {
 type Row struct {
 	Day                                                       *time.Time
 	Model, AccountID, AccountName, ProviderID                 string
+	Project                                                   string // set only for GroupBy "project"
 	Requests, Input, Output, CacheRead, CacheWrite, Reasoning int64
 	Cost                                                      []CostTotal // one per currency
 	CostReported                                              bool        // true only if every contributing row was reported
@@ -346,6 +358,25 @@ func (s *Service) Query(ctx context.Context, q Query) ([]Row, error) {
 			if err != nil {
 				return nil, err
 			}
+			rows = append(rows, row)
+		}
+	case "project":
+		got, err := s.q.UsageByProject(ctx, db.UsageByProjectParams{
+			OrgID: orgID, UserID: userID, IsAdmin: isAdmin,
+			AccountID: accountID, ProviderID: providerID,
+			FromDay: from, ToDay: to,
+		})
+		if err != nil {
+			return nil, fmt.Errorf("querying usage by project: %w", err)
+		}
+		for _, r := range got {
+			row, err := makeRow(nil, "", "", "", "",
+				r.Requests, r.InputTokens, r.OutputTokens, r.CacheReadTokens, r.CacheWriteTokens, r.ReasoningTokens,
+				r.CostReported, r.Cost)
+			if err != nil {
+				return nil, err
+			}
+			row.Project = r.Project
 			rows = append(rows, row)
 		}
 	default:

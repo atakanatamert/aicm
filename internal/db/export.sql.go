@@ -110,6 +110,7 @@ SELECT
     a.name AS account_name,
     a.provider_id,
     d.model,
+    d.project,
     d.source,
     d.requests,
     d.input_tokens,
@@ -128,7 +129,7 @@ WHERE d.org_id = $1
   AND d.day <= $5
   AND ($6::uuid IS NULL OR d.account_id = $6::uuid)
   AND ($7::text IS NULL OR a.provider_id = $7::text)
-ORDER BY d.day, a.name, d.account_id, d.model, d.source
+ORDER BY d.day, a.name, d.account_id, d.model, d.project, d.source
 `
 
 type ExportUsageRowsParams struct {
@@ -147,6 +148,7 @@ type ExportUsageRowsRow struct {
 	AccountName      string
 	ProviderID       string
 	Model            string
+	Project          string
 	Source           string
 	Requests         int64
 	InputTokens      int64
@@ -185,6 +187,7 @@ func (q *Queries) ExportUsageRows(ctx context.Context, arg ExportUsageRowsParams
 			&i.AccountName,
 			&i.ProviderID,
 			&i.Model,
+			&i.Project,
 			&i.Source,
 			&i.Requests,
 			&i.InputTokens,
