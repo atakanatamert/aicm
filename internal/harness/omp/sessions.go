@@ -47,6 +47,18 @@ func (h *Harness) Scan(ctx context.Context, cursors harness.Cursors) (harness.Ba
 				byProvider[entry.Name] = entry
 			}
 		}
+		// Subscription logins (Claude, ChatGPT) attribute omp's turns to the
+		// same accounts Claude Code and Codex report, unless an API key for
+		// that provider is set.
+		logins, err := readOAuthAccounts(dir)
+		if err != nil {
+			return harness.Batch{}, fmt.Errorf("reading omp logins in %s: %w", dir, err)
+		}
+		for _, login := range logins {
+			if _, ok := byProvider[login.Name]; !ok {
+				byProvider[login.Name] = keyEntry{Name: login.Name, ProviderID: login.Ref.ProviderID, Ref: login.Ref}
+			}
+		}
 		keysByDir[i] = byProvider
 	}
 

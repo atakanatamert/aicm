@@ -56,15 +56,17 @@ func TestDiscoverGolden(t *testing.T) {
 	// key (one coding-plan and one pay-as-you-go API account) plus a disabled
 	// key, an OAuth row and a provider without a catalog id, none of which
 	// may be reported.
-	if len(accounts) != 4 {
-		t.Fatalf("Discover returned %d accounts, want 4", len(accounts))
+	// The subscription logins (Claude, ChatGPT) are reported by account id;
+	// their tokens never appear.
+	if len(accounts) != 6 {
+		t.Fatalf("Discover returned %d accounts, want 6", len(accounts))
 	}
 	got := marshalGolden(t, accounts)
 	want := readGolden(t, "discover.golden.json")
 	if !bytes.Equal(got, want) {
 		t.Fatalf("discovered accounts mismatch\n got: %s\nwant: %s", got, want)
 	}
-	for _, secret := range []string{"synthetic-anthropic", "synthetic-deepseek", "zai-synthetic", "synthetic-access"} {
+	for _, secret := range []string{"synthetic-anthropic", "synthetic-deepseek", "zai-synthetic", "synthetic-access", "synthetic-refresh"} {
 		if bytes.Contains(want, []byte(secret)) {
 			t.Fatalf("discover golden contains a credential (%s)", secret)
 		}
@@ -149,8 +151,13 @@ func TestSessionsGolden(t *testing.T) {
 	if !bytes.Equal(got, want) {
 		t.Fatalf("usage events mismatch\n got: %s\nwant: %s", got, want)
 	}
-	if strings.Contains(string(got), "msg-a3") || strings.Contains(string(got), "msg-a4") {
-		t.Fatal("OAuth or unknown-provider messages were reported")
+	// msg-a3 ran on omp's ChatGPT login: it belongs to that subscription.
+	// msg-a4 is a provider without a key or login: not reported.
+	if !strings.Contains(string(got), "msg-a3") || !strings.Contains(string(got), `"provider_id": "chatgpt"`) {
+		t.Fatal("the ChatGPT-login turn was not attributed to the subscription")
+	}
+	if strings.Contains(string(got), "msg-a4") {
+		t.Fatal("a message without a key or login was reported")
 	}
 
 	again, err := harness.Scan(context.Background(), batch.Cursors)

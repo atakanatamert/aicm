@@ -11,6 +11,26 @@
   },
   {
     "ref": {
+      "provider_id": "chatgpt",
+      "external_id": "acct-chatgpt-0001"
+    },
+    "harness": "omp",
+    "label": "codex@example.com",
+    "auth_kind": "agent_capture",
+    "has_api_key": false
+  },
+  {
+    "ref": {
+      "provider_id": "claude",
+      "external_id": "acct-claude-0001"
+    },
+    "harness": "omp",
+    "label": "claude@example.com",
+    "auth_kind": "agent_capture",
+    "has_api_key": false
+  },
+  {
+    "ref": {
       "provider_id": "deepseek",
       "external_id": "key:a6f49ddedeebc46f"
     },

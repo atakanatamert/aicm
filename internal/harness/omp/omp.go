@@ -106,14 +106,12 @@ type keyEntry struct {
 }
 
 // Discover implements harness.Harness. It reports one account per distinct
-// plain API key whose provider has a hub catalog id.
+// plain API key whose provider has a hub catalog id, plus the Claude and
+// ChatGPT subscription logins omp holds (by account id, never the token).
 func (h *Harness) Discover(_ context.Context) ([]agentlink.DiscoveredAccount, error) {
 	entries, err := h.keyEntries()
 	if err != nil {
 		return nil, err
-	}
-	if len(entries) == 0 {
-		return nil, nil
 	}
 
 	seen := make(map[agentlink.AccountRef]struct{}, len(entries))
@@ -130,6 +128,25 @@ func (h *Harness) Discover(_ context.Context) ([]agentlink.DiscoveredAccount, er
 			AuthKind:  "api_key",
 			HasAPIKey: true,
 		})
+	}
+
+	for _, dir := range h.dirs {
+		logins, err := readOAuthAccounts(dir)
+		if err != nil {
+			return nil, fmt.Errorf("reading omp logins in %s: %w", dir, err)
+		}
+		for _, login := range logins {
+			if _, ok := seen[login.Ref]; ok {
+				continue
+			}
+			seen[login.Ref] = struct{}{}
+			accounts = append(accounts, agentlink.DiscoveredAccount{
+				Ref:      login.Ref,
+				Harness:  ID,
+				Label:    login.Email,
+				AuthKind: "agent_capture",
+			})
+		}
 	}
 
 	sort.Slice(accounts, func(i, j int) bool {
