@@ -44,6 +44,8 @@ services:
     entrypoint: ["/bin/sh", "/backup.sh"]
     environment:
       PGPASSWORD: ${AICM_DB_PASSWORD:-aicm}
+      # uid:gid that owns the backup files, e.g. "1000:1000"; root when empty.
+      AICM_BACKUP_OWNER: ${AICM_BACKUP_OWNER:-}
     volumes:
       - ./deploy/backup/backup.sh:/backup.sh:ro
       - ./backups:/backups

@@ -4,8 +4,9 @@
 # Nightly backup sidecar for the hub: a pg_dump of the database and a copy of
 # the master key, kept side by side in /backups. Without the master key the
 # stored API keys in a dump cannot be decrypted, so restore both together.
-# Keeps the newest AICM_BACKUP_KEEP dumps (default 14). `backup.sh now` writes
-# one backup and exits.
+# Keeps the newest AICM_BACKUP_KEEP dumps (default 14). AICM_BACKUP_OWNER
+# (uid:gid) hands the files to a host user so they can be copied off-site.
+# `backup.sh now` writes one backup and exits.
 set -eu
 
 : "${PGPASSWORD:?PGPASSWORD must be set}"
@@ -21,6 +22,9 @@ backup() {
 		cp /hub-data/master.key /backups/master.key.tmp
 		chmod 600 /backups/master.key.tmp
 		mv /backups/master.key.tmp /backups/master.key
+	fi
+	if [ -n "${AICM_BACKUP_OWNER:-}" ]; then
+		chown "$AICM_BACKUP_OWNER" "/backups/aicm-$stamp.dump" /backups/master.key 2>/dev/null || true
 	fi
 	echo "backup written: /backups/aicm-$stamp.dump"
 	ls -1t /backups/aicm-*.dump 2>/dev/null | tail -n "+$((keep + 1))" | while read -r old; do
