@@ -145,6 +145,39 @@ func (q *Queries) ListAccountKeyMachines(ctx context.Context, arg ListAccountKey
 	return items, nil
 }
 
+const listAccountMachineDetails = `-- name: ListAccountMachineDetails :many
+SELECT details FROM account_machines
+WHERE org_id = $1::uuid
+  AND account_id = $2::uuid
+ORDER BY last_seen_at DESC, machine_id, harness
+`
+
+type ListAccountMachineDetailsParams struct {
+	OrgID     string
+	AccountID string
+}
+
+// What each machine reported about the account, most recently seen first.
+func (q *Queries) ListAccountMachineDetails(ctx context.Context, arg ListAccountMachineDetailsParams) ([]json.RawMessage, error) {
+	rows, err := q.db.Query(ctx, listAccountMachineDetails, arg.OrgID, arg.AccountID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []json.RawMessage{}
+	for rows.Next() {
+		var details json.RawMessage
+		if err := rows.Scan(&details); err != nil {
+			return nil, err
+		}
+		items = append(items, details)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const listAgentAccounts = `-- name: ListAgentAccounts :many
 SELECT id, org_id, provider_id, name, status, external_id, auth_kind, secret_id, config, allow_unofficial, plan_name, price_minor, currency, billing_cycle, renews_on, auto_renew, promo_kind, promo_ends_on, notes, last_synced_at, last_sync_error, sync_failing_since, archived_at, created_at, updated_at, renewal_anchor_day FROM accounts
 WHERE org_id = $1::uuid

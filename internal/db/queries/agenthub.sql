@@ -71,6 +71,13 @@ WHERE org_id = sqlc.arg(org_id)::uuid
   AND account_id = sqlc.arg(account_id)::uuid
   AND details->>'has_api_key' = 'true';
 
+-- name: ListAccountMachineDetails :many
+-- What each machine reported about the account, most recently seen first.
+SELECT details FROM account_machines
+WHERE org_id = sqlc.arg(org_id)::uuid
+  AND account_id = sqlc.arg(account_id)::uuid
+ORDER BY last_seen_at DESC, machine_id, harness;
+
 -- name: TouchMachineSeen :exec
 -- Incoming messages refresh last_seen_at, at most once a minute.
 UPDATE machines

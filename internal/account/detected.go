@@ -22,6 +22,24 @@ type DetectedPlan struct {
 	Started time.Time
 }
 
+// DetectPlan prices the tier and start date an agent reported against the
+// provider catalog. It returns false when either is missing, the tier is not
+// in the catalog or the date is malformed, leaving the plan for the user.
+func DetectPlan(info provider.Info, tier, started string) (DetectedPlan, bool) {
+	if tier == "" || started == "" {
+		return DetectedPlan{}, false
+	}
+	price, ok := info.Plan(tier)
+	if !ok {
+		return DetectedPlan{}, false
+	}
+	at, err := time.Parse(time.RFC3339Nano, started)
+	if err != nil {
+		return DetectedPlan{}, false
+	}
+	return DetectedPlan{Price: price, Started: at}, true
+}
+
 // FillDetected sets a detected plan on an active account whose price and
 // renewal date are both empty: monthly at the list price, renewing on the
 // start date's day of month. When the account has no subscription charges

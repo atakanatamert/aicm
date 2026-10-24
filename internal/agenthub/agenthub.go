@@ -395,8 +395,10 @@ func (h *Hub) PushConfig(ctx context.Context, orgID string) {
 	}
 }
 
-// Confirm moves a pending account to active, optionally renaming it. With
-// importKey it asks a connected machine that reported the key for it.
+// Confirm moves a pending account to active, optionally renaming it, and
+// prices a subscription the agents already reported a plan tier and start
+// date for. With importKey it asks a connected machine that reported the key
+// for it.
 func (h *Hub) Confirm(ctx context.Context, p auth.Principal, accountID string, name *string, importKey bool) (db.Account, error) {
 	a, err := h.accounts.Get(ctx, p, accountID)
 	switch {
@@ -459,11 +461,20 @@ func (h *Hub) Confirm(ctx context.Context, p auth.Principal, accountID string, n
 	}); err != nil {
 		return db.Account{}, err
 	}
+	// Price a subscription the agents already identified now, not on the
+	// next discovery report.
+	filled, err := h.fillStoredPlan(ctx, q, p.Actor(), p.OrgID, updated)
+	if err != nil {
+		return db.Account{}, err
+	}
 	if err := tx.Commit(ctx); err != nil {
 		return db.Account{}, fmt.Errorf("committing account confirm: %w", err)
 	}
 
 	h.PushConfig(ctx, p.OrgID)
+	if filled {
+		return h.accounts.Get(ctx, p, accountID)
+	}
 	return updated, nil
 }
 

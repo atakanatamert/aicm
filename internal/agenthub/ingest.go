@@ -67,8 +67,10 @@ func (h *Hub) ingestAccounts(ctx context.Context, s *session, e agentlink.Envelo
 		}); err != nil {
 			return fmt.Errorf("recording account machine: %w", err).Error()
 		}
-		if err := h.fillDetectedPlan(ctx, q, actor, s.orgID, a, item); err != nil {
-			return err.Error()
+		if a.Status == "active" {
+			if _, err := h.fillDetectedPlan(ctx, q, actor, s.orgID, a.ID, a.ProviderID, item.Details); err != nil {
+				return err.Error()
+			}
 		}
 		if a.Inserted {
 			if err := audit.Write(ctx, q, actor, audit.Entry{
@@ -229,30 +231,40 @@ func (h *Hub) providerInfo(id string) (provider.Info, bool) {
 }
 
 // fillDetectedPlan prices an active subscription the agent identified (plan
-// tier and start date) when the user has not entered a plan yet.
-func (h *Hub) fillDetectedPlan(ctx context.Context, q *db.Queries, actor audit.Actor, orgID string, a db.UpsertDiscoveredAccountRow, item agentlink.DiscoveredAccount) error {
-	if a.Status != "active" {
-		return nil
-	}
-	tier := item.Details[agentlink.DetailPlanTier]
-	startedRaw := item.Details[agentlink.DetailSubscriptionStarted]
-	if tier == "" || startedRaw == "" {
-		return nil
-	}
-	info, ok := h.providerInfo(item.Ref.ProviderID)
+// tier and start date in details) when the user has not entered a plan yet.
+// It reports whether the plan was filled.
+func (h *Hub) fillDetectedPlan(ctx context.Context, q *db.Queries, actor audit.Actor, orgID, accountID, providerID string, details map[string]string) (bool, error) {
+	info, ok := h.providerInfo(providerID)
 	if !ok {
-		return nil
+		return false, nil
 	}
-	price, ok := info.Plan(tier)
+	plan, ok := account.DetectPlan(info, details[agentlink.DetailPlanTier], details[agentlink.DetailSubscriptionStarted])
 	if !ok {
-		return nil
+		return false, nil
 	}
-	started, err := time.Parse(time.RFC3339Nano, startedRaw)
+	filled, err := account.FillDetected(ctx, q, actor, orgID, accountID, plan, time.Now())
 	if err != nil {
-		return nil // a malformed date from the harness: leave the plan for the user
+		return false, fmt.Errorf("filling detected plan for %s: %w", accountID, err)
 	}
-	if _, err := account.FillDetected(ctx, q, actor, orgID, a.ID, account.DetectedPlan{Price: price, Started: started}, time.Now()); err != nil {
-		return fmt.Errorf("filling detected plan for %s: %w", a.ID, err)
+	return filled, nil
+}
+
+// fillStoredPlan applies the plan from the details the agents already
+// reported for the account, taking the most recently seen machine that
+// reported both a plan tier and a subscription start.
+func (h *Hub) fillStoredPlan(ctx context.Context, q *db.Queries, actor audit.Actor, orgID string, a db.Account) (bool, error) {
+	rows, err := q.ListAccountMachineDetails(ctx, db.ListAccountMachineDetailsParams{OrgID: orgID, AccountID: a.ID})
+	if err != nil {
+		return false, fmt.Errorf("listing account machine details: %w", err)
 	}
-	return nil
+	for _, raw := range rows {
+		var details map[string]string
+		if err := json.Unmarshal(raw, &details); err != nil {
+			continue // not written by discoveredDetails: nothing to price
+		}
+		if details[agentlink.DetailPlanTier] != "" && details[agentlink.DetailSubscriptionStarted] != "" {
+			return h.fillDetectedPlan(ctx, q, actor, orgID, a.ID, a.ProviderID, details)
+		}
+	}
+	return false, nil
 }
