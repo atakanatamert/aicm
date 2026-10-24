@@ -3,6 +3,7 @@
 package codex
 
 import (
+	"bufio"
 	"bytes"
 	"context"
 	"encoding/base64"
@@ -10,6 +11,7 @@ import (
 	"os"
 	"path/filepath"
 	"reflect"
+	"runtime"
 	"strings"
 	"testing"
 	"time"
@@ -18,6 +20,42 @@ import (
 )
 
 const testAccountID = "acct_abc123"
+
+// fakeCodexEnv makes the test binary act as a synthetic codex app-server.
+const fakeCodexEnv = "AICM_TEST_FAKE_CODEX"
+
+func TestMain(m *testing.M) {
+	if os.Getenv(fakeCodexEnv) == "1" {
+		fakeCodex()
+		return
+	}
+	os.Exit(m.Run())
+}
+
+// fakeCodex answers codex app-server JSON-RPC requests on stdin with canned
+// responses until stdin closes.
+func fakeCodex() {
+	in := bufio.NewScanner(os.Stdin)
+	in.Buffer(make([]byte, 0, 64*1024), 1<<20)
+	for in.Scan() {
+		var req struct {
+			Method string `json:"method"`
+		}
+		if json.Unmarshal(in.Bytes(), &req) != nil {
+			continue
+		}
+		var resp string
+		switch req.Method {
+		case "initialize":
+			resp = `{"jsonrpc":"2.0","id":1,"result":{"userAgent":"fake-codex","codexHome":"/tmp","platformFamily":"unix","platformOs":"macos"}}`
+		case "account/rateLimits/read":
+			resp = `{"jsonrpc":"2.0","id":2,"result":{"rateLimits":{"primary":{"usedPercent":22,"windowDurationMins":300,"resetsAt":1772636400},"secondary":{"usedPercent":55,"windowDurationMins":10080,"resetsAt":1773223200},"credits":{"hasCredits":true,"unlimited":false,"balance":"7.25"},"planType":"plus"},"accountId":"acct_abc123"}}`
+		default:
+			continue
+		}
+		_, _ = os.Stdout.WriteString(resp + "\n")
+	}
+}
 
 func TestDiscoverGolden(t *testing.T) {
 	t.Setenv("CODEX_HOME", "")
@@ -105,15 +143,25 @@ func TestAppServerGolden(t *testing.T) {
 	home := t.TempDir()
 	writeAuth(t, filepath.Join(home, ".codex"))
 
-	script, err := os.ReadFile("testdata/fake-codex.sh")
+	// The test binary itself plays codex app-server (see TestMain).
+	self, err := os.Executable()
+	if err != nil {
+		t.Fatal(err)
+	}
+	exe, err := os.ReadFile(self)
 	if err != nil {
 		t.Fatal(err)
 	}
 	binDir := t.TempDir()
-	if err := os.WriteFile(filepath.Join(binDir, "codex"), script, 0o755); err != nil {
+	name := appServerBin
+	if runtime.GOOS == "windows" {
+		name += ".exe"
+	}
+	if err := os.WriteFile(filepath.Join(binDir, name), exe, 0o755); err != nil {
 		t.Fatal(err)
 	}
 	t.Setenv("PATH", binDir+string(os.PathListSeparator)+os.Getenv("PATH"))
+	t.Setenv(fakeCodexEnv, "1")
 
 	fixed := time.Date(2026, 3, 4, 10, 5, 0, 0, time.UTC)
 	h := New(home)

@@ -428,11 +428,15 @@ func TestCursorsAdvanceAfterSpool(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
+		// Replace the spool directory with a regular file: every write
+		// into it then fails, on every OS and regardless of privileges.
 		spoolDir := filepath.Join(dir, "spool")
-		if err := os.Chmod(spoolDir, 0o500); err != nil {
+		if err := os.Remove(spoolDir); err != nil {
 			t.Fatal(err)
 		}
-		t.Cleanup(func() { _ = os.Chmod(spoolDir, dirMode) })
+		if err := os.WriteFile(spoolDir, nil, fileMode); err != nil {
+			t.Fatal(err)
+		}
 
 		a.scanOnce(context.Background())
 

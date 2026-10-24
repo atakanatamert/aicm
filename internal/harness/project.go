@@ -19,8 +19,8 @@ var projectCache = struct {
 // Project returns the base name of the git repository containing cwd (the
 // main repository for a linked worktree), or the base name of cwd itself when
 // it is not inside a repository. It never returns a full path. An empty cwd,
-// /, the home directory, temp directories and loose folders directly under
-// the home directory (Desktop, .config) give "".
+// a filesystem root (/, C:\), the home directory, temp directories and loose
+// folders directly under the home directory (Desktop, .config) give "".
 func Project(cwd string) string {
 	if cwd == "" {
 		return ""
@@ -46,7 +46,7 @@ func projectName(cwd string) string {
 	if h, err := os.UserHomeDir(); err == nil && h != "" {
 		home = filepath.Clean(h)
 	}
-	if cwd == string(filepath.Separator) || cwd == home || isTempDir(cwd) {
+	if isRoot(cwd) || cwd == home || isTempDir(cwd) {
 		return ""
 	}
 
@@ -85,10 +85,16 @@ func projectName(cwd string) string {
 // directory, where the name says nothing about a project.
 func looseName(cwd, home string) string {
 	parent := filepath.Dir(cwd)
-	if parent == home || parent == string(filepath.Separator) || isTempDir(parent) || isTempDir(cwd) {
+	if parent == home || isRoot(parent) || isTempDir(parent) || isTempDir(cwd) {
 		return ""
 	}
 	return filepath.Base(cwd)
+}
+
+// isRoot reports whether dir is a filesystem root: / on Unix, a volume root
+// (C:\ or \\server\share\) on Windows.
+func isRoot(dir string) bool {
+	return dir == filepath.VolumeName(dir)+string(filepath.Separator)
 }
 
 func isTempDir(dir string) bool {

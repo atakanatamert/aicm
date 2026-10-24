@@ -5,6 +5,7 @@ package harness
 import (
 	"os"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"testing"
 )
@@ -49,8 +50,19 @@ func TestProject(t *testing.T) {
 		t.Fatalf("creating fake home: %v", err)
 	}
 
-	t.Setenv("HOME", fakeHome)
+	// os.UserHomeDir reads USERPROFILE on Windows and HOME elsewhere.
+	if runtime.GOOS == "windows" {
+		t.Setenv("USERPROFILE", fakeHome)
+	} else {
+		t.Setenv("HOME", fakeHome)
+	}
 	home := fakeHome
+
+	// On Windows the root of a volume (C:\) counts as the root as well.
+	volumeRoot := string(filepath.Separator)
+	if vol := filepath.VolumeName(root); vol != "" {
+		volumeRoot = vol + string(filepath.Separator)
+	}
 
 	tests := []struct {
 		name string
@@ -63,6 +75,7 @@ func TestProject(t *testing.T) {
 		{name: "missing path", cwd: missing, want: "dir"},
 		{name: "empty input", cwd: "", want: ""},
 		{name: "root", cwd: string(filepath.Separator), want: ""},
+		{name: "volume root", cwd: volumeRoot, want: ""},
 		{name: "home", cwd: home, want: ""},
 		{name: "temp dir", cwd: os.TempDir(), want: ""},
 		{name: "linked worktree", cwd: linked, want: "mainrepo"},

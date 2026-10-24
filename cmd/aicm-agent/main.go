@@ -15,6 +15,7 @@ import (
 	"os"
 	"os/signal"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"syscall"
 	"time"
@@ -50,7 +51,7 @@ Flags for enroll and run:
 
 Flags for mcp:
   --hub URL          hub base URL (default AICM_HUB_URL or the enrolled config)
-  --token-file FILE  file holding the personal API token (mode 0600)
+  --token-file FILE  file holding the personal API token (mode 0600 on Unix)
 `
 
 func main() {
@@ -300,7 +301,9 @@ func serveMCP(args []string, stderr io.Writer) int {
 	return 0
 }
 
-// readTokenFile reads the token once and refuses a world-readable file.
+// readTokenFile reads the token once and refuses a world-readable file. On
+// Windows the check is skipped: NTFS ACLs are not expressed in the permission
+// bits Go reports (every file shows as 0666 or 0444).
 func readTokenFile(path string) (string, error) {
 	fi, err := os.Stat(path)
 	if err != nil {
@@ -309,7 +312,7 @@ func readTokenFile(path string) (string, error) {
 	if !fi.Mode().IsRegular() {
 		return "", fmt.Errorf("%s is not a regular file", path)
 	}
-	if fi.Mode().Perm()&0o004 != 0 {
+	if runtime.GOOS != "windows" && fi.Mode().Perm()&0o004 != 0 {
 		return "", fmt.Errorf("%s is world-readable; chmod 600 it", path)
 	}
 	b, err := os.ReadFile(path) //nolint:gosec // path is an explicit CLI argument
