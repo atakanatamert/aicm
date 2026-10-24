@@ -9,6 +9,7 @@ import (
 	"os"
 	"path/filepath"
 	"reflect"
+	"runtime"
 	"testing"
 	"time"
 
@@ -177,26 +178,38 @@ func TestStatuslineCaptureGolden(t *testing.T) {
 	if err != nil {
 		t.Fatalf("reading stdin fixture: %v", err)
 	}
-	input = bytes.ReplaceAll(input, []byte("/path/to/transcript.jsonl"), []byte(transcript))
+	// The path goes inside a JSON string; Windows backslashes need escaping.
+	quoted, err := json.Marshal(transcript)
+	if err != nil {
+		t.Fatalf("encoding transcript path: %v", err)
+	}
+	transcriptJSON := quoted[1 : len(quoted)-1]
+	input = bytes.ReplaceAll(input, []byte("/path/to/transcript.jsonl"), transcriptJSON)
+	// The original's stdout passes through byte-exact. PowerShell, which
+	// Claude Code uses on Windows without Git Bash, ends output lines in CRLF.
+	want := "hi\n"
+	if runtime.GOOS == "windows" && findGitBash() == "" {
+		want = "hi\r\n"
+	}
 	var out bytes.Buffer
 	if code := RunStatusline(bytes.NewReader(input), &out, dataDir); code != 0 {
 		t.Fatalf("RunStatusline exit = %d, want 0", code)
 	}
-	if out.String() != "hi\n" {
-		t.Fatalf("stdout = %q, want %q", out.String(), "hi\n")
+	if out.String() != want {
+		t.Fatalf("stdout = %q, want %q", out.String(), want)
 	}
 
 	invalid, err := os.ReadFile(filepath.Join("testdata", "statusline", "stdin-invalid.json")) //nolint:gosec // testdata path
 	if err != nil {
 		t.Fatalf("reading invalid stdin fixture: %v", err)
 	}
-	invalid = bytes.ReplaceAll(invalid, []byte("/path/to/transcript.jsonl"), []byte(transcript))
+	invalid = bytes.ReplaceAll(invalid, []byte("/path/to/transcript.jsonl"), transcriptJSON)
 	out.Reset()
 	if code := RunStatusline(bytes.NewReader(invalid), &out, dataDir); code != 0 {
 		t.Fatalf("RunStatusline invalid exit = %d, want 0", code)
 	}
-	if out.String() != "hi\n" {
-		t.Fatalf("stdout = %q, want %q", out.String(), "hi\n")
+	if out.String() != want {
+		t.Fatalf("stdout = %q, want %q", out.String(), want)
 	}
 
 	spoolPath := filepath.Join(dataDir, "claude-statusline.jsonl")
@@ -263,6 +276,16 @@ func TestInstallUninstall(t *testing.T) {
 	t.Setenv("CLAUDE_CONFIG_DIR", configDir)
 	h := New(t.TempDir(), dataDir)
 	executable := "/usr/local/bin/aicm-agent"
+	wantCommand := executable + " statusline"
+	if runtime.GOOS == "windows" {
+		// Rooted but driveless, so Abs adds the current drive. Forward slashes
+		// keep the command valid in both Git Bash and PowerShell.
+		abs, err := filepath.Abs(executable)
+		if err != nil {
+			t.Fatalf("resolving executable: %v", err)
+		}
+		wantCommand = filepath.ToSlash(abs) + " statusline"
+	}
 
 	if err := h.Install(executable); err != nil {
 		t.Fatalf("Install: %v", err)
@@ -275,8 +298,8 @@ func TestInstallUninstall(t *testing.T) {
 	if statusLine["type"] != "command" {
 		t.Fatalf("statusLine type = %v", statusLine["type"])
 	}
-	if statusLine["command"] != executable+" statusline" {
-		t.Fatalf("statusLine command = %v, want %q", statusLine["command"], executable+" statusline")
+	if statusLine["command"] != wantCommand {
+		t.Fatalf("statusLine command = %v, want %q", statusLine["command"], wantCommand)
 	}
 	if statusLine["padding"] != float64(2) {
 		t.Fatalf("statusLine padding = %v, want 2", statusLine["padding"])
@@ -308,6 +331,28 @@ func TestInstallUninstall(t *testing.T) {
 		t.Fatalf("second Install changed settings:\nbefore: %s\nafter: %s", before, after)
 	}
 
+	// A wrapper from an earlier install or another path is pointed at this
+	// executable; the stored original stays.
+	stale := readJSONMapBytes(t, after)
+	stale["statusLine"].(map[string]any)["command"] = `'/opt/old/aicm-agent' statusline`
+	staleData, err := json.Marshal(stale)
+	if err != nil {
+		t.Fatalf("encoding stale settings: %v", err)
+	}
+	if err := os.WriteFile(settingsPath, staleData, 0o600); err != nil {
+		t.Fatalf("writing stale settings: %v", err)
+	}
+	if err := h.Install(executable); err != nil {
+		t.Fatalf("Install over a stale wrapper: %v", err)
+	}
+	refreshed := readJSONMap(t, settingsPath)["statusLine"].(map[string]any)
+	if refreshed["command"] != wantCommand {
+		t.Fatalf("refreshed command = %v, want %q", refreshed["command"], wantCommand)
+	}
+	if stored := readJSONMap(t, filepath.Join(dataDir, "statusline.json")); stored["command"] != "echo mine" {
+		t.Fatalf("stored original after refresh = %v", stored)
+	}
+
 	if err := h.Uninstall(); err != nil {
 		t.Fatalf("Uninstall: %v", err)
 	}
@@ -315,6 +360,46 @@ func TestInstallUninstall(t *testing.T) {
 	want := readJSONMapBytes(t, original)
 	if !reflect.DeepEqual(restored, want) {
 		t.Fatalf("restored settings = %v, want %v", restored, want)
+	}
+}
+
+func TestWindowsWrapperCommand(t *testing.T) {
+	tests := []struct {
+		name    string
+		abs     string
+		gitBash bool
+		want    string
+	}{
+		{"plain path", `C:\Users\me\AppData\Local\aicm-agent\aicm-agent.exe`, true, "C:/Users/me/AppData/Local/aicm-agent/aicm-agent.exe statusline"},
+		{"plain path without Git Bash", `C:\Users\me\AppData\Local\aicm-agent\aicm-agent.exe`, false, "C:/Users/me/AppData/Local/aicm-agent/aicm-agent.exe statusline"},
+		{"space for Git Bash", `C:\Users\Jo O'Neil\aicm-agent.exe`, true, `'C:/Users/Jo O'\''Neil/aicm-agent.exe' statusline`},
+		{"space for PowerShell", `C:\Users\Jo O'Neil\aicm-agent.exe`, false, `& 'C:/Users/Jo O''Neil/aicm-agent.exe' statusline`},
+		{"typographic quote for PowerShell", `C:\Users\Jo O’Neil\aicm-agent.exe`, false, `& 'C:/Users/Jo O’’Neil/aicm-agent.exe' statusline`},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := windowsWrapperCommand(tt.abs, tt.gitBash)
+			if got != tt.want {
+				t.Fatalf("windowsWrapperCommand = %q, want %q", got, tt.want)
+			}
+			if !isWrapperCommand(got) {
+				t.Fatalf("isWrapperCommand(%q) = false", got)
+			}
+		})
+	}
+
+	for _, command := range []string{
+		"/usr/local/bin/aicm-agent statusline",
+		`'C:\Users\me\AppData\Local\aicm-agent\aicm-agent.exe' statusline`,
+	} {
+		if !isWrapperCommand(command) {
+			t.Fatalf("isWrapperCommand(%q) = false for an earlier install's form", command)
+		}
+	}
+	for _, command := range []string{"echo mine", "~/.claude/statusline.sh", "aicm-agent status"} {
+		if isWrapperCommand(command) {
+			t.Fatalf("isWrapperCommand(%q) = true", command)
+		}
 	}
 }
 

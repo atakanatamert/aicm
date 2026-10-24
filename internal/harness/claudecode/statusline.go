@@ -79,11 +79,74 @@ func RunStatusline(stdin io.Reader, stdout io.Writer, dataDir string) int {
 	return 0
 }
 
+// shellCommand runs a statusline command the way Claude Code does: sh on
+// Unix; on Windows Git Bash when it is installed, otherwise PowerShell.
 func shellCommand(command string) *exec.Cmd {
-	if runtime.GOOS == "windows" {
-		return exec.CommandContext(context.Background(), "cmd", "/C", command) //nolint:gosec // the user's configured statusline command
+	if runtime.GOOS != "windows" {
+		return exec.CommandContext(context.Background(), "sh", "-c", command) //nolint:gosec // the user's configured statusline command
 	}
-	return exec.CommandContext(context.Background(), "sh", "-c", command) //nolint:gosec // the user's configured statusline command
+	if bash := findGitBash(); bash != "" {
+		return exec.CommandContext(context.Background(), bash, "-c", command) //nolint:gosec // the user's configured statusline command
+	}
+	args := []string{"-NoProfile", "-NonInteractive"}
+	if os.Getenv("CLAUDE_CODE_POWERSHELL_RESPECT_EXECUTION_POLICY") != "1" {
+		args = append(args, "-ExecutionPolicy", "Bypass")
+	}
+	args = append(args, "-Command", command)
+	return exec.CommandContext(context.Background(), findPowerShell(), args...) //nolint:gosec // the user's configured statusline command
+}
+
+// findGitBash mirrors how Claude Code locates Git Bash on Windows:
+// CLAUDE_CODE_GIT_BASH_PATH when it names an existing bash or sh, then the
+// default Git install dirs, then bin\bash.exe of the Git install behind the
+// git on PATH. A git inside the working directory is ignored, as Claude Code
+// refuses executables a project placed there. It returns "" when none exists.
+func findGitBash() string {
+	if p := os.Getenv("CLAUDE_CODE_GIT_BASH_PATH"); p != "" && isRegularFile(p) {
+		switch strings.ToLower(filepath.Base(p)) {
+		case "bash.exe", "sh.exe", "bash", "sh":
+			return p
+		}
+	}
+	for _, root := range []string{`C:\Program Files\Git`, `C:\Program Files (x86)\Git`} {
+		if p := filepath.Join(root, "bin", "bash.exe"); isRegularFile(p) {
+			return p
+		}
+	}
+	git, err := exec.LookPath("git")
+	if err != nil {
+		return ""
+	}
+	if git, err = filepath.Abs(git); err != nil {
+		return ""
+	}
+	if wd, err := os.Getwd(); err == nil {
+		if rel, err := filepath.Rel(wd, git); err == nil && rel != ".." &&
+			!strings.HasPrefix(rel, ".."+string(filepath.Separator)) {
+			return ""
+		}
+	}
+	// git.exe lives in <Git>\cmd or <Git>\bin; bash.exe in <Git>\bin.
+	if p := filepath.Join(filepath.Dir(filepath.Dir(git)), "bin", "bash.exe"); isRegularFile(p) {
+		return p
+	}
+	return ""
+}
+
+// findPowerShell prefers PowerShell 7 and falls back to Windows PowerShell,
+// as Claude Code does.
+func findPowerShell() string {
+	for _, name := range []string{"pwsh.exe", "powershell.exe"} {
+		if p, err := exec.LookPath(name); err == nil {
+			return p
+		}
+	}
+	return "powershell.exe"
+}
+
+func isRegularFile(path string) bool {
+	info, err := os.Stat(path) //nolint:gosec // fixed Git install paths, PATH lookups or the user's CLAUDE_CODE_GIT_BASH_PATH
+	return err == nil && info.Mode().IsRegular()
 }
 
 // captureStatusline appends one capture line when stdin carries a valid
@@ -145,7 +208,7 @@ func (h *Harness) Install(executable string) error {
 	if err != nil {
 		return fmt.Errorf("resolving agent executable: %w", err)
 	}
-	wrapper := shellQuote(abs) + " statusline"
+	wrapper := wrapperCommand(abs)
 	var original json.RawMessage
 	haveOriginal := false
 	changed := false
@@ -180,7 +243,11 @@ func (h *Harness) Install(executable string) error {
 		if raw, ok := current["command"]; ok {
 			_ = json.Unmarshal(raw, &existingCommand)
 		}
-		if isWrapperCommand(existingCommand) {
+		// A wrapper from an earlier install is refreshed when it differs from
+		// the current one (moved binary, other shell); the stored original is
+		// kept.
+		wrapped := isWrapperCommand(existingCommand)
+		if wrapped && strings.TrimSpace(existingCommand) == wrapper {
 			continue
 		}
 
@@ -190,7 +257,7 @@ func (h *Harness) Install(executable string) error {
 				return fmt.Errorf("backing up %s: %w", path, err)
 			}
 		}
-		if !haveOriginal && current != nil {
+		if !haveOriginal && current != nil && !wrapped {
 			original = append(json.RawMessage(nil), settings["statusLine"]...)
 			haveOriginal = true
 		}
@@ -221,7 +288,7 @@ func (h *Harness) Install(executable string) error {
 		if err := os.WriteFile(path, out, mode); err != nil {
 			return fmt.Errorf("writing %s: %w", path, err)
 		}
-		changed = true
+		changed = changed || !wrapped
 	}
 	if !changed {
 		return nil
@@ -302,16 +369,61 @@ func isJSONNull(raw json.RawMessage) bool {
 }
 
 func isWrapperCommand(command string) bool {
-	command = strings.TrimSpace(command)
-	if !strings.HasSuffix(command, " statusline") {
+	exe, ok := strings.CutSuffix(strings.TrimSpace(command), " statusline")
+	if !ok {
 		return false
 	}
-	exe := strings.Trim(strings.TrimSuffix(command, " statusline"), `"'`)
-	base := filepath.Base(exe)
+	// Drop PowerShell's call operator and either shell's quotes.
+	exe = strings.Trim(strings.TrimSpace(strings.TrimPrefix(exe, "&")), `"'`)
+	base := exe[strings.LastIndexAny(exe, `/\`)+1:]
 	return base == version.AgentBinary || base == version.AgentBinary+".exe"
 }
 
-// shellQuote quotes an executable path for the shell Claude Code uses.
+// wrapperCommand is the statusLine command Install writes for the agent at
+// abs.
+func wrapperCommand(abs string) string {
+	if runtime.GOOS != "windows" {
+		return shellQuote(abs) + " statusline"
+	}
+	return windowsWrapperCommand(abs, findGitBash() != "")
+}
+
+// windowsShellSpecial holds the characters that keep a forward-slash path
+// from being a plain word in both Git Bash and PowerShell. PowerShell also
+// treats typographic quotes as quotes.
+const windowsShellSpecial = " \t\r\n'\"`$!*?()[]{};&|<>#~@,%^=+‘’‚‛“”„"
+
+// windowsWrapperCommand writes the path with forward slashes, which Git Bash
+// and PowerShell both run unquoted. A path that needs quoting is quoted for
+// the shell Claude Code picks: Git Bash when installed, else PowerShell.
+func windowsWrapperCommand(abs string, gitBash bool) string {
+	path := strings.ReplaceAll(abs, `\`, "/")
+	switch {
+	case !strings.ContainsAny(path, windowsShellSpecial):
+		return path + " statusline"
+	case gitBash:
+		return "'" + strings.ReplaceAll(path, "'", `'\''`) + "' statusline"
+	default:
+		return "& " + powerShellQuote(path) + " statusline"
+	}
+}
+
+// powerShellQuote single-quotes s for PowerShell, doubling every character
+// PowerShell reads as a single quote.
+func powerShellQuote(s string) string {
+	var b strings.Builder
+	b.WriteByte('\'')
+	for _, r := range s {
+		b.WriteRune(r)
+		if strings.ContainsRune("'‘’‚‛", r) {
+			b.WriteRune(r)
+		}
+	}
+	b.WriteByte('\'')
+	return b.String()
+}
+
+// shellQuote quotes an executable path for sh.
 func shellQuote(s string) string {
 	if s == "" {
 		return "''"
