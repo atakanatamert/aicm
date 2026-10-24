@@ -34,7 +34,7 @@ services:
       - "${AICM_PORT:-8080}:8080"
 
   # Nightly database dump plus a copy of the master key in ./backups (14 kept).
-  # Restore both together: docs/operations.md.
+  # Restore both together: README.md, "Backups".
   backup:
     image: postgres:17-alpine
     restart: unless-stopped
