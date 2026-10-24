@@ -28,8 +28,6 @@ jobs:
       - uses: actions/setup-go@v5
         with:
           go-version-file: go.mod
-      - name: placeholder UI for go:embed (the web job builds the real one)
-        run: mkdir -p web/dist && echo '<!doctype html>' > web/dist/index.html
       - run: go build ./...
       - run: go vet ./...
       - name: agent and hub cross-compile for every release target
