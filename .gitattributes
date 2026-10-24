@@ -1,0 +1,4 @@
+# Every text file is LF in the index and in the working tree, on every OS:
+# shell scripts run in Linux containers, the hub embeds install.sh, and
+# golden tests compare bytes.
+* text=auto eol=lf
