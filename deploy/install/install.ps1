@@ -60,8 +60,14 @@ if (-not $hasVersion) {
         $Version = (Invoke-RestMethod -Uri "https://api.github.com/repos/$Repo/releases/latest" -Headers $headers).tag_name
     }
     catch {
-        # No stable release yet: take the newest pre-release.
-        $Version = (Invoke-RestMethod -Uri "https://api.github.com/repos/$Repo/releases?per_page=1" -Headers $headers)[0].tag_name
+        # No stable release yet: take the most recently published non-draft
+        # release. The API's list order is not publication order.
+        $releases = Invoke-RestMethod -Uri "https://api.github.com/repos/$Repo/releases?per_page=100" -Headers $headers
+        $Version = ($releases | Where-Object { -not $_.draft -and $_.published_at } |
+            Sort-Object { [datetime]$_.published_at } -Descending | Select-Object -First 1).tag_name
+        if (-not $Version) {
+            throw "No published release found for $Repo"
+        }
     }
 }
 if (-not $Version.StartsWith('v')) {

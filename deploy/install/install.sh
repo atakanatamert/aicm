@@ -32,7 +32,7 @@ fetch() {
 	if command -v curl >/dev/null 2>&1; then
 		curl -fsSL "$1" -o "$2"
 	elif command -v wget >/dev/null 2>&1; then
-		wget -qO- "$1" >"$2"
+		wget -qO "$2" "$1"
 	else
 		warn "curl or wget is required"
 		return 1
@@ -56,11 +56,19 @@ resolve_latest() {
 	esac
 }
 
-# newest_release prints the newest tag including pre-releases, for repos that
-# have no stable release yet.
+# newest_release prints the most recently published non-draft tag including
+# pre-releases, for repos that have no stable release yet. The API's list order
+# is not publication order, so pick the greatest published_at (ISO 8601 UTC
+# strings sort lexicographically). Splitting on , { } puts each key on its own
+# line; tag_name and draft precede published_at within a release object.
 newest_release() {
-	tag=$(fetch "https://api.github.com/repos/$REPO/releases?per_page=1" /dev/stdout 2>/dev/null |
-		sed -n 's/.*"tag_name"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p' | head -n 1)
+	tag=$(fetch "https://api.github.com/repos/$REPO/releases?per_page=100" - 2>/dev/null |
+		tr ',{}' '\n\n\n' |
+		awk -F'"' '
+			$2 == "tag_name" { t = $4; d = 0 }
+			$2 == "draft" && $3 ~ /true/ { d = 1 }
+			$2 == "published_at" && $4 != "" && !d && $4 > best { best = $4; tag = t }
+			END { if (tag != "") print tag }')
 	[ -n "$tag" ] || return 1
 	printf '%s\n' "$tag"
 }

@@ -30,13 +30,16 @@ const releaseRepo = "atakanatamert/aicm"
 
 const (
 	releaseAPI       = "https://api.github.com/repos/" + releaseRepo + "/releases/latest"
+	releasesAPI      = "https://api.github.com/repos/" + releaseRepo + "/releases?per_page=100"
 	checksumsAsset   = "checksums.txt"
 	maxDownloadBytes = 512 << 20
 )
 
 type release struct {
-	TagName string         `json:"tag_name"`
-	Assets  []releaseAsset `json:"assets"`
+	TagName     string         `json:"tag_name"`
+	Draft       bool           `json:"draft"`
+	PublishedAt string         `json:"published_at"`
+	Assets      []releaseAsset `json:"assets"`
 }
 
 type releaseAsset struct {
@@ -54,19 +57,12 @@ func Update(ctx context.Context, client *http.Client) (string, error) {
 	if client == nil {
 		client = http.DefaultClient
 	}
-	body, err := download(ctx, client, releaseAPI)
-	if errors.Is(err, errNotFound) {
-		return "", nil // only pre-releases exist so far
-	}
+	rel, err := latestRelease(ctx, client)
 	if err != nil {
 		return "", err
 	}
-	var rel release
-	if err := json.Unmarshal(body, &rel); err != nil {
-		return "", fmt.Errorf("decoding release: %w", err)
-	}
-	if rel.TagName == "" {
-		return "", errors.New("release has no tag name")
+	if rel == nil {
+		return "", nil
 	}
 	newer, err := versionIsNewer(rel.TagName, version.Version)
 	if err != nil {
@@ -114,6 +110,46 @@ func Update(ctx context.Context, client *http.Client) (string, error) {
 		return "", err
 	}
 	return rel.TagName, nil
+}
+
+// latestRelease returns the stable latest release, or while none exists the
+// most recently published non-draft release. It returns nil when there is no
+// published release at all. The list endpoint is not in publication order, so
+// the greatest published_at (ISO 8601 UTC, sorts lexicographically) wins.
+func latestRelease(ctx context.Context, client *http.Client) (*release, error) {
+	body, err := download(ctx, client, releaseAPI)
+	if err == nil {
+		var rel release
+		if err := json.Unmarshal(body, &rel); err != nil {
+			return nil, fmt.Errorf("decoding release: %w", err)
+		}
+		if rel.TagName == "" {
+			return nil, errors.New("release has no tag name")
+		}
+		return &rel, nil
+	}
+	if !errors.Is(err, errNotFound) {
+		return nil, err
+	}
+	body, err = download(ctx, client, releasesAPI)
+	if err != nil {
+		return nil, err
+	}
+	var rels []release
+	if err := json.Unmarshal(body, &rels); err != nil {
+		return nil, fmt.Errorf("decoding release list: %w", err)
+	}
+	var newest *release
+	for i := range rels {
+		r := &rels[i]
+		if r.Draft || r.PublishedAt == "" || r.TagName == "" {
+			continue
+		}
+		if newest == nil || r.PublishedAt > newest.PublishedAt {
+			newest = r
+		}
+	}
+	return newest, nil
 }
 
 // findAsset returns an asset's download URL by exact name.
