@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: AGPL-3.0-or-later
+// SPDX-License-Identifier: SUL-1.0
 
 // Package provider defines what a provider adapter is. Each provider is one
 // package under internal/provider/<id>/ that declares its catalog entry

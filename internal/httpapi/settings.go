@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: AGPL-3.0-or-later
+// SPDX-License-Identifier: SUL-1.0
 
 package httpapi
 
@@ -15,8 +15,8 @@ import (
 	"github.com/atakanatamert/aicm/internal/version"
 )
 
-// sourceRepo is the project's source repository, reported so the AGPL
-// network clause is visible to users.
+// sourceRepo is the project's source repository, linked from the UI footer
+// next to the running version.
 const sourceRepo = "https://github.com/atakanatamert/aicm"
 
 // mapSettingsError maps the settings service's sentinel errors to HTTP.

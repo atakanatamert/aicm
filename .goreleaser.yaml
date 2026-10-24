@@ -41,7 +41,7 @@ archives:
       - goos: windows
         formats: [zip]
     files:
-      - LICENSES/Apache-2.0.txt
+      - LICENSE
       - THIRD_PARTY_NOTICES.md
   - id: hub
     ids: [hub]
@@ -67,17 +67,17 @@ dockers_v2:
     extra_files: [LICENSE, THIRD_PARTY_NOTICES.md]
     labels:
       org.opencontainers.image.source: https://github.com/atakanatamert/aicm
-      org.opencontainers.image.licenses: AGPL-3.0-or-later
+      org.opencontainers.image.licenses: SUL-1.0
   - id: agent
     ids: [agent]
     dockerfile: deploy/release/agent.Dockerfile
     images: ["ghcr.io/atakanatamert/aicm-agent"]
     tags: ["{{ .Version }}", "{{ if not .Prerelease }}latest{{ end }}"]
     platforms: [linux/amd64, linux/arm64]
-    extra_files: [LICENSES/Apache-2.0.txt, THIRD_PARTY_NOTICES.md]
+    extra_files: [LICENSE, THIRD_PARTY_NOTICES.md]
     labels:
       org.opencontainers.image.source: https://github.com/atakanatamert/aicm
-      org.opencontainers.image.licenses: Apache-2.0
+      org.opencontainers.image.licenses: SUL-1.0
 
 # Formula (not a cask) because `brew services` needs a formula service block.
 # GoReleaser marks `brews` deprecated in favour of casks; revisit when casks
@@ -93,7 +93,7 @@ brews:
     skip_upload: '{{ if index .Env "HOMEBREW_TAP_TOKEN" }}auto{{ else }}true{{ end }}'
     homepage: https://github.com/atakanatamert/aicm
     description: Agent for aicm, the self-hosted AI cost and subscription manager
-    license: Apache-2.0
+    license: SUL-1.0
     install: |
       bin.install "aicm-agent"
     service: |

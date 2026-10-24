@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: AGPL-3.0-or-later
+// SPDX-License-Identifier: SUL-1.0
 
 // Package notify delivers alert emails. SMTP is the only Notifier in v1;
 // the interface keeps Slack, Telegram or ntfy out of the alert logic.

@@ -1455,7 +1455,7 @@ type Settings struct {
 	FxSource        SettingsFxSource `json:"fx_source"`
 	Smtp            SmtpSettings     `json:"smtp"`
 
-	// SourceUrl Source code of the running version (AGPL network clause)
+	// SourceUrl Source code of the running version
 	SourceUrl string `json:"source_url"`
 	Version   string `json:"version"`
 }

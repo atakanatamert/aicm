@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: AGPL-3.0-or-later
+// SPDX-License-Identifier: SUL-1.0
 
 // Package machine enrols agents, stores their per-machine credentials and
 // manages the org's Ed25519 hub signing key.

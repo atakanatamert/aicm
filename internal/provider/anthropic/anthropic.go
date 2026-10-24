@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: AGPL-3.0-or-later
+// SPDX-License-Identifier: SUL-1.0
 
 // Package anthropic reads organization usage and cost from the Anthropic
 // Admin API. It needs an Admin API key (sk-ant-admin…); the key only travels

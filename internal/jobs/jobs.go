@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: AGPL-3.0-or-later
+// SPDX-License-Identifier: SUL-1.0
 
 // Package jobs sets up River, the Postgres-backed job queue that runs every
 // scheduled hub job: provider sync, renewals, FX refresh and alert checks.

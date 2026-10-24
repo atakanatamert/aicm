@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: AGPL-3.0-or-later
+// SPDX-License-Identifier: SUL-1.0
 
 // Package quota stores provider-native meters and their readings and derives
 // the ranking score (score.go). Readings are stored exactly as reported.

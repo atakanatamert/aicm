@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: Apache-2.0
+// SPDX-License-Identifier: SUL-1.0
 
 package mcpserver
 
@@ -8,12 +8,12 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
-	"strings"
 	"time"
 
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 
 	"github.com/atakanatamert/aicm/internal/apiclient"
+	"github.com/atakanatamert/aicm/internal/money"
 )
 
 // toolset holds the generated hub client every tool calls.
@@ -484,7 +484,7 @@ func (t *toolset) updateAccount(ctx context.Context, _ *mcp.CallToolRequest, in 
 }
 
 func (t *toolset) recordCharge(ctx context.Context, _ *mcp.CallToolRequest, in recordChargeInput) (*mcp.CallToolResult, apiclient.Charge, error) {
-	minor, err := parseMinor(in.Amount, in.Currency)
+	amount, err := money.ParseDecimal(in.Amount, in.Currency)
 	if err != nil {
 		return nil, apiclient.Charge{}, err
 	}
@@ -495,7 +495,7 @@ func (t *toolset) recordCharge(ctx context.Context, _ *mcp.CallToolRequest, in r
 	resp, err := t.hub.CreateChargeWithResponse(ctx, apiclient.ChargeCreate{
 		AccountId:   in.AccountID,
 		Kind:        apiclient.ChargeKind(in.Kind),
-		Amount:      apiclient.Money{AmountMinor: minor, Currency: in.Currency},
+		Amount:      apiclient.Money{AmountMinor: amount.Minor, Currency: in.Currency},
 		OccurredOn:  occurred,
 		Description: in.Description,
 	})
@@ -507,7 +507,7 @@ func (t *toolset) recordCharge(ctx context.Context, _ *mcp.CallToolRequest, in r
 	}
 	charge := *resp.JSON201
 	return text(fmt.Sprintf("Recorded %s %s %s on %s.",
-		charge.Kind, formatMinor(charge.Amount.AmountMinor, charge.Amount.Currency),
+		charge.Kind, money.Amount{Minor: charge.Amount.AmountMinor, Currency: charge.Amount.Currency}.Decimal(),
 		charge.Amount.Currency, charge.OccurredOn.Format("2006-01-02"))), charge, nil
 }
 
@@ -606,11 +606,11 @@ func newPlan(name, price *string, currency string, cycle *string, renewsOn *stri
 			return nil, errors.New("price_amount requires a billing cycle other than none")
 		}
 	} else if price != nil {
-		minor, err := parseMinor(*price, currency)
+		amount, err := money.ParseDecimal(*price, currency)
 		if err != nil {
 			return nil, err
 		}
-		p.Price = &apiclient.Money{AmountMinor: minor, Currency: currency}
+		p.Price = &apiclient.Money{AmountMinor: amount.Minor, Currency: currency}
 	}
 	if renewsOn != nil {
 		day, err := parseDay(*renewsOn)
@@ -641,11 +641,11 @@ func patchPlan(in updateAccountInput, current apiclient.Plan, currency string) (
 	}
 	price := current.Price
 	if in.PriceAmount != nil {
-		minor, err := parseMinor(*in.PriceAmount, currency)
+		amount, err := money.ParseDecimal(*in.PriceAmount, currency)
 		if err != nil {
 			return nil, err
 		}
-		price = &apiclient.Money{AmountMinor: minor, Currency: currency}
+		price = &apiclient.Money{AmountMinor: amount.Minor, Currency: currency}
 	}
 	renewsOn := current.RenewsOn
 	if in.RenewsOn != nil {
@@ -718,132 +718,4 @@ func countLinks(l apiclient.Links) int {
 		}
 	}
 	return n
-}
-
-// ---------------------------------------------------------------- money
-
-var (
-	zeroDecimal = map[string]struct{}{
-		"BIF": {}, "CLP": {}, "DJF": {}, "GNF": {}, "ISK": {}, "JPY": {},
-		"KMF": {}, "KRW": {}, "PYG": {}, "RWF": {}, "UGX": {}, "UYI": {},
-		"VND": {}, "VUV": {}, "XAF": {}, "XOF": {}, "XPF": {},
-	}
-	threeDecimal = map[string]struct{}{
-		"BHD": {}, "IQD": {}, "JOD": {}, "KWD": {}, "LYD": {}, "OMR": {}, "TND": {},
-	}
-)
-
-// currencyExponent is internal/money.Exponent, copied because that package is
-// AGPL and mcpserver is Apache-2.0.
-func currencyExponent(currency string) (int, error) {
-	if len(currency) != 3 {
-		return 0, fmt.Errorf("invalid currency code %q", currency)
-	}
-	for i := range 3 {
-		if currency[i] < 'A' || currency[i] > 'Z' {
-			return 0, fmt.Errorf("invalid currency code %q", currency)
-		}
-	}
-	if _, ok := zeroDecimal[currency]; ok {
-		return 0, nil
-	}
-	if _, ok := threeDecimal[currency]; ok {
-		return 3, nil
-	}
-	return 2, nil
-}
-
-// parseMinor parses a decimal string in major units into minor units without
-// strconv, rounding half away from zero like internal/money.ParseDecimal.
-func parseMinor(amount, currency string) (int64, error) {
-	exp, err := currencyExponent(currency)
-	if err != nil {
-		return 0, err
-	}
-	s := strings.TrimSpace(amount)
-	neg := false
-	switch {
-	case strings.HasPrefix(s, "-"):
-		neg, s = true, s[1:]
-	case strings.HasPrefix(s, "+"):
-		s = s[1:]
-	}
-	intPart, frac, _ := strings.Cut(s, ".")
-	if intPart == "" && frac == "" {
-		return 0, fmt.Errorf("parsing %s amount %q: not a plain decimal number", currency, amount)
-	}
-	if !digits(intPart) || !digits(frac) {
-		return 0, fmt.Errorf("parsing %s amount %q: not a plain decimal number", currency, amount)
-	}
-
-	const maxInt64 = int64(^uint64(0) >> 1)
-	var v int64
-	add := func(c byte) error {
-		d := int64(c - '0')
-		if v > (maxInt64-d)/10 {
-			return fmt.Errorf("parsing %s amount %q: out of range", currency, amount)
-		}
-		v = v*10 + d
-		return nil
-	}
-	for i := range len(intPart) {
-		if err := add(intPart[i]); err != nil {
-			return 0, err
-		}
-	}
-	roundUp := false
-	for i := range exp {
-		c := byte('0')
-		if i < len(frac) {
-			c = frac[i]
-		}
-		if err := add(c); err != nil {
-			return 0, err
-		}
-	}
-	if len(frac) > exp {
-		roundUp = frac[exp] >= '5'
-	}
-	if roundUp {
-		if v == maxInt64 {
-			return 0, fmt.Errorf("parsing %s amount %q: out of range", currency, amount)
-		}
-		v++
-	}
-	if neg {
-		v = -v
-	}
-	return v, nil
-}
-
-func digits(s string) bool {
-	for i := range len(s) {
-		if s[i] < '0' || s[i] > '9' {
-			return false
-		}
-	}
-	return true
-}
-
-// formatMinor renders minor units for summaries.
-func formatMinor(v int64, currency string) string {
-	exp, err := currencyExponent(currency)
-	if err != nil {
-		exp = 2
-	}
-	neg := v < 0
-	if neg {
-		v = -v
-	}
-	s := fmt.Sprint(v)
-	if exp > 0 {
-		for len(s) <= exp {
-			s = "0" + s
-		}
-		s = s[:len(s)-exp] + "." + s[len(s)-exp:]
-	}
-	if neg {
-		return "-" + s
-	}
-	return s
 }

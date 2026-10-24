@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: Apache-2.0
+// SPDX-License-Identifier: SUL-1.0
 
 // Package agentlink is the protocol between aicm-agent and the hub: one
 // outbound WebSocket per machine, JSON messages in an Envelope, an Ed25519

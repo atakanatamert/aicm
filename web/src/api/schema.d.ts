@@ -1833,7 +1833,7 @@ export interface components {
             version: string;
             /**
              * Format: uri
-             * @description Source code of the running version (AGPL network clause)
+             * @description Source code of the running version
              */
             source_url: string;
         };

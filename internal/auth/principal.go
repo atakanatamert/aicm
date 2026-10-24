@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: AGPL-3.0-or-later
+// SPDX-License-Identifier: SUL-1.0
 
 // Package auth handles users, sessions, API tokens, roles and per-account
 // grants. This file is the contract every feature uses: the Principal the

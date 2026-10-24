@@ -1,6 +1,6 @@
 # Contributing
 
-aicm is pre-alpha. Read [docs/PLAN.md](docs/PLAN.md) for the design and [CLAUDE.md](CLAUDE.md) for code conventions; both apply to humans and coding agents alike.
+Read [docs/PLAN.md](docs/PLAN.md) for the design and [CLAUDE.md](CLAUDE.md) for code conventions; both apply to humans and coding agents alike.
 
 ## Contributor License Agreement
 
@@ -16,11 +16,11 @@ docker compose up --build        # hub on http://localhost:8080
 go build ./... && go vet ./... && golangci-lint run
 go test ./...                    # DB tests need AICM_TEST_DATABASE_URL
 sqlc generate                    # after editing migrations/ or internal/db/queries/
-./scripts/check-licenses.sh      # SPDX headers and the Apache/AGPL boundary
+./scripts/check-licenses.sh      # SPDX header on every Go file
 ```
 
 Commits follow [Conventional Commits](https://www.conventionalcommits.org) (`feat:`, `fix:`, `docs:`, `chore:` …), one task per branch, squash-merged.
 
-## Licenses
+## License
 
-The hub is AGPL-3.0-or-later. The agent and everything it links (`cmd/aicm-agent`, `internal/agentlink`, `internal/mcpserver`, `internal/apiclient`, `internal/agent`, `internal/harness`, `internal/meter`, `internal/version`) is Apache-2.0 and must not import hub packages; `scripts/check-licenses.sh` enforces this. Code ported from another project needs an entry in [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md) in the same change.
+All code is under the [Sustainable Use License 1.0](LICENSE) (SPDX `SUL-1.0`), and contributions are accepted under the [CLA](CLA.md), which lets the maintainer also offer aicm commercially. Code ported from another project needs an entry in [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md) in the same change.

@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: AGPL-3.0-or-later
+// SPDX-License-Identifier: SUL-1.0
 
 // Package agenthub terminates the agent WebSocket, runs the signed handshake
 // and ingests what enrolled machines push: discovered accounts, usage and

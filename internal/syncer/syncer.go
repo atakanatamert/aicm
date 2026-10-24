@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: AGPL-3.0-or-later
+// SPDX-License-Identifier: SUL-1.0
 
 // Package syncer runs provider adapters for accounts the hub polls: one
 // River job per account sync, plus a dispatcher that queues accounts whose

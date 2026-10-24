@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: AGPL-3.0-or-later
+// SPDX-License-Identifier: SUL-1.0
 
 // Package manual declares catalog-only providers. They have no API the hub
 // calls: the user or the agent fills in their meters, and the links take the

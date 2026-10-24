@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: AGPL-3.0-or-later
+// SPDX-License-Identifier: SUL-1.0
 
 // Package googleaistudio adapts Gemini API keys from Google AI Studio. Google
 // offers no balance, spend or usage API for these keys outside Google Cloud

@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: AGPL-3.0-or-later
+// SPDX-License-Identifier: SUL-1.0
 
 // Package account owns accounts: their plan and renewal date, the key stored
 // for them, their machines and the daily renewal roll-forward.

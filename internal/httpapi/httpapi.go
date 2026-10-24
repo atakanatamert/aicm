@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: AGPL-3.0-or-later
+// SPDX-License-Identifier: SUL-1.0
 
 // Package httpapi is the hub's HTTP layer. Routing, request decoding and
 // response types are generated from api/openapi.yaml into api.gen.go

@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: AGPL-3.0-or-later
+// SPDX-License-Identifier: SUL-1.0
 
 // Package copilot adapts GitHub's billing AI credit usage report for an
 // individual Copilot plan. GitHub bills Copilot in AI credits; the endpoint

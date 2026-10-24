@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: AGPL-3.0-or-later
+// SPDX-License-Identifier: SUL-1.0
 
 // Package alert evaluates alert rules, writes the in-app inbox and exposes
 // the rule editor. Evaluation lives in evaluate.go; the hourly River job in

@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: AGPL-3.0-or-later
+// SPDX-License-Identifier: SUL-1.0
 
 // Package deepseek adapts DeepSeek's balance endpoint. DeepSeek has no usage
 // or charge API, so the adapter fetches quota only.

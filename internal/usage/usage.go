@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: AGPL-3.0-or-later
+// SPDX-License-Identifier: SUL-1.0
 
 // Package usage stores per-request usage events, rolls them up per UTC day
 // and model, replaces provider-reported days, and answers grouped queries.

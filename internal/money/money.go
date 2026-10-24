@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: AGPL-3.0-or-later
+// SPDX-License-Identifier: SUL-1.0
 
 // Package money handles amounts as integer minor units with an ISO 4217 code.
 // Money is never a float. Provider responses that carry decimals (strings or

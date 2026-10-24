@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: Apache-2.0
+// SPDX-License-Identifier: SUL-1.0
 
 // Package claudecode imports Claude Code's local account data, its per-request
 // usage logs and its statusline rate-limit captures.

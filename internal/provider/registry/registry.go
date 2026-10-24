@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: AGPL-3.0-or-later
+// SPDX-License-Identifier: SUL-1.0
 
 // Package registry lists every provider compiled into the hub. Adding a
 // provider is one line in All.

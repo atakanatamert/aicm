@@ -1,4 +1,4 @@
-# SPDX-License-Identifier: AGPL-3.0-or-later
+# SPDX-License-Identifier: SUL-1.0
 #
 # Installs the aicm agent for the current user on Windows: downloads the
 # release, verifies its checksum, enrolls the machine and registers a

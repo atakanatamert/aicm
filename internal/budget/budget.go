@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: AGPL-3.0-or-later
+// SPDX-License-Identifier: SUL-1.0
 
 // Package budget stores the org's monthly budgets and reports their status:
 // month-to-date confirmed spend converted per charge to the budget currency,

@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: AGPL-3.0-or-later
+// SPDX-License-Identifier: SUL-1.0
 
 // Package zai adapts the Z.ai GLM Coding Plan's quota endpoint. The endpoint
 // is not part of the public API reference, so the adapter is marked

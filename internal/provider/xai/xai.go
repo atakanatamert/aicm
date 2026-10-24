@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: AGPL-3.0-or-later
+// SPDX-License-Identifier: SUL-1.0
 
 // Package xai adapts xAI's Management API. It reads the team's prepaid
 // credit balance, daily usage grouped by billing line description, and the

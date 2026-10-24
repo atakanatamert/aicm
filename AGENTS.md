@@ -8,13 +8,13 @@ Read `docs/PLAN.md` for the design and `docs/DECISIONS.md` for settled decisions
 ## Layout
 
 ```text
-cmd/aicm/            hub binary (AGPL): serve, migrate, rotate-key, create-admin, providers --markdown
-cmd/aicm-agent/      agent binary (Apache-2.0): run, enroll, mcp, update
+cmd/aicm/            hub binary: serve, migrate, rotate-key, create-admin, providers --markdown
+cmd/aicm-agent/      agent binary: run, enroll, mcp, update
 internal/<feature>/  one package per feature: types, service, sqlc queries together
 internal/provider/<id>/   one package per provider adapter
 internal/harness/<id>/    one package per local harness importer (used by the agent)
-internal/agentlink/  hub<->agent protocol (Apache-2.0)
-internal/mcpserver/  MCP tools (Apache-2.0)
+internal/agentlink/  hub<->agent protocol
+internal/mcpserver/  MCP tools
 migrations/          goose SQL migrations
 web/                 React + Vite app, built to web/dist and embedded with go:embed
 docs/                plan, decisions, research, task cards
@@ -30,7 +30,7 @@ docs/                plan, decisions, research, task cards
 - Money: integer minor units plus an ISO 4217 currency code. Never store money as a float. Convert only for display, at the rate of the record's own date.
 - Time: store UTC `timestamptz`. Meter `resets_at` values are absolute times, not durations.
 <!-- REUSE-IgnoreStart -->
-- Every Go source file starts with a one-line SPDX header: `// SPDX-License-Identifier: AGPL-3.0-or-later` (hub) or `// SPDX-License-Identifier: Apache-2.0` (everything the agent binary links: `cmd/aicm-agent`, `internal/agentlink`, `internal/mcpserver`, `internal/apiclient`, `internal/agent`, `internal/harness`, `internal/meter`, `internal/version`). Apache packages must never import AGPL packages. `REUSE.toml` supplies copyright and covers non-Go files.
+- Every Go source file starts with the one-line SPDX header `// SPDX-License-Identifier: SUL-1.0` (Sustainable Use License 1.0, the whole repo; `scripts/check-licenses.sh` checks it). `REUSE.toml` supplies copyright and covers non-Go files.
 <!-- REUSE-IgnoreEnd -->
 - SQL: schema lives in `migrations/` (goose). Queries live in `internal/db/queries/<feature>.sql`; `sqlc generate` writes Go into `internal/db`. Feature packages call `internal/db`.
 - HTTP: routes, request decoding and response types are generated from `api/openapi.yaml` into `internal/httpapi/api.gen.go` (`go generate ./internal/httpapi`). Handlers are methods on `httpapi.Server`, one file per feature; return typed responses or an `*httpapi.APIError`. Never edit `*.gen.go`; change the spec and regenerate. A new operation in the spec needs its handler before the package compiles.

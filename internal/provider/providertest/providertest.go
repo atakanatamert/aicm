@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: AGPL-3.0-or-later
+// SPDX-License-Identifier: SUL-1.0
 
 // Package providertest runs adapter golden tests: a recorded fixture goes in,
 // the adapter's records come out and are compared with a golden JSON file.

@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: AGPL-3.0-or-later
+// SPDX-License-Identifier: SUL-1.0
 
 // Package pricing looks up model token prices and estimates request cost in
 // micro units. Prices come from the LiteLLM price file (see litellm.go) and

@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: Apache-2.0
+// SPDX-License-Identifier: SUL-1.0
 
 // Package harness defines local harness importers used by the agent. Each
 // harness (Claude Code, Codex, omp) is one package under internal/harness/<id>/.

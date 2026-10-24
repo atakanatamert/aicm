@@ -1,8 +1,8 @@
-// SPDX-License-Identifier: Apache-2.0
+// SPDX-License-Identifier: SUL-1.0
 
 // Package meter defines provider-native quota meters and their readings.
 // Both the hub (provider adapters) and the agent (harness capture) produce
-// these, so the package is Apache-2.0 and imports nothing from the hub.
+// these, so the package imports nothing from the hub.
 //
 // A meter keeps the provider's own key, label, unit and reset rule. Readings
 // carry the provider's numbers untouched; the only derived figure anywhere is

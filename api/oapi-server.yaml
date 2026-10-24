@@ -1,4 +1,4 @@
-# oapi-codegen config for the hub's server side (AGPL). Run: go generate ./internal/httpapi
+# oapi-codegen config for the hub's server side. Run: go generate ./internal/httpapi
 package: httpapi
 output: api.gen.go
 generate:

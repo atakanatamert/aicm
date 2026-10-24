@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: AGPL-3.0-or-later
+// SPDX-License-Identifier: SUL-1.0
 
 // Package fx stores one EUR-based reference rate per currency per day and
 // converts money amounts at the rate of the amount's own date.

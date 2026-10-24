@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: AGPL-3.0-or-later
+// SPDX-License-Identifier: SUL-1.0
 
 // Package charge records money out: subscription fees, top-ups, invoices and
 // refunds, each in its billed currency, plus the spend report that converts

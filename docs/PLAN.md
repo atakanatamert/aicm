@@ -11,14 +11,14 @@ Revision 3 adds the hosted business model (AGPL hub with a CLA, Apache agent, or
 - React with Vite (no Next.js), shadcn/ui, shadcn charts, Motion, Hairline for illustration, Impeccable as a design review step.
 - Opt-in for unofficial quota endpoints; passive capture is the default.
 - Roles (admin, editor, viewer) plus per-account grants; email and password, no SSO.
-- AGPL-3.0-or-later for the hub; Frankfurter as the default rate source; Google AI Studio instead of Google Cloud; a generated supported-providers table in the README; MIT-licensed projects such as tokscale reused with attribution. Gemini CLI subscription quota stays out unless you say otherwise.
+- Sustainable Use License 1.0 for the whole repo (Decision 33, replacing the earlier AGPL hub and Apache agent); Frankfurter as the default rate source; Google AI Studio instead of Google Cloud; a generated supported-providers table in the README; MIT-licensed projects such as tokscale reused with attribution. Gemini CLI subscription quota stays out unless you say otherwise.
 - Major providers first; the rest on community request.
 - Email alerts first, other channels later; audit log, CSV export and the scoring rule in v1.
 
 **Open items (placeholders in use until decided)**
 
 1. Contributor terms: the plan assumes a CLA from the first outside pull request (recommended). Not yet confirmed.
-2. Agent, MCP server and agent-link protocol license: the plan assumes Apache-2.0 (recommended). Not yet confirmed.
+2. License: settled as the Sustainable Use License 1.0 for everything (Decision 33).
 3. Project name: settled as `aicm` (Decision 24).
 
 ## Your points, answered
@@ -38,6 +38,8 @@ Revision 3 adds the hosted business model (AGPL hub with a CLA, Apache agent, or
 | 11 | Alerts, audit log, CSV, scoring | All in v1: email alerts with an inbox, append-only audit log, CSV export, and your burn-rate scoring with an hourly 24 h forecast. |
 
 ## Business model and licensing
+
+> **Superseded 2026-10-24 (Decision 33).** The whole repo is now under the Sustainable Use License 1.0: anyone may self-host and modify aicm for internal business, personal or non-commercial use, and only the maintainer may sell it or offer it as a hosted service. The AGPL/Apache reasoning below is kept for history; the CLA, trademark and Cloud-split points still apply.
 
 A hosted version on top of an AGPL core works, and it is the Grafana and Plausible model more than the Supabase one: Supabase and ClickHouse use Apache-2.0, which would let a bigger company host your code closed-source. AGPL plus a CLA keeps the community license honest while leaving you, and only you, free to run a hosted version with closed extras or to sell commercial licenses. Three things have to be decided now because they are expensive to change later: the CLA, multi-tenancy in the schema, and the trademark.
 
@@ -448,11 +450,11 @@ The MCP server is `aicm mcp`, a stdio process built on the official [Go MCP SDK]
 
 No tool deletes data, and no tool can read or return a secret.
 
-## Open source setup
+## Source-available setup
 
-The hub is AGPL-3.0-or-later; the agent, MCP server and agent-link protocol are Apache-2.0; contributors sign a CLA. Releases install in one command, and the README always shows which providers are supported. The reasoning is under *Business model and licensing*.
+The whole repo is under the Sustainable Use License 1.0 (Decision 33); contributors sign a CLA. Releases install in one command, and the README always shows which providers are supported.
 
-- **License files:** AGPL text in the root `LICENSE`, Apache-2.0 in `cmd/aicm-agent/`, `internal/agentlink/` and `internal/mcpserver/`, and an SPDX header on every file checked by REUSE lint in CI. A footer link to the source and version in the UI keeps forks compliant with AGPL's network clause.
+- **License files:** the license text in the root `LICENSE` and `LICENSES/SUL-1.0.txt`, and an SPDX header on every file checked by REUSE lint in CI. A footer link to the source and version in the UI.
 - **Contributions:** CLA Assistant on every pull request, `CONTRIBUTING.md` (how to add a provider in one package or YAML file, how to record a fixture), Conventional Commits.
 - **Attribution:** `THIRD_PARTY_NOTICES.md` lists every ported or bundled project and ships in binaries and images.
 - **Community files:** `README`, `SECURITY.md` (private reports through GitHub Security Advisories), `CODE_OF_CONDUCT.md`, `TRADEMARKS.md`, issue templates (bug, new provider), PR template, `CHANGELOG.md`.

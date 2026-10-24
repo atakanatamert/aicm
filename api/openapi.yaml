@@ -27,8 +27,8 @@ info:
     **Not in this spec.** `GET /api/agent/connect` is the agent WebSocket
     (protocol in `docs/agentlink.md`). `/mcp` serves MCP over streamable HTTP.
   license:
-    name: AGPL-3.0-or-later
-    url: https://www.gnu.org/licenses/agpl-3.0.html
+    name: Sustainable Use License 1.0 (SUL-1.0)
+    url: https://github.com/atakanatamert/aicm/blob/main/LICENSE
 
 servers:
   - url: /
@@ -2708,7 +2708,7 @@ components:
         source_url:
           type: string
           format: uri
-          description: Source code of the running version (AGPL network clause)
+          description: Source code of the running version
 
     SettingsUpdate:
       type: object

@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: Apache-2.0
+// SPDX-License-Identifier: SUL-1.0
 
 // Package version holds the product name and build version shared by the hub
 // and the agent. The product name lives only here and in go.mod, so renaming

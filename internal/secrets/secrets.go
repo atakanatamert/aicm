@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: AGPL-3.0-or-later
+// SPDX-License-Identifier: SUL-1.0
 
 // Package secrets stores provider keys and other credentials encrypted at
 // rest. Each org has a data key (DEK) that is wrapped by the master key;

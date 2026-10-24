@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: Apache-2.0
+// SPDX-License-Identifier: SUL-1.0
 
 // Package codex imports the ChatGPT account and quota data used by the Codex
 // CLI. It reads Codex's local files read-only and may start the official

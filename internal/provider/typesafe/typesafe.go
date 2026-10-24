@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: AGPL-3.0-or-later
+// SPDX-License-Identifier: SUL-1.0
 
 // Package typesafe adapts TypeSafe (the Jev System One model). Its API has no
 // balance, usage or billing endpoint, so the adapter only checks keys; usage

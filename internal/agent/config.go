@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: Apache-2.0
+// SPDX-License-Identifier: SUL-1.0
 
 // Package agent is the aicm agent: it enrolls one machine with a hub, keeps
 // an outbound WebSocket open, scans local harnesses and spools every outgoing

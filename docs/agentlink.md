@@ -1,6 +1,6 @@
 # agentlink protocol, version 1
 
-The link between `aicm-agent` and the hub. Go types in `internal/agentlink` are the source of truth; this page explains them. License: Apache-2.0.
+The link between `aicm-agent` and the hub. Go types in `internal/agentlink` are the source of truth; this page explains them.
 
 ## Transport
 

@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: AGPL-3.0-or-later
+// SPDX-License-Identifier: SUL-1.0
 
 // Package audit writes the append-only audit log. Every mutation calls
 // Write once, inside the same transaction as the change when there is one,

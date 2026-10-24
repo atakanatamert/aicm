@@ -1,5 +1,5 @@
 #!/bin/sh
-# SPDX-License-Identifier: AGPL-3.0-or-later
+# SPDX-License-Identifier: SUL-1.0
 #
 # Nightly backup sidecar for the hub: a pg_dump of the database and a copy of
 # the master key, kept side by side in /backups. Without the master key the

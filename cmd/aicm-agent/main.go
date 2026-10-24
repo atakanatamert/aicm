@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: Apache-2.0
+// SPDX-License-Identifier: SUL-1.0
 
 // Command aicm-agent runs on each developer machine. It reads local harness
 // data and pushes usage, discovered accounts and quota meters to the hub over

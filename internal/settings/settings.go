@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: AGPL-3.0-or-later
+// SPDX-License-Identifier: SUL-1.0
 
 // Package settings reads and writes the single org's settings: display
 // currency, FX source and the SMTP server alerts are sent through.

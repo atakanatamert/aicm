@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: AGPL-3.0-or-later
+// SPDX-License-Identifier: SUL-1.0
 
 // Package config reads the hub's settings from the environment.
 // Every variable is prefixed AICM_. Later tasks add their own fields here.

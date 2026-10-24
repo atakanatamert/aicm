@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: Apache-2.0
+// SPDX-License-Identifier: SUL-1.0
 
 // Package mcpserver exposes the hub's data to coding agents over the Model
 // Context Protocol. Every tool calls the hub's HTTP API with the caller's API

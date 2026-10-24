@@ -74,6 +74,7 @@ web/
 
 `web/embed.go`:
 
+<!-- REUSE-IgnoreStart -->
 ```go
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
@@ -89,6 +90,7 @@ var dist embed.FS
 // telling the developer to run `pnpm -C web build`.
 func Handler() http.Handler
 ```
+<!-- REUSE-IgnoreEnd -->
 
 Cache headers: `Cache-Control: public, max-age=31536000, immutable` for files under `assets/`, `no-cache` for `index.html`.
 
