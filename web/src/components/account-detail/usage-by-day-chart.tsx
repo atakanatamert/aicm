@@ -1,6 +1,7 @@
 import { CartesianGrid, Line, LineChart, XAxis, YAxis } from "recharts"
 import type { components } from "@/api/schema"
 import { ChartContainer, ChartTooltip, ChartTooltipContent, type ChartConfig } from "@/components/ui/chart"
+import { fillDays } from "@/lib/day-series"
 import { formatMicro } from "@/lib/format"
 
 type UsageRow = components["schemas"]["UsageRow"]
@@ -10,26 +11,27 @@ const axisDay = new Intl.DateTimeFormat(undefined, { month: "short", day: "numer
 
 type Point = { day: string; requests: number } & Record<string, string | number>
 
-/** One point per day; one line per currency, in micro units. */
-function seriesOf(rows: UsageRow[]): Point[] {
+/** One point per day, gaps filled with zeros; one line per currency, in micro units. */
+function seriesOf(rows: UsageRow[], currencies: string[]): Point[] {
+  const zero = (day: string): Point => ({ day, requests: 0, ...Object.fromEntries(currencies.map((c) => [c, 0])) })
   const byDay = new Map<string, Point>()
   for (const row of rows) {
-    const day = row.day
+    const day = row.day?.slice(0, 10)
     if (!day) continue
-    const point = byDay.get(day) ?? { day, requests: 0 }
+    const point = byDay.get(day) ?? zero(day)
     point.requests += row.requests
     for (const c of row.cost) {
       point[c.currency] = (Number(point[c.currency]) || 0) + c.amount_micro
     }
     byDay.set(day, point)
   }
-  return [...byDay.values()].sort((a, b) => a.day.localeCompare(b.day))
+  return fillDays([...byDay.values()], zero)
 }
 
 /** Estimated cost per day, one line per currency. */
 export function UsageByDayChart({ rows }: { rows: UsageRow[] }) {
-  const points = seriesOf(rows)
   const currencies = [...new Set(rows.flatMap((r) => r.cost.map((c) => c.currency)))]
+  const points = seriesOf(rows, currencies)
   const config = Object.fromEntries(
     currencies.map((currency, i) => [currency, { label: currency, color: `var(--chart-${(i % 5) + 1})` }]),
   ) as ChartConfig

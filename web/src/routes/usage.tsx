@@ -119,7 +119,7 @@ export default function Usage() {
           <>
             {groupBy === "day" && (
               <Suspense fallback={<Skeleton className="h-64 w-full" />}>
-                <UsageChart rows={usage.data} />
+                <UsageChart rows={usage.data} from={from} to={to} />
               </Suspense>
             )}
             <UsageTable groupBy={groupBy} rows={usage.data} />
