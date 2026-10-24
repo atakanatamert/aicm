@@ -1,0 +1,69 @@
+name: New provider
+description: Ask for a provider aicm should track, or for automatic sync of one that is tracked by hand today.
+labels: ["provider"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Check the supported providers table in the README first. A provider listed there as "Manual" can still be asked for here if it now has an API.
+
+        Never paste a real API key, admin key or token. Replace secrets, account ids and email addresses in sample responses with `REDACTED`.
+  - type: input
+    id: provider
+    attributes:
+      label: Provider name
+      placeholder: Example AI
+    validations:
+      required: true
+  - type: input
+    id: docs
+    attributes:
+      label: API documentation
+      description: Link to the docs for the balance, usage or billing API.
+      placeholder: https://docs.example.ai/api/billing
+    validations:
+      required: true
+  - type: dropdown
+    id: billing
+    attributes:
+      label: Billing model
+      options:
+        - Subscription (fixed monthly or yearly plan)
+        - Pay-as-you-go (prepaid credits or postpaid usage)
+        - Both
+    validations:
+      required: true
+  - type: dropdown
+    id: auth
+    attributes:
+      label: Authentication
+      description: What the endpoint needs.
+      options:
+        - Normal API key
+        - Admin or management key
+        - OAuth (subscription login)
+        - None
+        - Other (explain below)
+    validations:
+      required: true
+  - type: textarea
+    id: endpoints
+    attributes:
+      label: Endpoints
+      description: The method and URL for each thing the provider exposes, for example remaining balance, usage, cost or quota limits.
+      placeholder: |
+        GET https://api.example.ai/v1/balance  remaining credits
+        GET https://api.example.ai/v1/usage?start=...  usage per day and model
+    validations:
+      required: true
+  - type: textarea
+    id: sample
+    attributes:
+      label: Sample response
+      description: A real response from the endpoint, with every secret, account id and email address replaced by `REDACTED`.
+      render: json
+  - type: textarea
+    id: extra
+    attributes:
+      label: Anything else
+      description: Rate limits, currencies, whether the endpoint is official or undocumented, links to the provider's billing and top-up pages.

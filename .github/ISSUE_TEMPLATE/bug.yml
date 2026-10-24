@@ -1,0 +1,73 @@
+name: Bug report
+description: Something in the hub, the agent or an installer does not work as it should.
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting a bug. Security problems go through a [private advisory](https://github.com/atakanatamert/aicm/security/advisories/new), not here.
+
+        Never paste API keys, admin keys, OAuth tokens, enrollment or machine tokens, passwords or the contents of `master.key` into an issue. Replace them with `REDACTED`.
+  - type: input
+    id: hub-version
+    attributes:
+      label: Hub version
+      description: Output of `aicm version` (or `docker compose exec hub aicm version`).
+      placeholder: aicm v0.1.0
+    validations:
+      required: true
+  - type: input
+    id: agent-version
+    attributes:
+      label: Agent version
+      description: Output of `aicm-agent version` on the affected machine. Leave empty if the agent is not involved.
+      placeholder: aicm-agent v0.1.0
+  - type: input
+    id: os
+    attributes:
+      label: Operating system
+      description: Of the machine where the problem happens, with version and architecture.
+      placeholder: macOS 15.4 arm64, Ubuntu 24.04 x86_64, Windows 11 x64
+    validations:
+      required: true
+  - type: dropdown
+    id: install-method
+    attributes:
+      label: Install method
+      multiple: true
+      options:
+        - Hub with Docker Compose
+        - Hub from a release binary
+        - Agent with the one-line installer (macOS/Linux)
+        - Agent with the one-line installer (Windows)
+        - Agent with Homebrew
+        - Agent in Docker
+        - Agent from a release binary
+        - Built from source
+    validations:
+      required: true
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened
+      description: What you did, step by step, and what you saw.
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: What you expected
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs
+      description: |
+        Relevant hub logs (`docker compose logs hub`) or agent logs. Check them for API keys, tokens, email addresses and other secrets and replace those with `REDACTED` before posting.
+      render: text
+  - type: textarea
+    id: extra
+    attributes:
+      label: Anything else
+      description: Providers or harnesses involved (Claude Code, Codex, omp), screenshots, or other context.
